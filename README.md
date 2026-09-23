@@ -6,6 +6,35 @@ A Retrieval-Augmented Generation (RAG) chatbot with document upload, multi-docum
 
 ---
 
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on pull requests targeting `main`, pushes to
+`main`, and manual workflow runs. It provides two checks:
+
+- **Backend tests**: Python 3.12 runs the mocked Flask unit tests using
+  `backend/requirements-test.txt`. Application package versions are constrained
+  by `backend/requirements.txt`. No OpenAI key, running backend, or vector
+  database is required. These tests do not validate the full RAG dependency
+  installation or live model quality; the evaluation scripts remain separate.
+- **Frontend build**: Node.js 22 installs the lockfile with `npm ci`, checks
+  TypeScript, and builds the Next.js application. The build needs network access
+  to download the Google fonts used by the layout.
+
+To run the same checks locally, from `backend/` in a Python virtual environment:
+
+```shell
+python -m pip install -r requirements-test.txt
+python -m pytest test_chat_endpoint.py -v
+```
+
+From `frontend/`:
+
+```shell
+npm ci
+npx tsc --noEmit
+npm run build
+```
+
 ## Prerequisites
 
 The following must be installed **manually** before running any startup script. `start-dev.ps1 -InstallDeps` will not install these for you.
