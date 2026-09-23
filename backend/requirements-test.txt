@@ -1,0 +1,8 @@
+# Unit tests mock LangChain, OpenAI and ChromaDB in conftest.py.
+# Apply application version pins without installing the RAG/evaluation stack.
+-c requirements.txt
+flask
+flask-cors
+python-dotenv
+werkzeug
+pytest==8.3.5
