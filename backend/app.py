@@ -59,6 +59,11 @@ from rag.prompts import(
     _GUARD_PROMPT,
 )
 
+from rag.retrieval import (
+    _similarity_search,
+    _similarity_search_with_score,
+)
+
 load_dotenv()
 
 # ── Flask app ─────────────────────────────────────────────────────────────────
@@ -254,30 +259,6 @@ def _parse_citations(raw_answer: str, chunks: list) -> tuple:
     return clean_answer, cited_chunks if cited_chunks else chunks
 
 
-def _similarity_search(query: str, k: int = NUM_CHUNKS, where: dict = None) -> list[Document]:
-    """Query ChromaDB and return LangChain Document objects."""
-    n = min(k, collection.count())
-    if n == 0:
-        return []
-    kwargs: dict = {"query_texts": [query], "n_results": n, "include": ["documents", "metadatas"]}
-    if where:
-        kwargs["where"] = where
-    results = collection.query(**kwargs)
-    return [Document(page_content=t, metadata=m)
-            for t, m in zip(results["documents"][0], results["metadatas"][0])]
-
-
-def _similarity_search_with_score(query: str, k: int = NUM_CHUNKS) -> list[tuple[Document, float]]:
-    """Query ChromaDB and return (Document, distance) tuples."""
-    n = min(k, collection.count())
-    if n == 0:
-        return []
-    results = collection.query(query_texts=[query], n_results=n,
-                               include=["documents", "metadatas", "distances"])
-    return [(Document(page_content=t, metadata=m), d)
-            for t, m, d in zip(results["documents"][0], results["metadatas"][0], results["distances"][0])]
-
-
 # ── Scope detection ──────────────────────────────────────────────────────────
 
 _SCOPE_CANDIDATE_K      = 12
@@ -371,7 +352,7 @@ def _detect_scope(message: str, session_id: str) -> tuple:
         return ("broad", None)
 
     # 3 — Candidate retrieval + score-based competition check
-    candidates = _similarity_search_with_score(message, k=_SCOPE_CANDIDATE_K)
+    candidates = _similarity_search_with_score(collection, message, k=_SCOPE_CANDIDATE_K)
     if not candidates:
         return ("pass", None)
 
@@ -467,6 +448,7 @@ def _evict_stale_sessions() -> None:
 def _answer_single_doc(question: str, filename: str, session_id: str):
     """Retrieve chunks from a specific file using ChromaDB metadata filter."""
     doc_chunks = _similarity_search(
+        collection,
         question,
         k=NUM_CHUNKS,
         where={"source": str(KNOWLEDGE_BASE_DIR / filename)},
@@ -512,7 +494,7 @@ def _answer_multi_doc(question: str, session_id: str):
     num_docs       = max(1, len(_load_doc_registry()))
     pool_k         = min(num_docs * 5, 80)            # retrieve a wide pool
     chunks_per_src = max(2, MAX_MULTI_DOC_CHUNKS // num_docs)  # balance per source
-    candidates     = _similarity_search(question, k=pool_k)
+    candidates     = _similarity_search(collection, question, k=pool_k)
     by_source: dict = {}
     for doc in candidates:
         src = os.path.basename(doc.metadata.get("source", "unknown"))
@@ -590,7 +572,7 @@ def _chat_with_memory(question: str, session_id: str) -> tuple[str, list[Documen
         condensed = question
 
     # Step 2: Retrieve relevant chunks
-    chunks = _similarity_search(condensed, k=NUM_CHUNKS)
+    chunks = _similarity_search(collection, condensed, k=NUM_CHUNKS)
     if not chunks:
         answer = "The uploaded documents do not contain information about this."
         memory.save_context({"input": question}, {"output": answer})
