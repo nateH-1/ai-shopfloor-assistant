@@ -31,7 +31,6 @@ import chromadb
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 
 from langchain_openai import ChatOpenAI
-from langchain.prompts import PromptTemplate
 from langchain.memory import ConversationBufferMemory
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -71,6 +70,8 @@ from rag.context import (
 )
 
 load_dotenv()
+
+KNOWLEDGE_BASE_DIR.mkdir(exist_ok=True)
 
 # ── Flask app ─────────────────────────────────────────────────────────────────
 app = Flask(__name__)

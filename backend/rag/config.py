@@ -17,5 +17,3 @@ BROAD_INTENT_PHRASES = {
 }
 SESSION_TTL_SECONDS      = 2 * 60 * 60   # evict sessions idle for 2 hours
 MAX_MULTI_DOC_CHUNKS     = 40            # hard cap on total chunks sent to LLM (≈10K tokens)
-
-KNOWLEDGE_BASE_DIR.mkdir(exist_ok=True)
