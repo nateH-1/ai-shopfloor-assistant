@@ -14,7 +14,6 @@ GET    /api/health                   — Health check
 """
 
 import os
-import re
 import csv
 import json
 import time
@@ -55,7 +54,6 @@ from rag.prompts import(
     QA_PROMPT,
     CONDENSE_PROMPT,
     _MULTI_DOC_QA_TEMPLATE,
-    _GUARD_PROMPT,
 )
 
 from rag.retrieval import (
@@ -68,6 +66,8 @@ from rag.context import (
     _dedup_chunks,
     _parse_citations,
 )
+
+from rag.guard import _is_off_topic
 
 load_dotenv()
 
@@ -84,35 +84,16 @@ llm:        ChatOpenAI | None          = None
 _guard_llm: ChatOpenAI | None          = None   # cheap off-topic classifier
 conversation_sessions: dict            = {}      # session_id → { memory, last_accessed }
 
-def _is_off_topic(question: str) -> bool:
-    """
-    Make a cheap, context-free LLM call to classify whether the question is
-    clearly personal / off-topic BEFORE the RAG chain retrieves any documents.
-    Running this *before* retrieval prevents document context from biasing the answer.
-    Returns True  → block the question and return the canned off-topic reply.
-    Returns False → let the full RAG chain handle it normally.
-    """
-    # Fast deterministic check for obvious entertainment requests (whole-word match)
-    _lower = question.lower()
-    _ENTERTAINMENT_WORDS = ("joke", "jokes", "story", "stories", "poem", "poems",
-                            "riddle", "riddles", "sing", "song", "limerick")
-    if any(re.search(r'\b' + w + r'\b', _lower) for w in _ENTERTAINMENT_WORDS):
-        return True
-
+def _get_guard_llm() -> ChatOpenAI:
+    """Return the cheap off-topic classifier client, creating it on first use."""
     global _guard_llm
-    try:
-        if _guard_llm is None:
-            _guard_llm = ChatOpenAI(
-                model_name="gpt-4o-mini",
-                temperature=0,
-                max_tokens=3,      # only need "YES" or "NO"
-            )
-        safe_msg = question.replace('"', "'")
-        result   = _guard_llm.invoke(_GUARD_PROMPT.format(msg=safe_msg))
-        raw      = result.content.strip()
-        return raw.upper().startswith("YES")
-    except Exception:
-        return False   # fail open — let the chain handle edge cases
+    if _guard_llm is None:
+        _guard_llm = ChatOpenAI(
+            model_name="gpt-4o-mini",
+            temperature=0,
+            max_tokens=3,      # only need "YES" or "NO"
+        )
+    return _guard_llm
 
 
 # ── Helper: document registry ─────────────────────────────────────────────────
@@ -595,7 +576,7 @@ def chat():
         session_data = conversation_sessions.get(session_id, {})
         has_history = "memory" in session_data and session_data["memory"].load_memory_variables({}).get("chat_history", "")
         has_pending_clarification = bool(session_data.get("pending_clarification"))
-        if not has_pending_clarification and _is_off_topic(message):
+        if not has_pending_clarification and _is_off_topic(message, _get_guard_llm):
             return jsonify({
                 "reply":      "I can only answer questions about the uploaded documents.",
                 "session_id": session_id,
