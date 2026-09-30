@@ -166,6 +166,33 @@ class TestOffTopicGuard:
         assert res.status_code == 200
         assert res.get_json()["reply"] != "I can only answer questions about the uploaded documents."
 
+    def test_guard_receives_message_and_client_getter(self, client):
+        with patch("app._is_off_topic", return_value=True) as mock_guard:
+            client.post("/chat", json={"message": "How are you?"})
+        mock_guard.assert_called_once_with("How are you?", app_module._get_guard_llm)
+
+    def test_guard_skipped_while_clarification_pending(self, client):
+        """A reply to a document-choice prompt must never be classified as off-topic."""
+        app_module.conversation_sessions["sess-3"] = {
+            "pending_clarification": {
+                "original_question": "what is the torque spec",
+                "options": [
+                    {"label": "Manual A", "value": "manual_a.pdf"},
+                    {"label": "All relevant documents", "value": "__all__"},
+                ],
+            }
+        }
+        with patch("app._is_off_topic", return_value=True) as mock_guard, \
+             patch("app._answer_single_doc") as mock_single:
+            mock_single.return_value = app.response_class(
+                response='{"reply":"Spec answer","session_id":"sess-3","metadata":{"sources":[]}}',
+                status=200,
+                mimetype="application/json",
+            )
+            res = client.post("/chat", json={"message": "manual_a.pdf", "session_id": "sess-3"})
+        mock_guard.assert_not_called()
+        assert res.get_json()["reply"] == "Spec answer"
+
 
 # ── Group 4: Successful Response Shape ───────────────────────────────────────
 
