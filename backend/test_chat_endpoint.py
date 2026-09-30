@@ -490,7 +490,11 @@ class TestClarificationResolution:
             }
         }
 
-        scope, scope_data = app_module._detect_scope("cs_project_syllabus_spring_2026_v2.pdf", "sess-1")
+        scope, scope_data = app_module._detect_scope(
+            "cs_project_syllabus_spring_2026_v2.pdf",
+            app_module.conversation_sessions["sess-1"],
+            app_module.collection,
+        )
 
         assert scope == "resolved_single"
         assert scope_data == (
