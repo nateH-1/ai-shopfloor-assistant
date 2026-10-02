@@ -5,7 +5,7 @@ Tests for resource creation in rag/resources.py and how app.py stores it.
 They pin down the settings that must not change silently (collection name,
 embedding model, chat models) and the current _init_store error behavior.
 Framework: pytest + unittest.mock
-Run: cd backend && pytest test_resources.py -v
+Run: cd backend && pytest tests/test_resources.py -v
 """
 
 from unittest.mock import MagicMock, patch
