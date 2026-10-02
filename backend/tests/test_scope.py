@@ -6,7 +6,7 @@ They pin down CURRENT behavior, including known issue #10.
 Retrieval is replaced with scripted (chunk, distance) pairs, so no
 Chroma or OpenAI calls are made. Lower distance = better match.
 Framework: pytest + unittest.mock
-Run: cd backend && pytest test_scope.py -v
+Run: cd backend && pytest tests/test_scope.py -v
 """
 
 from types import SimpleNamespace

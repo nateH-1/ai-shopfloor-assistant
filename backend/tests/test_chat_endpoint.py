@@ -3,7 +3,7 @@ test_chat_endpoint.py
 =====================
 Unit tests for all Flask routes.
 Framework: pytest + unittest.mock + Flask test client
-Run: cd backend && pytest test_chat_endpoint.py -v
+Run: cd backend && pytest tests/test_chat_endpoint.py -v
 """
 
 import io

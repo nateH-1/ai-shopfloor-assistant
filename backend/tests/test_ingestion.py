@@ -5,7 +5,7 @@ Tests for _ingest_file in rag/ingestion.py — the code that writes uploaded
 documents into the Chroma collection. A fake collection records what would
 be deleted and added; nothing touches the real database.
 Framework: pytest + unittest.mock
-Run: cd backend && pytest test_ingestion.py -v
+Run: cd backend && pytest tests/test_ingestion.py -v
 """
 
 from pathlib import Path
