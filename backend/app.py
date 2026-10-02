@@ -27,7 +27,6 @@ from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 
 import chromadb
-from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 
 from langchain_openai import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
@@ -37,9 +36,7 @@ from langchain_core.documents import Document
 
 from rag.config import (
     KNOWLEDGE_BASE_DIR,
-    CHROMA_DB_DIR,
     DOCUMENTS_JSON,
-    MODEL_NAME,
     NUM_CHUNKS,
     CHUNK_SIZE,
     CHUNK_OVERLAP,
@@ -72,6 +69,12 @@ from rag.scope import (
     _display_name,
 )
 
+from rag.resources import (
+    _create_collection,
+    _create_guard_llm,
+    _create_llm,
+)
+
 load_dotenv()
 
 KNOWLEDGE_BASE_DIR.mkdir(exist_ok=True)
@@ -91,11 +94,7 @@ def _get_guard_llm() -> ChatOpenAI:
     """Return the cheap off-topic classifier client, creating it on first use."""
     global _guard_llm
     if _guard_llm is None:
-        _guard_llm = ChatOpenAI(
-            model_name="gpt-4o-mini",
-            temperature=0,
-            max_tokens=3,      # only need "YES" or "NO"
-        )
+        _guard_llm = _create_guard_llm()
     return _guard_llm
 
 
@@ -121,10 +120,8 @@ def _init_store() -> tuple[bool, str]:
         return False, "OPENAI_API_KEY not set in environment."
 
     try:
-        ef         = OpenAIEmbeddingFunction(api_key=api_key, model_name="text-embedding-ada-002")
-        client     = chromadb.PersistentClient(path=CHROMA_DB_DIR)
-        collection = client.get_or_create_collection(name="documents", embedding_function=ef)
-        llm        = ChatOpenAI(model_name=MODEL_NAME, temperature=0)
+        collection = _create_collection(api_key)
+        llm        = _create_llm()
         return True, "Vector store loaded."
     except Exception as exc:
         return False, f"Failed to load vector store: {exc}"
