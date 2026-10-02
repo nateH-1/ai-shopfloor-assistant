@@ -39,7 +39,7 @@ jobs:
       - name: Install unit test dependencies
         run: python -m pip install -r requirements-test.txt
       - name: Run backend unit tests
-        run: python -m pytest test_chat_endpoint.py test_context.py test_guard.py test_scope.py -v
+        run: python -m pytest test_chat_endpoint.py test_context.py test_guard.py test_scope.py test_resources.py -v
 
   frontend:
     name: Frontend build
