@@ -1,127 +1,26 @@
-"use client";
+﻿"use client";
 
-import { useState, useCallback, useRef } from "react";
-import Header from "@/components/Header";
-import WelcomePage from "@/components/WelcomePage";
-import ChatPage from "@/components/ChatPage";
-import DocumentSidebar from "@/components/DocumentSidebar";
-import type { Message } from "@/lib/types";
-import { sendMessage } from "@/lib/chatApi";
+import { useRouter } from "next/navigation";
+import GenericHeader from "@/components/GenericHeader";
+import { SignUpBubble } from "@/components/SignUpBubble";
 
-export default function Home() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const sessionIdRef = useRef<string | undefined>(undefined);
-
-  const handleSend = useCallback(async (text: string) => {
-    const userMessage: Message = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: text,
-      timestamp: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true);
-
-    try {
-      // Snapshot history before the new user message (setMessages is async)
-      const history = messages.map(({ role, content }) => ({ role, content }));
-
-      const response = await sendMessage(text, history, sessionIdRef.current);
-
-      // Persist session ID for stateful backends
-      if (response.session_id) {
-        sessionIdRef.current = response.session_id;
-      }
-
-      const aiMessage: Message = {
-        id: `ai-${Date.now()}`,
-        role: "assistant",
-        content: response.reply,
-        timestamp: new Date().toISOString(),
-        sources: response.metadata?.sources,
-        clarification: response.metadata?.clarification,
-      };
-
-      setMessages((prev) => [...prev, aiMessage]);
-    } catch (err) {
-      console.error("[chat] API call failed:", err);
-
-      const errorContent = "Sorry, I couldn't reach the assistant. Please check that the backend is running and try again.";
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `err-${Date.now()}`,
-          role: "assistant",
-          content: errorContent,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [messages]);
-
-  // Clarification button selection — sends the selected option value to backend without adding a user bubble
-  const handleClarificationSelect = useCallback(async (selectedValue: string) => {
-    setIsLoading(true);
-    try {
-      const history = messages.map(({ role, content }) => ({ role, content }));
-      const response = await sendMessage(selectedValue, history, sessionIdRef.current);
-      if (response.session_id) {
-        sessionIdRef.current = response.session_id;
-      }
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `ai-${Date.now()}`,
-          role: "assistant",
-          content: response.reply,
-          timestamp: new Date().toISOString(),
-          sources: response.metadata?.sources,
-          clarification: response.metadata?.clarification,
-        },
-      ]);
-    } catch (err) {
-      console.error("[chat] clarification API call failed:", err);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `err-${Date.now()}`,
-          role: "assistant",
-          content: "Sorry, I couldn't reach the assistant. Please check that the backend is running and try again.",
-          timestamp: new Date().toISOString(),
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [messages]);
-
-  const hasMessages = messages.length > 0 || isLoading;
+export default function SignUpPage() {
+  const router = useRouter();
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <Header onDocsClick={() => setIsSidebarOpen(true)} />
-
-      <DocumentSidebar
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-      />
-
-      {hasMessages ? (
-        <ChatPage
-          messages={messages}
-          onSend={handleSend}
-          onClarificationSelect={handleClarificationSelect}
-          isLoading={isLoading}
-        />
-      ) : (
-        <WelcomePage onSend={handleSend} />
-      )}
+    <div className="flex min-h-dvh flex-col bg-[#f3f4f6]">
+      <GenericHeader />
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-10">
+        <div className="mb-8 text-center">
+          <h1 className="mb-2 text-2xl font-semibold tracking-tight text-[#1a202c]">
+            Welcome to Kuldeep
+          </h1>
+          <p className="text-sm leading-relaxed text-gray-500">
+            Sign up to get started with your AI manufacturing assistant.
+          </p>
+        </div>
+        <SignUpBubble onSubmit={() => router.push("/chat")} />
+      </main>
     </div>
   );
 }
