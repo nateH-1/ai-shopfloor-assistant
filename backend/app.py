@@ -28,41 +28,16 @@ from dotenv import load_dotenv
 import chromadb
 
 from langchain_openai import ChatOpenAI
-from langchain.memory import ConversationBufferMemory
-from langchain_core.documents import Document
 
 from rag.config import (
     KNOWLEDGE_BASE_DIR,
     DOCUMENTS_JSON,
-    NUM_CHUNKS,
     MAX_UPLOAD_MB,
     ALLOWED_EXTENSIONS,
     SESSION_TTL_SECONDS,
-    MAX_MULTI_DOC_CHUNKS,
 )
 
-from rag.prompts import(
-    QA_PROMPT,
-    CONDENSE_PROMPT,
-    _MULTI_DOC_QA_TEMPLATE,
-)
-
-from rag.retrieval import _similarity_search
-
-from rag.context import (
-    _build_numbered_context,
-    _dedup_chunks,
-    _parse_citations,
-)
-
-from rag.guard import _is_off_topic
-
-from rag.scope import (
-    _build_clarification_options,
-    _build_clarification_question,
-    _detect_scope,
-    _display_name,
-)
+from rag.context import _dedup_chunks
 
 from rag.resources import (
     _create_collection,
@@ -71,6 +46,8 @@ from rag.resources import (
 )
 
 from rag.ingestion import _ingest_file
+
+from rag.pipeline import answer_question
 
 load_dotenv()
 
@@ -133,28 +110,10 @@ def _evict_stale_sessions() -> None:
         conversation_sessions.pop(sid, None)
 
 
-def _answer_single_doc(question: str, filename: str, session_id: str):
-    """Retrieve chunks from a specific file using ChromaDB metadata filter."""
-    doc_chunks = _similarity_search(
-        collection,
-        question,
-        k=NUM_CHUNKS,
-        where={"source": str(KNOWLEDGE_BASE_DIR / filename)},
-    )
-
-    if not doc_chunks:
-        return jsonify({
-            "reply":      f'The document "{_display_name(filename)}" does not appear to contain information about this.',
-            "session_id": session_id,
-            "metadata":   {"sources": []},
-        })
-
-    context          = _build_numbered_context(doc_chunks)
-    result           = llm.invoke(QA_PROMPT.format(context=context, question=question))
-    answer, used_chunks = _parse_citations(result.content, doc_chunks)
-
+def _format_sources(chunks: list) -> list:
+    """Turn the chunks an answer used into the source list the frontend shows."""
     sources = []
-    for i, doc in enumerate(_dedup_chunks(used_chunks), 1):
+    for i, doc in enumerate(_dedup_chunks(chunks), 1):
         src     = doc.metadata.get("source", "Unknown")
         page    = doc.metadata.get("page", 0)
         snippet = doc.page_content[:150].replace("\n", " ")
@@ -167,113 +126,7 @@ def _answer_single_doc(question: str, filename: str, session_id: str):
             "snippet":    snippet,
             "full_snippet": doc.page_content.replace("\n", " "),
         })
-
-    return jsonify({
-        "reply":      answer,
-        "session_id": session_id,
-        "metadata":   {"sources": sources},
-    })
-
-
-def _answer_multi_doc(question: str, session_id: str):
-    """Retrieve chunks balanced across sources and synthesize with multi-doc prompt."""
-    # Scale k with the number of known documents so every doc gets fair representation.
-    # Cap total chunks at MAX_MULTI_DOC_CHUNKS to stay within the LLM context window.
-    num_docs       = max(1, len(_load_doc_registry()))
-    pool_k         = min(num_docs * 5, 80)            # retrieve a wide pool
-    chunks_per_src = max(2, MAX_MULTI_DOC_CHUNKS // num_docs)  # balance per source
-    candidates     = _similarity_search(collection, question, k=pool_k)
-    by_source: dict = {}
-    for doc in candidates:
-        src = os.path.basename(doc.metadata.get("source", "unknown"))
-        if src not in by_source:
-            by_source[src] = []
-        if len(by_source[src]) < chunks_per_src:
-            by_source[src].append(doc)
-
-    context_parts: list = []
-    all_chunks:    list = []
-    chunk_num = 1
-    for src, chunks in by_source.items():
-        context_parts.append(f"[Source: {src}]")
-        for chunk in chunks:
-            context_parts.append(f"[CHUNK {chunk_num}]\n{chunk.page_content}")
-            all_chunks.append(chunk)
-            chunk_num += 1
-        context_parts.append("")
-
-    result = llm.invoke(_MULTI_DOC_QA_TEMPLATE.format(
-        context="\n".join(context_parts),
-        question=question,
-    ))
-    answer, used_chunks = _parse_citations(result.content, all_chunks)
-
-    sources = []
-    for i, doc in enumerate(_dedup_chunks(used_chunks), 1):
-        src     = doc.metadata.get("source", "Unknown")
-        page    = doc.metadata.get("page", 0)
-        snippet = doc.page_content[:150].replace("\n", " ")
-        if len(doc.page_content) > 150:
-            snippet += "..."
-        sources.append({
-            "id":         i,
-            "file":       os.path.basename(src),
-            "page":       page + 1,
-            "snippet":    snippet,
-            "full_snippet": doc.page_content.replace("\n", " "),
-        })
-
-    return jsonify({
-        "reply":      answer,
-        "session_id": session_id,
-        "metadata":   {"sources": sources},
-    })
-
-
-# ── Helper: manual conversational RAG pipeline ───────────────────────────────
-def _chat_with_memory(question: str, session_id: str) -> tuple[str, list[Document]]:
-    """
-    Manual replacement for ConversationalRetrievalChain.
-    1. Condense follow-up questions using CONDENSE_PROMPT + chat history.
-    2. Retrieve top-k chunks from ChromaDB.
-    3. Answer with QA_PROMPT (strict grounding).
-    4. Save to ConversationBufferMemory for next turn.
-    """
-    session = conversation_sessions.setdefault(session_id, {})
-    session["last_accessed"] = time.monotonic()
-
-    if "memory" not in session:
-        session["memory"] = ConversationBufferMemory(
-            memory_key="chat_history",
-            return_messages=False,
-        )
-
-    memory      = session["memory"]
-    chat_history = memory.load_memory_variables({}).get("chat_history", "")
-
-    # Step 1: Condense follow-up question into standalone form if needed
-    if chat_history:
-        condensed = llm.invoke(
-            CONDENSE_PROMPT.format(chat_history=chat_history, question=question)
-        ).content.strip()
-    else:
-        condensed = question
-
-    # Step 2: Retrieve relevant chunks
-    chunks = _similarity_search(collection, condensed, k=NUM_CHUNKS)
-    if not chunks:
-        answer = "The uploaded documents do not contain information about this."
-        memory.save_context({"input": question}, {"output": answer})
-        return answer, []
-
-    # Step 3: Answer strictly from retrieved context
-    context   = _build_numbered_context(chunks)
-    raw       = llm.invoke(QA_PROMPT.format(context=context, question=condensed)).content
-    answer, chunks = _parse_citations(raw, chunks)
-
-    # Step 4: Persist turn to memory
-    memory.save_context({"input": question}, {"output": answer})
-    return answer, chunks
+    return sources
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -316,85 +169,23 @@ def chat():
                 "metadata":   {"sources": []},
             })
 
-        # Guard: block personal/entertainment/small-talk questions BEFORE retrieval.
-        # Still skip when a clarification is pending — the user is replying to a
-        # document-selection prompt, so their short answer ("the first one", "yes")
-        # should never be classified as off-topic.
-        session_data = conversation_sessions.get(session_id, {})
-        has_history = "memory" in session_data and session_data["memory"].load_memory_variables({}).get("chat_history", "")
-        has_pending_clarification = bool(session_data.get("pending_clarification"))
-        if not has_pending_clarification and _is_off_topic(message, _get_guard_llm):
-            return jsonify({
-                "reply":      "I can only answer questions about the uploaded documents.",
-                "session_id": session_id,
-                "metadata":   {"sources": []},
-            })
-
-        # ── Condense follow-ups before scope detection ──────────────────────────
-        # If there's conversation history, rephrase the message into a standalone
-        # question so that scope detection works on the full context, not just
-        # a bare pronoun like "tell me more about the first one."
-        chat_history = ""
-        if has_history:
-            chat_history = session_data["memory"].load_memory_variables({}).get("chat_history", "")
-            condensed_for_scope = llm.invoke(
-                CONDENSE_PROMPT.format(chat_history=chat_history, question=message)
-            ).content.strip()
-        else:
-            condensed_for_scope = message
-
-        # ── Scope detection ──────────────────────────────────────────────────────
-        scope, scope_data = _detect_scope(
-            condensed_for_scope,
-            conversation_sessions.get(session_id, {}),
+        result = answer_question(
+            message,
+            conversation_sessions,
+            session_id,
             collection,
+            llm,
+            _get_guard_llm,
+            lambda: len(_load_doc_registry()),
         )
 
-        if scope == "ambiguous":
-            options  = _build_clarification_options(scope_data)
-            question = _build_clarification_question(scope_data)
-            conversation_sessions.setdefault(session_id, {})["pending_clarification"] = {
-                "original_question": message,
-                "options":           options,
-            }
-            return jsonify({
-                "reply":      question,
-                "session_id": session_id,
-                "metadata":   {
-                    "sources":       [],
-                    "clarification": {"question": question, "options": options},
-                },
-            })
-
-        if scope in ("broad", "resolved_all"):
-            return _answer_multi_doc(scope_data if scope == "resolved_all" else message, session_id)
-
-        if scope == "resolved_single":
-            filename, original_q = scope_data
-            return _answer_single_doc(original_q, filename, session_id)
-
-        # ── Default: manual conversational RAG pipeline ─────────────────────────
-        answer, source_docs = _chat_with_memory(message, session_id)
-
-        sources = []
-        for i, doc in enumerate(_dedup_chunks(source_docs), 1):
-            src     = doc.metadata.get("source", "Unknown")
-            page    = doc.metadata.get("page", 0)
-            snippet = doc.page_content[:150].replace("\n", " ")
-            if len(doc.page_content) > 150:
-                snippet += "..."
-            sources.append({
-                "id":         i,
-                "file":       os.path.basename(src),
-                "page":       page + 1,
-                "snippet":    snippet,
-                "full_snippet": doc.page_content.replace("\n", " "),
-            })
-
+        metadata = {"sources": _format_sources(result["chunks"])}
+        if result["clarification"]:
+            metadata["clarification"] = result["clarification"]
         return jsonify({
-            "reply":      answer,
+            "reply":      result["reply"],
             "session_id": session_id,
-            "metadata":   {"sources": sources},
+            "metadata":   metadata,
         })
 
     except Exception as exc:
