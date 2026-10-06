@@ -17,12 +17,13 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
   const [role, setRole] = useState<SignUpInfo["role"]>("Worker");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const passwordFormat = /^(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*:?><]).*$/i;
   const [organization, setOrganization] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-
+    const [passwordErrorMessage] = useState("Please enter a valid password.\nPasswords must contain at least 8 characters including 1 number and 1 special character.")
     if (role == "Guest") {
       setErrorMessage("");
       onSubmit({ role, email: "", password: "", organization: ""});
@@ -32,15 +33,14 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
       setErrorMessage("Please enter your email.");
       return;
     }
-    if (!password.trim()) {
-      setErrorMessage("Please enter a password.");
+    if (!password.trim() || password.length < 8 || passwordFormat.test(password)) {
+      setErrorMessage(passwordErrorMessage);
       return;
     }
     if (!organization.trim()) {
       setErrorMessage("Please enter your organization name.");
       return;
     }
-
     setErrorMessage("");
     onSubmit({ role, email: email.trim(), password, organization: organization.trim() });
   };
@@ -74,7 +74,7 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
           <div className="flex flex-col gap-4">
             <p>If you continue as a guest, you will still be able to upload files and ask questions, but you will not be able to connect to other machines and files will be deleted after you sign out.</p>
             <button type="submit" className="mt-1 w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
-                Continue as a guest
+                Continue as a Guest
             </button>
           </div>
           
