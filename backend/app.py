@@ -21,7 +21,8 @@ import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
+from feedback import register_feedback
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -77,6 +78,10 @@ KNOWLEDGE_BASE_DIR.mkdir(exist_ok=True)
 app = Flask(__name__)
 CORS(app)
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
+
+# Feedback is stored separately from the document collection.  It does not
+# alter retrieval, prompts, citations, or the RAG answer flow.
+register_feedback(app, CHROMA_DB_DIR, MODEL_NAME)
 
 # ── Global state ─────────────────────────────────────────────────────────────
 collection: chromadb.Collection | None = None
@@ -576,6 +581,9 @@ def chat():
         session_data = conversation_sessions.get(session_id, {})
         has_history = "memory" in session_data and session_data["memory"].load_memory_variables({}).get("chat_history", "")
         has_pending_clarification = bool(session_data.get("pending_clarification"))
+        # When a document-choice button resolves a prior question, preserve the
+        # original question with the answer snapshot used by feedback storage.
+        g.feedback_question = (session_data.get("pending_clarification") or {}).get("original_question", message)
         if not has_pending_clarification and _is_off_topic(message, _get_guard_llm):
             return jsonify({
                 "reply":      "I can only answer questions about the uploaded documents.",

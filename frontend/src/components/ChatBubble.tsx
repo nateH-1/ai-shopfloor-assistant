@@ -8,6 +8,8 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import AnswerFeedback from "./AnswerFeedback";
+import type { Feedback } from "@/lib/feedbackApi";
 import type { Message, Source, Clarification } from "@/lib/types";
 
 // ─── AI Assistant Bubble ────────────────────────────────────────────────────
@@ -18,12 +20,18 @@ export function AssistantBubble({
   clarification,
   onOptionSelect,
   isLatest,
+  feedbackId,
+  feedbackUnavailable,
+  onRewrite,
 }: {
   content: string;
   sources?: Source[];
   clarification?: Clarification;
   onOptionSelect?: (value: string) => void;
   isLatest?: boolean;
+  feedbackId?: string;
+  feedbackUnavailable?: boolean;
+  onRewrite?: (feedback: Feedback) => void;
 }) {
   const [showSources, setShowSources] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
@@ -88,6 +96,11 @@ export function AssistantBubble({
             </div>
           )}
         </div>
+
+        {/* Server-issued IDs exclude connection errors and clarification prompts. */}
+        {/* The answer text is passed only for the browser's local read-aloud button. */}
+        {feedbackId && <AnswerFeedback messageId={feedbackId} answerText={content} onRewrite={onRewrite} />}
+        {feedbackUnavailable && <p className="text-xs text-gray-500">Feedback is temporarily unavailable for this answer.</p>}
 
         {/* Source toggle */}
         {hasSources && (
@@ -156,9 +169,19 @@ export function UserBubble({ content }: { content: string }) {
 
 // ─── Generic ChatBubble dispatcher ──────────────────────────────────────────
 
-export function ChatBubble({ message, onOptionSelect, isLatest }: { message: Message; onOptionSelect?: (value: string) => void; isLatest?: boolean }) {
+export function ChatBubble({
+  message,
+  onOptionSelect,
+  isLatest,
+  onRewrite,
+}: {
+  message: Message;
+  onOptionSelect?: (value: string) => void;
+  isLatest?: boolean;
+  onRewrite?: (message: Message, feedback: Feedback) => void;
+}) {
   if (message.role === "assistant") {
-    return <AssistantBubble content={message.content} sources={message.sources} clarification={message.clarification} onOptionSelect={onOptionSelect} isLatest={isLatest} />;
+    return <AssistantBubble feedbackId={message.feedbackId} feedbackUnavailable={message.feedbackUnavailable} content={message.content} sources={message.sources} clarification={message.clarification} onOptionSelect={onOptionSelect} isLatest={isLatest} onRewrite={onRewrite ? (feedback) => onRewrite(message, feedback) : undefined} />;
   }
   return <UserBubble content={message.content} />;
 }
