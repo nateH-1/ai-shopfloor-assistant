@@ -17,13 +17,13 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
   const [role, setRole] = useState<SignUpInfo["role"]>("Worker");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const passwordFormat = /^(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*:?><]).*$/i;
   const [organization, setOrganization] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const [passwordErrorMessage] = useState("Please enter a valid password.\nPasswords must contain at least 8 characters including 1 number and 1 special character.")
     if (role == "Guest") {
       setErrorMessage("");
       onSubmit({ role, email: "", password: "", organization: ""});
@@ -33,8 +33,8 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
       setErrorMessage("Please enter your email.");
       return;
     }
-    if (!password.trim() || password.length < 8 || passwordFormat.test(password)) {
-      setErrorMessage(passwordErrorMessage);
+    if (!password.trim() || password.length < 8 || password.length > 32 || passwordFormat.test(password)) {
+      setErrorMessage("Please enter a valid password.\nPasswords must contain between 8 and 32 characters including at least 1 number and 1 special character.");
       return;
     }
     if (!organization.trim()) {
@@ -42,7 +42,7 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
       return;
     }
     setErrorMessage("");
-    onSubmit({ role, email: email.trim(), password, organization: organization.trim() });
+    onSubmit({ role: role, email: email.trim(), password: password.trim(), organization: organization.trim() });
   };
 
   const inputClassName = "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-[#2d3748] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200";
@@ -50,6 +50,7 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
   return (
     <div className="mx-auto w-full max-w-md rounded-2xl rounded-tl-sm border border-gray-200 bg-white px-5 py-6 shadow-sm sm:px-6">
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+        {/* Role Selection */}
         <fieldset>
           <legend className="mb-3 text-lg font-semibold text-[#1a202c]">Sign up as:</legend>
           <div className="grid grid-cols-3 gap-2">
@@ -70,6 +71,7 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
             ))}
           </div>
         </fieldset>
+        {/* Sign Up Information */}
         {role == "Guest" ? (
           <div className="flex flex-col gap-4">
             <p>If you continue as a guest, you will still be able to upload files and ask questions, but you will not be able to connect to other machines and files will be deleted after you sign out.</p>
@@ -86,7 +88,10 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
             </div>
             <div>
               <label htmlFor="signup-password" className="mb-1.5 block text-sm font-medium text-[#2d3748]">Password</label>
-              <input id="signup-password" name="password" type="password" autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} className={inputClassName} />
+              <input id="signup-password" name="password" type={showPassword ? "text" : "password"} autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} className={inputClassName} />
+              <button type="button" onClick={() => setShowPassword(!showPassword)}   aria-controls="signup-password" className="mt-1 block ml-auto text-sm  text-blue-600">
+                {showPassword ? "Hide password" : "Show password"}
+              </button>
             </div>
             <div>
               <label htmlFor="signup-organization" className="mb-1.5 block text-sm font-medium text-[#2d3748]">{role == "Worker" ? "Organization Code" : "Organization Name"}</label>
