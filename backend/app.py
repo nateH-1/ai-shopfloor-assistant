@@ -47,6 +47,8 @@ from rag.resources import (
 
 from rag.ingestion import _ingest_file
 
+from rag.keyword import _build_keyword_index
+
 from rag.pipeline import answer_question
 
 load_dotenv()
@@ -63,6 +65,8 @@ collection: chromadb.Collection | None = None
 llm:        ChatOpenAI | None          = None
 _guard_llm: ChatOpenAI | None          = None   # cheap off-topic classifier
 conversation_sessions: dict            = {}      # session_id → { memory, last_accessed }
+_keyword_index:       dict | None      = None    # BM25 index over the collection's chunks
+_keyword_index_stale: bool             = True    # rebuild before next use (documents changed)
 
 def _get_guard_llm() -> ChatOpenAI:
     """Return the cheap off-topic classifier client, creating it on first use."""
@@ -70,6 +74,23 @@ def _get_guard_llm() -> ChatOpenAI:
     if _guard_llm is None:
         _guard_llm = _create_guard_llm()
     return _guard_llm
+
+
+def _get_keyword_index() -> dict | None:
+    """Return the BM25 keyword index, rebuilding it first if the documents changed."""
+    global _keyword_index, _keyword_index_stale
+    if collection is None:
+        return None
+    if _keyword_index_stale:
+        _keyword_index = _build_keyword_index(collection)
+        _keyword_index_stale = False
+    return _keyword_index
+
+
+def _mark_keyword_index_stale() -> None:
+    """Call after documents are added or removed so the next search rebuilds the index."""
+    global _keyword_index_stale
+    _keyword_index_stale = True
 
 
 # ── Helper: document registry ─────────────────────────────────────────────────
@@ -96,6 +117,7 @@ def _init_store() -> tuple[bool, str]:
     try:
         collection = _create_collection(api_key)
         llm        = _create_llm()
+        _mark_keyword_index_stale()
         return True, "Vector store loaded."
     except Exception as exc:
         return False, f"Failed to load vector store: {exc}"
@@ -177,6 +199,7 @@ def chat():
             llm,
             _get_guard_llm,
             lambda: len(_load_doc_registry()),
+            _get_keyword_index,
         )
 
         metadata = {"sources": _format_sources(result["chunks"])}
@@ -231,6 +254,7 @@ def upload_document():
     if not ok:
         filepath.unlink(missing_ok=True)
         return jsonify({"success": False, "message": msg}), 500
+    _mark_keyword_index_stale()
 
     # Update registry
     registry = _load_doc_registry()
@@ -262,6 +286,7 @@ def delete_document(filename: str):
 
     # Selectively delete only this document's vectors — no rebuild required
     collection.delete(where={"source": str(KNOWLEDGE_BASE_DIR / filename)})
+    _mark_keyword_index_stale()
 
     # Clear sessions so memory doesn't reference deleted content
     conversation_sessions.clear()
