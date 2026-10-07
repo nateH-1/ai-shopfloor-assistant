@@ -8,6 +8,19 @@ from rag.config import NUM_CHUNKS
 # "8mm-1.25", "kg/cm2" or "4.2" stay in one piece.
 _TOKEN_RE = re.compile(r"[a-z0-9]+(?:[-./][a-z0-9]+)*")
 
+# Filler words that say nothing about the topic. A question word missing from the
+# manuals only counts as evidence of "not covered" if it is NOT one of these.
+_STOP_WORDS = frozenset("""
+a an the and or but not no yes if then than so as at by for from in into of on onto to with without about
+after before during over under up down out off again also too very really just only here there
+i me my we us our you your he she it its they them their this that these those
+is are was were be been being am do does did done doing have has had can could should would will shall may might must
+what which who whom whose when where why how
+tell explain describe show give list define mean means meaning need know want please help more
+difference between example examples kind type types way ways thing things one ones other else all each every
+some any many much same such like use used using get got make made go goes refer refers
+""".split())
+
 
 def _tokenize(text: str) -> list[str]:
     """Lowercase words, keeping part numbers and codes as single tokens."""
@@ -29,6 +42,7 @@ def _build_keyword_index(collection) -> dict | None:
         "texts":     data["documents"],
         "metadatas": data["metadatas"],
         "bm25":      BM25Okapi(tokenized),
+        "vocab":     {token for tokens in tokenized for token in tokens},
     }
 
 
@@ -61,3 +75,14 @@ def _keyword_search(index: dict | None, query: str, k: int = NUM_CHUNKS, source:
         if len(results) == k:
             break
     return results
+
+
+def _unknown_terms(index: dict | None, query: str) -> list[str]:
+    """Important words in the query (not filler, longer than 1 character) that appear
+    in no chunk at all. A question built around such a word cannot be answered from
+    the documents, e.g. "warranty" or "salary" in manuals that never mention them.
+    """
+    if index is None:
+        return []
+    return [w for w in dict.fromkeys(_tokenize(query))
+            if len(w) > 1 and w not in _STOP_WORDS and w not in index["vocab"]]

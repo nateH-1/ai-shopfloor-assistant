@@ -12,7 +12,7 @@ Run: cd backend && pytest tests/test_pipeline.py -v
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from rag.pipeline import OFF_TOPIC_REPLY, answer_question
+from rag.pipeline import NO_INFO_REPLY, OFF_TOPIC_REPLY, _chat_with_memory, answer_question
 
 
 def _ask(message="what is the torque spec", sessions=None, scope=("pass", None),
@@ -71,3 +71,14 @@ def test_follow_up_is_condensed_for_scope_only():
     _, _, fakes = _ask("and the press?", sessions={"s1": {"memory": memory}}, llm=llm)
     assert fakes.scope.call_args.args[0] == "What is the torque spec of the press?"
     assert fakes.memory.call_args.args[0] == "and the press?"
+
+
+def test_not_enough_evidence_answers_without_calling_the_model():
+    memory = MagicMock()
+    memory.load_memory_variables.return_value = {"chat_history": ""}   # first turn: no rewrite call
+    llm, session = MagicMock(), {"memory": memory}
+    with patch("rag.pipeline._hybrid_search", return_value=([], False)):
+        answer, chunks = _chat_with_memory("what is the warranty period", session, "COLLECTION", llm, "KEYWORD_GETTER")
+    assert (answer, chunks) == (NO_INFO_REPLY, [])
+    llm.invoke.assert_not_called()
+    session["memory"].save_context.assert_called_once()   # the turn is still remembered

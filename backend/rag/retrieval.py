@@ -3,7 +3,7 @@ import re
 from langchain_core.documents import Document
 
 from rag.config import KEYWORD_FALLBACK_DISTANCE, NUM_CHUNKS, RRF_K
-from rag.keyword import _keyword_search
+from rag.keyword import _keyword_search, _unknown_terms
 
 def _similarity_search(collection, query: str, k: int = NUM_CHUNKS, where: dict = None) -> list[Document]:
     """Query ChromaDB and return LangChain Document objects."""
@@ -58,17 +58,22 @@ def _reciprocal_rank_fusion(ranked_lists: list[list[str]], rrf_k: int = RRF_K) -
 
 
 def _hybrid_search(collection, query: str, get_keyword_index, k: int = NUM_CHUNKS,
-                   where: dict = None) -> list[Document]:
+                   where: dict = None) -> tuple[list[Document], bool]:
     """Vector search, plus BM25 keyword results when the query looks like a code
     or the best vector match is weak (distance >= KEYWORD_FALLBACK_DISTANCE).
 
-    Otherwise returns exactly what _similarity_search would. get_keyword_index is
-    only called when keyword search is needed. where={"source": ...} limits both
-    searches to one file.
+    Returns (chunks, enough_evidence). Evidence is NOT enough when the vector match
+    is weak AND the query uses an important word found in no chunk at all; then no
+    chunks are returned, so callers can say the documents don't cover it instead of
+    letting the model guess.
+
+    For a strong, non-code query the chunks are exactly what _similarity_search would
+    return. get_keyword_index is only called when keyword search or the evidence
+    check needs it. where={"source": ...} limits both searches to one file.
     """
     n = min(k, collection.count())
     if n == 0:
-        return []
+        return [], False
     kwargs: dict = {"query_texts": [query], "n_results": n, "include": ["documents", "metadatas", "distances"]}
     if where:
         kwargs["where"] = where
@@ -80,14 +85,18 @@ def _hybrid_search(collection, query: str, get_keyword_index, k: int = NUM_CHUNK
 
     weak = not distances or distances[0] >= KEYWORD_FALLBACK_DISTANCE
     if not (weak or _is_code_like_query(query)):
-        return [docs[i] for i in ids]
+        return [docs[i] for i in ids], True
+
+    index = get_keyword_index()
+    if weak and _unknown_terms(index, query):
+        return [], False
 
     source = where.get("source") if where else None
-    keyword_hits = _keyword_search(get_keyword_index(), query, k=k, source=source)
+    keyword_hits = _keyword_search(index, query, k=k, source=source)
     if not keyword_hits:
-        return [docs[i] for i in ids]
+        return [docs[i] for i in ids], True
 
     for hit in keyword_hits:
         docs.setdefault(hit["id"], Document(page_content=hit["text"], metadata=hit["metadata"]))
     merged = _reciprocal_rank_fusion([ids, [hit["id"] for hit in keyword_hits]])
-    return [docs[i] for i in merged[:k]]
+    return [docs[i] for i in merged[:k]], True

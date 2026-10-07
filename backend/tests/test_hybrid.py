@@ -13,6 +13,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from rag.keyword import _tokenize
 from rag.retrieval import _hybrid_search, _is_code_like_query, _reciprocal_rank_fusion
 
 
@@ -41,38 +42,39 @@ def _kw(*ids):
     return [{"id": i, "text": f"text of {i}", "metadata": {"source": "kb/manual.pdf"}, "score": 5.0} for i in ids]
 
 
-def _search(query, vector_hits, keyword_hits, **kwargs):
-    getter = MagicMock(return_value="INDEX")
+def _search(query, vector_hits, keyword_hits, vocab=None, **kwargs):
+    """Run _hybrid_search; the fake index's vocabulary holds every query word unless given."""
+    getter = MagicMock(return_value={"vocab": set(_tokenize(query)) if vocab is None else vocab})
     with patch("rag.retrieval._keyword_search", return_value=keyword_hits) as kw:
-        docs = _hybrid_search(_collection(vector_hits), query, getter, **kwargs)
-    return [d.page_content.removeprefix("text of ") for d in docs], getter, kw
+        docs, enough = _hybrid_search(_collection(vector_hits), query, getter, **kwargs)
+    return [d.page_content.removeprefix("text of ") for d in docs], getter, kw, enough
 
 
 def test_strong_plain_question_uses_vector_only():
-    ids, getter, kw = _search("how do I clean a lathe", [("a", 0.11), ("b", 0.15)], _kw("z"))
-    assert ids == ["a", "b"]
+    ids, getter, kw, enough = _search("how do I clean a lathe", [("a", 0.11), ("b", 0.15)], _kw("z"))
+    assert ids == ["a", "b"] and enough
     getter.assert_not_called()          # keyword index never even built
     kw.assert_not_called()
 
 
 def test_weak_vector_match_adds_keyword_results():
-    ids, getter, _ = _search("how do I clean a lathe", [("a", 0.25), ("b", 0.30)], _kw("z"))
-    assert set(ids) == {"a", "b", "z"}
+    ids, getter, _, enough = _search("how do I clean a lathe", [("a", 0.25), ("b", 0.30)], _kw("z"))
+    assert set(ids) == {"a", "b", "z"} and enough
     getter.assert_called_once()
 
 
 def test_code_like_question_adds_keyword_results_even_when_vector_is_strong():
-    ids, _, _ = _search("what drill goes with an 8mm-1.25 tap", [("a", 0.12)], _kw("z"))
+    ids, _, _, _ = _search("what drill goes with an 8mm-1.25 tap", [("a", 0.12)], _kw("z"))
     assert "z" in ids
 
 
 def test_chunk_found_by_both_searches_ranks_first():
-    ids, _, _ = _search("CO2 welding", [("a", 0.12), ("b", 0.13), ("c", 0.14)], _kw("c", "z"))
+    ids, _, _, _ = _search("CO2 welding", [("a", 0.12), ("b", 0.13), ("c", 0.14)], _kw("c", "z"))
     assert ids[0] == "c"
 
 
 def test_document_scope_applies_to_keyword_search():
-    _, _, kw = _search("CO2 welding", [("a", 0.25)], _kw("z"), where={"source": "kb/manual.pdf"})
+    _, _, kw, _ = _search("CO2 welding", [("a", 0.25)], _kw("z"), where={"source": "kb/manual.pdf"})
     assert kw.call_args.kwargs["source"] == "kb/manual.pdf"
 
 
@@ -80,3 +82,18 @@ def test_code_detection_and_rank_fusion():
     assert _is_code_like_query("8mm-1.25 tap") and _is_code_like_query("CO2 cylinder")
     assert not _is_code_like_query("how do I clean a lathe")
     assert _reciprocal_rank_fusion([["a", "b"], ["b", "c"]]) == ["b", "a", "c"]
+
+
+# ── Evidence check (PR C) ─────────────────────────────────────────────────────
+
+def test_weak_match_with_word_missing_from_documents_is_not_enough_evidence():
+    ids, _, kw, enough = _search("what is the warranty period", [("a", 0.22)], _kw("z"),
+                                 vocab={"period"})          # "warranty" appears in no chunk
+    assert ids == [] and not enough
+    kw.assert_not_called()
+
+
+def test_strong_match_is_enough_even_with_unknown_words():
+    _, getter, _, enough = _search("how do I clean a lathe quickly", [("a", 0.11)], [], vocab=set())
+    assert enough
+    getter.assert_not_called()

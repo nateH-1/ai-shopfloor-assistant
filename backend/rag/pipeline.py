@@ -17,6 +17,7 @@ from rag.scope import (
 )
 
 OFF_TOPIC_REPLY = "I can only answer questions about the uploaded documents."
+NO_INFO_REPLY   = "The uploaded documents do not contain information about this."
 
 
 def answer_question(
@@ -110,7 +111,7 @@ def answer_question(
 
 def _answer_single_doc(question: str, filename: str, collection, llm, get_keyword_index) -> tuple[str, list[Document]]:
     """Retrieve chunks from a specific file using ChromaDB metadata filter."""
-    doc_chunks = _hybrid_search(
+    doc_chunks, enough_evidence = _hybrid_search(
         collection,
         question,
         get_keyword_index,
@@ -118,7 +119,7 @@ def _answer_single_doc(question: str, filename: str, collection, llm, get_keywor
         where={"source": str(KNOWLEDGE_BASE_DIR / filename)},
     )
 
-    if not doc_chunks:
+    if not doc_chunks or not enough_evidence:
         return f'The document "{_display_name(filename)}" does not appear to contain information about this.', []
 
     context          = _build_numbered_context(doc_chunks)
@@ -137,7 +138,9 @@ def _answer_multi_doc(question: str, num_docs: int, collection, llm, get_keyword
     num_docs       = max(1, num_docs)
     pool_k         = min(num_docs * 5, 80)            # retrieve a wide pool
     chunks_per_src = max(2, MAX_MULTI_DOC_CHUNKS // num_docs)  # balance per source
-    candidates     = _hybrid_search(collection, question, get_keyword_index, k=pool_k)
+    candidates, enough_evidence = _hybrid_search(collection, question, get_keyword_index, k=pool_k)
+    if not enough_evidence:
+        return NO_INFO_REPLY, []
     by_source: dict = {}
     for doc in candidates:
         src = os.path.basename(doc.metadata.get("source", "unknown"))
@@ -195,9 +198,9 @@ def _chat_with_memory(question: str, session: dict, collection, llm, get_keyword
         condensed = question
 
     # Step 2: Retrieve relevant chunks
-    chunks = _hybrid_search(collection, condensed, get_keyword_index, k=NUM_CHUNKS)
-    if not chunks:
-        answer = "The uploaded documents do not contain information about this."
+    chunks, enough_evidence = _hybrid_search(collection, condensed, get_keyword_index, k=NUM_CHUNKS)
+    if not chunks or not enough_evidence:
+        answer = NO_INFO_REPLY
         memory.save_context({"input": question}, {"output": answer})
         return answer, []
 
