@@ -25,7 +25,7 @@ def _ask(message="what is the torque spec", sessions=None, scope=("pass", None),
          patch("rag.pipeline._answer_multi_doc", return_value=("multi answer", ["m"])) as fakes.multi, \
          patch("rag.pipeline._chat_with_memory", return_value=("memory answer", ["c"])) as fakes.memory:
         result = answer_question(message, sessions, "s1", "COLLECTION", llm or MagicMock(),
-                                 "GUARD_GETTER", fakes.get_num_docs)
+                                 "GUARD_GETTER", fakes.get_num_docs, "KEYWORD_GETTER")
     return result, sessions, fakes
 
 
@@ -46,7 +46,7 @@ def test_ambiguous_question_asks_and_remembers_it():
 def test_broad_question_uses_multi_doc_path():
     llm = MagicMock()
     result, _, fakes = _ask("compare the safety rules", scope=("broad", None), llm=llm)
-    fakes.multi.assert_called_once_with("compare the safety rules", 3, "COLLECTION", llm)
+    fakes.multi.assert_called_once_with("compare the safety rules", 3, "COLLECTION", llm, "KEYWORD_GETTER")
     assert result == {"reply": "multi answer", "chunks": ["m"], "clarification": None}
 
 

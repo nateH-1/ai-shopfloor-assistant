@@ -8,7 +8,7 @@ from rag.config import KNOWLEDGE_BASE_DIR, MAX_MULTI_DOC_CHUNKS, NUM_CHUNKS
 from rag.context import _build_numbered_context, _parse_citations
 from rag.guard import _is_off_topic
 from rag.prompts import CONDENSE_PROMPT, QA_PROMPT, _MULTI_DOC_QA_TEMPLATE
-from rag.retrieval import _similarity_search
+from rag.retrieval import _hybrid_search
 from rag.scope import (
     _build_clarification_options,
     _build_clarification_question,
@@ -27,14 +27,15 @@ def answer_question(
     llm,
     get_guard_llm,
     get_num_docs,
+    get_keyword_index,
 ) -> dict:
     """
     Run one chat turn: off-topic guard → condense follow-up → scope detection →
     clarification or one of the three answer paths.
 
     sessions is the caller's session store (session_id → session dict); entries are
-    created only where the answer paths need them. get_guard_llm and get_num_docs
-    are called only when needed.
+    created only where the answer paths need them. get_guard_llm, get_num_docs and
+    get_keyword_index are called only when needed.
 
     Returns {"reply": str, "chunks": list[Document], "clarification": dict | None}.
     """
@@ -87,12 +88,13 @@ def answer_question(
             get_num_docs(),
             collection,
             llm,
+            get_keyword_index,
         )
         return {"reply": answer, "chunks": used_chunks, "clarification": None}
 
     if scope == "resolved_single":
         filename, original_q = scope_data
-        answer, used_chunks = _answer_single_doc(original_q, filename, collection, llm)
+        answer, used_chunks = _answer_single_doc(original_q, filename, collection, llm, get_keyword_index)
         return {"reply": answer, "chunks": used_chunks, "clarification": None}
 
     # ── Default: manual conversational RAG pipeline ─────────────────────────
@@ -101,15 +103,17 @@ def answer_question(
         sessions.setdefault(session_id, {}),
         collection,
         llm,
+        get_keyword_index,
     )
     return {"reply": answer, "chunks": source_docs, "clarification": None}
 
 
-def _answer_single_doc(question: str, filename: str, collection, llm) -> tuple[str, list[Document]]:
+def _answer_single_doc(question: str, filename: str, collection, llm, get_keyword_index) -> tuple[str, list[Document]]:
     """Retrieve chunks from a specific file using ChromaDB metadata filter."""
-    doc_chunks = _similarity_search(
+    doc_chunks = _hybrid_search(
         collection,
         question,
+        get_keyword_index,
         k=NUM_CHUNKS,
         where={"source": str(KNOWLEDGE_BASE_DIR / filename)},
     )
@@ -123,7 +127,7 @@ def _answer_single_doc(question: str, filename: str, collection, llm) -> tuple[s
     return answer, used_chunks
 
 
-def _answer_multi_doc(question: str, num_docs: int, collection, llm) -> tuple[str, list[Document]]:
+def _answer_multi_doc(question: str, num_docs: int, collection, llm, get_keyword_index) -> tuple[str, list[Document]]:
     """Retrieve chunks balanced across sources and synthesize with multi-doc prompt.
 
     num_docs is the number of registered documents (used to size retrieval).
@@ -133,7 +137,7 @@ def _answer_multi_doc(question: str, num_docs: int, collection, llm) -> tuple[st
     num_docs       = max(1, num_docs)
     pool_k         = min(num_docs * 5, 80)            # retrieve a wide pool
     chunks_per_src = max(2, MAX_MULTI_DOC_CHUNKS // num_docs)  # balance per source
-    candidates     = _similarity_search(collection, question, k=pool_k)
+    candidates     = _hybrid_search(collection, question, get_keyword_index, k=pool_k)
     by_source: dict = {}
     for doc in candidates:
         src = os.path.basename(doc.metadata.get("source", "unknown"))
@@ -161,7 +165,7 @@ def _answer_multi_doc(question: str, num_docs: int, collection, llm) -> tuple[st
     return answer, used_chunks
 
 
-def _chat_with_memory(question: str, session: dict, collection, llm) -> tuple[str, list[Document]]:
+def _chat_with_memory(question: str, session: dict, collection, llm, get_keyword_index) -> tuple[str, list[Document]]:
     """
     Manual replacement for ConversationalRetrievalChain.
     1. Condense follow-up questions using CONDENSE_PROMPT + chat history.
@@ -191,7 +195,7 @@ def _chat_with_memory(question: str, session: dict, collection, llm) -> tuple[st
         condensed = question
 
     # Step 2: Retrieve relevant chunks
-    chunks = _similarity_search(collection, condensed, k=NUM_CHUNKS)
+    chunks = _hybrid_search(collection, condensed, get_keyword_index, k=NUM_CHUNKS)
     if not chunks:
         answer = "The uploaded documents do not contain information about this."
         memory.save_context({"input": question}, {"output": answer})

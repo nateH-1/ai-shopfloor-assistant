@@ -199,6 +199,7 @@ def chat():
             llm,
             _get_guard_llm,
             lambda: len(_load_doc_registry()),
+            _get_keyword_index,
         )
 
         metadata = {"sources": _format_sources(result["chunks"])}
