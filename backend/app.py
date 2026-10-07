@@ -43,6 +43,8 @@ from rag.resources import (
     _create_collection,
     _create_guard_llm,
     _create_llm,
+    _llm_provider,
+    _ollama_status,
 )
 
 from rag.ingestion import _ingest_file
@@ -66,7 +68,7 @@ llm:        ChatOpenAI | None          = None
 _guard_llm: ChatOpenAI | None          = None   # cheap off-topic classifier
 conversation_sessions: dict            = {}      # session_id → { memory, last_accessed }
 _keyword_index:       dict | None      = None    # BM25 index over the collection's chunks
-_keyword_index_stale: bool             = True    # rebuild before next use (documents changed)
+_keyword_index_stale: bool             = True    # rebuild on next use
 
 def _get_guard_llm() -> ChatOpenAI:
     """Return the cheap off-topic classifier client, creating it on first use."""
@@ -211,6 +213,13 @@ def chat():
             "metadata":   metadata,
         })
 
+    except ConnectionError as exc:
+        traceback.print_exc()
+        return jsonify({
+            "reply":      "The local AI model isn't reachable right now. Please make sure Ollama is running and try again.",
+            "session_id": session_id,
+            "metadata":   {"sources": []},
+        }), 503
     except Exception as exc:
         traceback.print_exc()
         return jsonify({"error": str(exc)}), 500
@@ -308,11 +317,18 @@ def health():
     """Health / readiness check."""
     has_api_key  = bool(os.getenv("OPENAI_API_KEY"))
     has_docs     = collection is not None and collection.count() > 0
+    try:
+        llm_provider = _llm_provider()
+        llm_error    = _ollama_status() if "ollama" in (llm_provider, _llm_provider("guard")) else None
+    except ValueError as exc:
+        llm_provider, llm_error = None, str(exc)
     return jsonify({
         "status":          "healthy",
         "has_documents":   has_docs,
         "has_api_key":     has_api_key,
-        "ready":           has_docs and has_api_key and collection is not None,
+        "llm_provider":    llm_provider,
+        "llm_error":       llm_error,
+        "ready":           has_docs and has_api_key and collection is not None and llm_error is None,
         "active_sessions": len(conversation_sessions),
     })
 

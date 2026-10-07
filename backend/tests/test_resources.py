@@ -65,3 +65,42 @@ def test_init_store_failure_is_reported_not_raised():
     with patch("app.os.getenv", return_value="sk-test"), \
          patch("app._create_collection", side_effect=RuntimeError("disk locked")):
         assert app_module._init_store() == (False, "Failed to load vector store: disk locked")
+
+
+# ── Model provider switch (PR D) ──────────────────────────────────────────────
+
+def test_ollama_provider_uses_local_model_with_large_context(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    monkeypatch.delenv("GUARD_LLM_PROVIDER", raising=False)
+    with patch("langchain_ollama.ChatOllama") as ollama, patch.object(resources, "ChatOpenAI") as openai:
+        resources._create_llm()
+        resources._create_guard_llm()
+    assert ollama.call_args_list[0].kwargs["num_ctx"] == resources.OLLAMA_NUM_CTX   # no silent truncation
+    assert ollama.call_args_list[1].kwargs["num_predict"] == 3                        # guard follows main
+    openai.assert_not_called()
+
+
+def test_guard_provider_can_differ_from_main(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    monkeypatch.setenv("GUARD_LLM_PROVIDER", "openai")
+    assert (resources._llm_provider(), resources._llm_provider("guard")) == ("ollama", "openai")
+
+
+def test_unknown_provider_is_rejected(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "olama")
+    with pytest.raises(ValueError):
+        resources._llm_provider()
+
+
+def test_ollama_status_reports_unreachable_server():
+    with patch("rag.resources.urllib.request.urlopen", side_effect=OSError("connection refused")):
+        assert "not reachable" in resources._ollama_status()
+
+
+def test_chat_explains_when_ollama_is_down():
+    app_module.collection = MagicMock(**{"count.return_value": 5})
+    app_module.llm = MagicMock()
+    with patch("app.answer_question", side_effect=ConnectionError("Failed to connect to Ollama")):
+        res = app_module.app.test_client().post("/chat", json={"message": "how do I clean a lathe"})
+    assert res.status_code == 503
+    assert "Ollama" in res.get_json()["reply"]

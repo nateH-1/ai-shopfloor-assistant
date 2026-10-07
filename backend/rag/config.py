@@ -17,6 +17,12 @@ BROAD_INTENT_PHRASES = {
 }
 SESSION_TTL_SECONDS      = 2 * 60 * 60   # evict sessions idle for 2 hours
 MAX_MULTI_DOC_CHUNKS     = 40            # hard cap on total chunks sent to LLM (≈10K tokens)
-KEYWORD_FALLBACK_DISTANCE = 0.20         # add BM25 results when the best vector match is this far or worse
-                                         # (measured 2026-10-06: answerable ≤ 0.176, unanswerable ≥ 0.224)
-RRF_K                    = 60            # reciprocal rank fusion constant (standard value)
+KEYWORD_FALLBACK_DISTANCE = 0.20         # best vector distance at which keyword results are added
+RRF_K                    = 60            # reciprocal rank fusion constant
+
+# Model provider defaults; override in .env (see .env.example). Embeddings always use OpenAI.
+DEFAULT_LLM_PROVIDER     = "openai"
+DEFAULT_OLLAMA_MODEL     = "gemma3:4b"
+DEFAULT_OLLAMA_BASE_URL  = "http://localhost:11434"
+OLLAMA_NUM_CTX           = 16384         # Ollama silently truncates prompts beyond this
+OLLAMA_TIMEOUT_SECONDS   = 300

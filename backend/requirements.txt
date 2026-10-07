@@ -4,6 +4,7 @@ langchain-openai==0.3.8
 langchain-community==0.3.23
 langchain-text-splitters==0.3.8
 rank-bm25==0.2.2
+langchain-ollama==0.3.10
 
 # Vector database
 chromadb>=1.5.1
