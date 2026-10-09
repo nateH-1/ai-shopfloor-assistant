@@ -20,7 +20,8 @@ import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
+from feedback import register_feedback
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -31,7 +32,9 @@ from langchain_openai import ChatOpenAI
 
 from rag.config import (
     KNOWLEDGE_BASE_DIR,
+    CHROMA_DB_DIR,
     DOCUMENTS_JSON,
+    MODEL_NAME,
     MAX_UPLOAD_MB,
     ALLOWED_EXTENSIONS,
     SESSION_TTL_SECONDS,
@@ -59,6 +62,10 @@ KNOWLEDGE_BASE_DIR.mkdir(exist_ok=True)
 app = Flask(__name__)
 CORS(app)
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
+
+# Feedback is stored separately from the document collection.  It does not
+# alter retrieval, prompts, citations, or the RAG answer flow.
+register_feedback(app, CHROMA_DB_DIR, MODEL_NAME)
 
 # ── Global state ─────────────────────────────────────────────────────────────
 collection: chromadb.Collection | None = None
@@ -190,6 +197,12 @@ def chat():
                 "session_id": session_id,
                 "metadata":   {"sources": []},
             })
+
+        # When a document-choice button resolves a prior question, preserve the
+        # original question with the answer snapshot used by feedback storage.
+        # Capture it before answer_question, which clears pending_clarification.
+        session_data = conversation_sessions.get(session_id, {})
+        g.feedback_question = (session_data.get("pending_clarification") or {}).get("original_question", message)
 
         result = answer_question(
             message,
