@@ -36,6 +36,7 @@ export function AssistantBubble({
   const [showSources, setShowSources] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const hasSources = sources && sources.length > 0;
+  const [fullSources, setFullSources] = useState<Set<number>>(new Set());
 
   return (
     <div className="flex items-start gap-3 w-full">
@@ -119,28 +120,41 @@ export function AssistantBubble({
 
             {showSources && (
               <div className="mt-2 flex flex-col gap-1.5">
-                {sources.map((src) => (
-                  <div
-                    key={src.id}
-                    className="rounded-lg bg-white px-3 py-2 text-xs shadow-sm"
-                    style={{ border: "1px solid #e5e7eb" }}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      {/* File name */}
-                      <span className="font-medium text-[#374151] truncate max-w-45" title={src.file}>
-                        {src.file}
-                      </span>
-                      {/* Page badge */}
-                      <span
-                        className="shrink-0 rounded-full px-2 py-0.5 text-white text-[10px] font-semibold"
-                        style={{ background: "linear-gradient(135deg, #a855f7 0%, #3b82f6 100%)" }}
+                {sources.map((src) => {
+                  const isExpanded = fullSources.has(src.id);
+                  const snippet = isExpanded
+                    ? src.full_snippet ?? src.snippet
+                    : src.snippet;
+
+                  return (
+                    <button
+                      key={src.id}
+                      onClick={() => toggleFullSources(src.id)}
+                      aria-expanded={isExpanded}
+                      className="rounded-lg bg-white px-3 py-2 text-xs shadow-sm text-left"
+                      style={{ border: "1px solid #e5e7eb" }}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <ChevronIcon className={`w-3 h-3 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                        <span className="font-medium text-[#374151] truncate max-w-45" title={src.file}>
+                          {src.file}
+                        </span>
+                        <span
+                          className="shrink-0 rounded-full px-2 py-0.5 text-white text-[10px] font-semibold"
+                          style={{ background: "linear-gradient(135deg, #a855f7 0%, #3b82f6 100%)" }}
+                        >
+                          p.{src.page}
+                        </span>
+                      </div>
+                      <p
+                        className={`text-[#6b7280] leading-snug ${isExpanded ? "whitespace-pre-wrap break-words" : "line-clamp-2"}`}
+                        title={snippet}
                       >
-                        p.{src.page}
-                      </span>
-                    </div>
-                    <p className="text-[#6b7280] leading-snug line-clamp-2" title={src.full_snippet ?? src.snippet}>{src.snippet}</p>
-                  </div>
-                ))}
+                        {snippet}
+                      </p>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -148,6 +162,17 @@ export function AssistantBubble({
       </div>
     </div>
   );
+  function toggleFullSources(id: number) {
+    setFullSources((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+        return next;
+    });
+}
 }
 
 // ─── User Bubble ─────────────────────────────────────────────────────────────
@@ -222,3 +247,4 @@ function ChevronIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+

@@ -11,7 +11,6 @@ Usage:
 
 import os
 import sys
-import csv
 import json
 from pathlib import Path
 from datetime import datetime, timezone
@@ -19,60 +18,19 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_core.documents import Document
+
+from rag.config import (
+    KNOWLEDGE_BASE_DIR,
+    CHROMA_DB_DIR,
+    DOCUMENTS_JSON,
+    CHUNK_SIZE,
+    CHUNK_OVERLAP,
+    ALLOWED_EXTENSIONS,
+)
+from rag.ingestion import _load_docs
 
 load_dotenv()
-
-KNOWLEDGE_BASE_DIR = Path("knowledge_base")
-CHROMA_DB_DIR      = "chroma_db"
-DOCUMENTS_JSON     = KNOWLEDGE_BASE_DIR / "documents.json"
-CHUNK_SIZE         = 1000
-CHUNK_OVERLAP      = 200
-ALLOWED_EXTENSIONS = {".pdf", ".txt", ".md", ".json", ".docx", ".csv", ".tsv", ".html", ".htm"}
-
-
-def _load_docs(filepath: Path) -> list:
-    """Return a list of LangChain Documents for any supported file type."""
-    ext = filepath.suffix.lower()
-
-    if ext == ".pdf":
-        return PyPDFLoader(str(filepath)).load()
-
-    if ext in (".txt", ".md"):
-        from langchain_community.document_loaders import TextLoader
-        return TextLoader(str(filepath), encoding="utf-8").load()
-
-    if ext == ".json":
-        text = filepath.read_text(encoding="utf-8")
-        try:
-            content = json.dumps(json.loads(text), indent=2)
-        except json.JSONDecodeError:
-            content = text
-        return [Document(page_content=content, metadata={"source": str(filepath)})]
-
-    if ext == ".docx":
-        from langchain_community.document_loaders import Docx2txtLoader
-        return Docx2txtLoader(str(filepath)).load()
-
-    if ext in (".csv", ".tsv"):
-        delimiter = "\t" if ext == ".tsv" else ","
-        rows = []
-        with filepath.open(encoding="utf-8", newline="") as f:
-            reader = csv.DictReader(f, delimiter=delimiter)
-            for row in reader:
-                rows.append(", ".join(f"{k}: {v}" for k, v in row.items()))
-        return [Document(page_content="\n".join(rows), metadata={"source": str(filepath)})]
-
-    if ext in (".html", ".htm"):
-        from bs4 import BeautifulSoup
-        soup = BeautifulSoup(filepath.read_text(encoding="utf-8"), "lxml")
-        for tag in soup(["script", "style"]):
-            tag.decompose()
-        return [Document(page_content=soup.get_text(separator="\n", strip=True), metadata={"source": str(filepath)})]
-
-    return []
 
 
 def load_registry() -> dict:

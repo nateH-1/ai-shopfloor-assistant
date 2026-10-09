@@ -5,7 +5,7 @@ Characterization tests for the context and citation helpers in rag/context.py.
 They pin down CURRENT behavior, including known quirks — a failing test here
 means behavior changed, which should only happen deliberately.
 Framework: pytest
-Run: cd backend && pytest test_context.py -v
+Run: cd backend && pytest tests/test_context.py -v
 """
 
 from types import SimpleNamespace

@@ -5,7 +5,7 @@ Characterization tests for the off-topic guard in rag/guard.py.
 They pin down CURRENT behavior: keyword checks, YES/NO interpretation,
 lazy client creation and fail-open error handling.
 Framework: pytest + unittest.mock
-Run: cd backend && pytest test_guard.py -v
+Run: cd backend && pytest tests/test_guard.py -v
 """
 
 from types import SimpleNamespace
