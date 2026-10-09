@@ -9,6 +9,7 @@ interface SignUpInputProps {
 interface SignUpInfo {
   role: "Worker" | "Admin" | "Guest";
   email: string;
+  full_name: string,
   password: string;
   organization: string;
 }
@@ -16,6 +17,7 @@ interface SignUpInfo {
 export function SignUpBubble({ onSubmit }: SignUpInputProps) {
   const [role, setRole] = useState<SignUpInfo["role"]>("Worker");
   const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("")
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const passwordFormat = /^(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*:?><]).*$/i;
@@ -26,15 +28,19 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
     event.preventDefault();
     if (role == "Guest") {
       setErrorMessage("");
-      onSubmit({ role, email: "", password: "", organization: ""});
+      onSubmit({ role, email: "", full_name: "", password: "", organization: ""});
       return
     }
     if (!email.trim()) {
       setErrorMessage("Please enter your email.");
       return;
     }
-    if (!password.trim() || password.length < 8 || password.length > 32 || passwordFormat.test(password)) {
-      setErrorMessage("Please enter a valid password.\nPasswords must contain between 8 and 32 characters including at least 1 number and 1 special character.");
+    if (!fullName) {
+      setErrorMessage("Please enter your full name for recognition by admin.");
+      return;
+    }
+    if (!password.trim() || password.length < 8 || passwordFormat.test(password)) {
+      setErrorMessage("Please enter a valid password.\nPasswords must contain at least 8 characters including at least 1 number and 1 special character.");
       return;
     }
     if (!organization.trim()) {
@@ -42,7 +48,7 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
       return;
     }
     setErrorMessage("");
-    onSubmit({ role: role, email: email.trim(), password: password.trim(), organization: organization.trim() });
+    onSubmit({ role: role, email: email.trim(), full_name: fullName, password: password.trim(), organization: organization.trim() });
   };
 
   const inputClassName = "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-[#2d3748] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200";
@@ -87,10 +93,51 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
               <input id="signup-email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={inputClassName} />
             </div>
             <div>
+              <label htmlFor="signup-name" className="mb-1.5 block text-sm font-medium text-[#2d3748]">Full Name</label>
+              <input id="signup-name" name="full_name" type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)} className={inputClassName} />
+            </div>
+            <div className="relative">
               <label htmlFor="signup-password" className="mb-1.5 block text-sm font-medium text-[#2d3748]">Password</label>
-              <input id="signup-password" name="password" type={showPassword ? "text" : "password"} autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} className={inputClassName} />
-              <button type="button" onClick={() => setShowPassword(!showPassword)}   aria-controls="signup-password" className="mt-1 block ml-auto text-sm  text-blue-600">
-                {showPassword ? "Hide password" : "Show password"}
+              <input
+                id="signup-password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={`${inputClassName} pr-12`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((previous) => !previous)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-controls="signup-password"
+                className="absolute right-3 translate-y-1 rounded p-1 text-gray-500 hover:text-gray-700 focus-visible:outline-2 focus-visible:outline-blue-500"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  {showPassword ? (
+                    <>
+                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </>
+                  ) : (
+                    <>
+                      <path d="M3 8c2 4 5 6 9 6s7-2 9-6" />
+                      <path d="m4 10-2 3m6 0-1 4m5-3v4m4-5 1 4m3-7 2 3" />
+                    </>
+                  )}
+                </svg>
               </button>
             </div>
             <div>

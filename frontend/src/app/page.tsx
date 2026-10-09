@@ -16,7 +16,7 @@ export default function SignUpPage() {
             Welcome to Kuldeep
           </h1>
           <h1 className="mb-2 text-2xl font-semibold tracking-tight text-[#1a202c]">
-            The AI Shopfoor Assistant
+            The AI Shopfloor Assistant
           </h1>
           <p className="text-sm leading-relaxed text-gray-500">
             Sign up to get started with your AI assistant. Upload documents and ask questions, without details going to the cloud.
