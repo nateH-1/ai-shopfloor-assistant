@@ -1,14 +1,22 @@
 // Header component matching Figma design
-// Blue header (#3B82F6) with robot icon on left and "Kuldeep" brand text on right.
+// Blue header (#3B82F6) with centered branding and account buttons on the right.
 
-export default function GenericHeader() {
+"use client";
+
+interface GenericHeaderProps {
+  onLogIn: () => void;
+  onSignUp: () => void;
+}
+
+export default function GenericHeader({ onLogIn, onSignUp }: GenericHeaderProps) {
+
   return (
     <header
-      className="w-full flex items-center justify-center px-5 py-3"
+      className="grid w-full grid-cols-1 items-center gap-y-3 px-5 py-3 sm:grid-cols-[1fr_auto_1fr]"
       style={{ backgroundColor: "#3B82F6" }}
     >
-      {/* Left: Custom icon in white circle + docs button */}
-      <div className="flex items-center justify-center gap-3">
+      {/* Center: Custom icon and brand name */}
+      <div className="flex items-center justify-center gap-3 sm:col-start-2 sm:row-start-1">
         <div className="flex items-center justify-center w-9 h-9 rounded-full bg-white/20">
           <img src="/icon.png" alt="Kuldeep icon" className="w-6 h-6 object-contain" />
         </div>
@@ -18,6 +26,14 @@ export default function GenericHeader() {
         >
           Kuldeep
         </span>
+      </div>
+      <div className="flex items-center justify-self-end gap-3 sm:col-start-3 sm:row-start-1">
+        <button type="button" onClick={onLogIn} className="whitespace-nowrap rounded-lg bg-[#f3f4f6] px-4 py-2.5 text-sm font-medium text-black transition-colors hover:bg-[#c9c9c9] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c9c9c9]">
+          Log In
+        </button>
+        <button type="button" onClick={onSignUp} className="whitespace-nowrap rounded-lg bg-[#f3f4f6] px-4 py-2.5 text-sm font-medium text-black transition-colors hover:bg-[#c9c9c9] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c9c9c9]">
+          Sign Up
+        </button>
       </div>
       
     </header>

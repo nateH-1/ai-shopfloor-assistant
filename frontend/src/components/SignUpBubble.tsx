@@ -17,7 +17,7 @@ interface SignUpInfo {
 export function SignUpBubble({ onSubmit }: SignUpInputProps) {
   const [role, setRole] = useState<SignUpInfo["role"]>("Worker");
   const [email, setEmail] = useState("");
-  const [fullName, setFullName] = useState("")
+  const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const passwordFormat = /^(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*:?><]).*$/i;
@@ -140,10 +140,10 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
                 </svg>
               </button>
             </div>
-            <div>
+            {/*<div>
               <label htmlFor="signup-organization" className="mb-1.5 block text-sm font-medium text-[#2d3748]">{role == "Worker" ? "Organization Code" : "Organization Name"}</label>
               <input id="signup-organization" name="organization" type="text" autoComplete="organization" required value={organization} onChange={(e) => setOrganization(e.target.value)} className={inputClassName} />
-            </div>
+            </div>*/}
             {errorMessage && <p role="alert" className="text-sm text-red-600">{errorMessage}</p>}
             <button type="submit" className="mt-1 w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
               Sign Up as {role == "Worker" ? "a Worker" : "an Admin"}
