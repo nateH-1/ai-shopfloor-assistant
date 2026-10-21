@@ -3,8 +3,9 @@
 import { useRouter } from "next/navigation";
 import GenericHeader from "@/components/GenericHeader";
 import { LogInBubble } from "@/components/LogInBubble";
+import { authenticate } from "@/lib/authApi";
 
-export default function SignUpPage() {
+export default function LogInPage() {
   const router = useRouter();
 
   return (
@@ -22,7 +23,10 @@ export default function SignUpPage() {
             Log in to keep working with your AI assistant. Upload documents and ask questions, without details going to the cloud.
           </p>
         </div>
-        <LogInBubble onSubmit={() => router.push("/chat")} />
+        <LogInBubble onSubmit={async (info) => {
+          await authenticate(info.role === "Guest" ? "register" : "login", info);
+          router.push("/chat");
+        }} />
       </main>
     </div>
   );

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import GenericHeader from "@/components/GenericHeader";
 import { SignUpBubble } from "@/components/SignUpBubble";
+import { authenticate } from "@/lib/authApi";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -25,7 +26,10 @@ export default function SignUpPage() {
             Sign up to get started with your AI assistant. Upload documents and ask questions, without details going to the cloud.
           </p>
         </div>
-        <SignUpBubble onSubmit={() => router.push("/chat")} />
+        <SignUpBubble onSubmit={async (info) => {
+          await authenticate("register", info);
+          router.push("/chat");
+        }} />
       </main>
     </div>
   );

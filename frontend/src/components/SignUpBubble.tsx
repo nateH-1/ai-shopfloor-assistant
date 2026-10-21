@@ -3,7 +3,7 @@
 import { useState, type SubmitEvent } from "react";
 
 interface SignUpInputProps {
-  onSubmit: (info: SignUpInfo) => void;
+  onSubmit: (info: SignUpInfo) => Promise<void>;
 }
 
 interface SignUpInfo {
@@ -24,38 +24,50 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
   const [organization, setOrganization] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const submit = async (info: SignUpInfo) => {
+    if (isSubmitting) return;
+    setErrorMessage("");
+    setIsSubmitting(true);
+    try {
+      await onSubmit(info);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
     if (role == "Guest") {
       setErrorMessage("");
-      onSubmit({ role, email: "", full_name: "", password: "", organization: ""});
+      void submit({ role, email: "", full_name: "", password: "", organization: ""});
       return
     }
     if (!email.trim()) {
       setErrorMessage("Please enter your email.");
       return;
     }
-    if (!fullName) {
+    if (!fullName.trim()) {
       setErrorMessage("Please enter your full name for recognition by admin.");
       return;
     }
-    if (!password.trim() || password.length < 8 || passwordFormat.test(password)) {
+    if (!password.trim() || password.length < 8 || !passwordFormat.test(password)) {
       setErrorMessage("Please enter a valid password.\nPasswords must contain at least 8 characters including at least 1 number and 1 special character.");
       return;
     }
-    if (!organization.trim()) {
-      setErrorMessage("Please enter your organization name.");
-      return;
-    }
     setErrorMessage("");
-    onSubmit({ role: role, email: email.trim(), full_name: fullName, password: password.trim(), organization: organization.trim() });
+    void submit({ role: role, email: email.trim(), full_name: fullName.trim(), password: password, organization: organization.trim() });
   };
 
   const inputClassName = "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-[#2d3748] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200";
 
   return (
     <div className="mx-auto w-full max-w-md rounded-2xl rounded-tl-sm border border-gray-200 bg-white px-5 py-6 shadow-sm sm:px-6">
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate className="flex flex-col gap-4">
         {/* Role Selection */}
         <fieldset>
           <legend className="mb-3 text-lg font-semibold text-[#1a202c]">Sign up as:</legend>
@@ -81,7 +93,7 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
         {role == "Guest" ? (
           <div className="flex flex-col gap-4">
             <p>If you continue as a guest, you will still be able to upload files and ask questions, but you will not be able to connect to other machines and files will be deleted after you sign out.</p>
-            <button type="submit" className="mt-1 w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
+            <button type="submit" disabled={isSubmitting} className="mt-1 w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
                 Continue as a Guest
             </button>
           </div>
@@ -144,12 +156,13 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
               <label htmlFor="signup-organization" className="mb-1.5 block text-sm font-medium text-[#2d3748]">{role == "Worker" ? "Organization Code" : "Organization Name"}</label>
               <input id="signup-organization" name="organization" type="text" autoComplete="organization" required value={organization} onChange={(e) => setOrganization(e.target.value)} className={inputClassName} />
             </div>*/}
-            {errorMessage && <p role="alert" className="text-sm text-red-600">{errorMessage}</p>}
-            <button type="submit" className="mt-1 w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
+            <button type="submit" disabled={isSubmitting} className="mt-1 w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
               Sign Up as {role == "Worker" ? "a Worker" : "an Admin"}
             </button>
           </div>
         )}
+        {errorMessage && <p role="alert" className="text-sm text-red-600">{errorMessage}</p>}
+        {isSubmitting && <p role="status" className="text-sm text-gray-500">Please wait...</p>}
       </form>
     </div>
   );

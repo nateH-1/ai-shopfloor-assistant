@@ -3,7 +3,7 @@
 import { useState, type SubmitEvent } from "react";
 
 interface LogInInputProps {
-  onSubmit: (info: LogInInfo) => void;
+  onSubmit: (info: LogInInfo) => Promise<void>;
 }
 
 interface LogInInfo {
@@ -19,34 +19,54 @@ export function LogInBubble({ onSubmit }: LogInInputProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const submit = async (info: LogInInfo) => {
+    if (isSubmitting) return;
+    setErrorMessage("");
+    setIsSubmitting(true);
+    try {
+      await onSubmit(info);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
+    if (isGuest) {
+      void submit({ email: "", password: "", role: "Guest" });
+      return;
+    }
     if (!email.trim()) {
       setErrorMessage("Please enter your email.");
       return;
     }
     if (!password.trim()) {
-      setErrorMessage("Please enter a valid password.\nPasswords must contain at least 8 characters including at least 1 number and 1 special character.");
+      setErrorMessage("Please enter a password.");
       return;
     }
     setErrorMessage("");
-    onSubmit({ email: email.trim(), password: password.trim(), role: (isGuest ? "Guest" : "Other")});
+    void submit({ email: email.trim(), password: password, role: (isGuest ? "Guest" : "Other")});
   };
 
   const inputClassName = "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-[#2d3748] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200";
 
   return (
     <div className="mx-auto w-full max-w-md rounded-2xl rounded-tl-sm border border-gray-200 bg-white px-5 py-6 shadow-sm sm:px-6">
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate className="flex flex-col gap-4">
         
         {/* Log In Info Information */}
         { isGuest ? (
           <div className="flex flex-col gap-4">
             <p>If you continue as a guest, you will still be able to upload files and ask questions, but you will not be able to connect to other machines and files will be deleted after you sign out.</p>
-            <button type="submit" className="mt-1 w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
+            <button type="submit" disabled={isSubmitting} className="mt-1 w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
                 Continue as a Guest
             </button>
-            <button onClick={() => setIsGuest((previous) => !previous)}>
+            <button type="button" disabled={isSubmitting} onClick={() => setIsGuest((previous) => !previous)}>
               Log In
             </button>
           </div>
@@ -62,7 +82,7 @@ export function LogInBubble({ onSubmit }: LogInInputProps) {
                 id="signup-password"
                 name="password"
                 type={showPassword ? "text" : "password"}
-                autoComplete="new-password"
+                autoComplete="current-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -100,15 +120,16 @@ export function LogInBubble({ onSubmit }: LogInInputProps) {
                 </svg>
               </button>
             </div>
-            {errorMessage && <p role="alert" className="text-sm text-red-600">{errorMessage}</p>}
-            <button type="submit" className="mt-1 w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
+            <button type="submit" disabled={isSubmitting} className="mt-1 w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
               Log In
             </button>
-            <button onClick={() => setIsGuest((previous) => !previous)}>
+            <button type="button" disabled={isSubmitting} onClick={() => setIsGuest((previous) => !previous)}>
               Continue as Guest
             </button>
           </div>
         )}
+        {errorMessage && <p role="alert" className="text-sm text-red-600">{errorMessage}</p>}
+        {isSubmitting && <p role="status" className="text-sm text-gray-500">Please wait...</p>}
       </form>
     </div>
   );
