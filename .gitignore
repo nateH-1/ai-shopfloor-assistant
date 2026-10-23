@@ -32,6 +32,7 @@ chroma_db/
 
 # Uploaded PDFs and document registry (user data, rebuilt locally)
 backend/knowledge_base/*.pdf
+backend/knowledge_base/documents.json
 knowledge_base/*.pdf
 knowledge_base/documents.json
 
