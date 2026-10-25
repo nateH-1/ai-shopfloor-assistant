@@ -1,31 +1,46 @@
 // Header component matching Figma design
 // Blue header (#3B82F6) with robot icon on left, "Kuldeep" brand text on right,
-// and a document-management button to open the knowledge-base sidebar.
+// and optional settings and chat links.
+
+import Link from "next/link";
 
 interface HeaderProps {
-  onDocsClick?: () => void;
+  showSettings?: boolean;
+  showChat?: boolean;
 }
 
-export default function Header({ onDocsClick }: HeaderProps) {
+export default function Header({ showSettings, showChat }: HeaderProps) {
   return (
     <header
       className="w-full flex items-center justify-between px-5 py-3"
       style={{ backgroundColor: "#3B82F6" }}
     >
-      {/* Left: Custom icon in white circle + docs button */}
+      {/* Left: Custom icon in white circle + navigation */}
       <div className="flex items-center gap-3">
         <div className="flex items-center justify-center w-9 h-9 rounded-full bg-white/20">
           <img src="/icon.png" alt="Kuldeep icon" className="w-6 h-6 object-contain" />
         </div>
-        {onDocsClick && (
-          <button
-            onClick={onDocsClick}
+        {showSettings && (
+          <Link
+            href="/settings"
             className="flex items-center gap-1.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors px-3 py-1.5"
-            title="Manage knowledge base documents"
+            title="Open settings"
           >
-            <FolderIcon className="w-4 h-4 text-white" />
-            <span className="text-white text-xs font-medium">Docs</span>
-          </button>
+            <SettingsIcon className="w-4 h-4 text-white" />
+            <span className="text-white text-xs font-medium">Settings</span>
+          </Link>
+        )}
+        {showChat && (
+          <Link
+            href="/chat"
+            className="flex items-center gap-1.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors px-3 py-1.5"
+            title="Back to chat"
+          >
+            <svg aria-hidden="true" className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m12 19-7-7 7-7M5 12h14" />
+            </svg>
+            <span className="text-white text-xs font-medium">Back to Chat</span>
+          </Link>
         )}
       </div>
 
@@ -40,10 +55,11 @@ export default function Header({ onDocsClick }: HeaderProps) {
   );
 }
 
-function FolderIcon({ className }: { className?: string }) {
+function SettingsIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+      <path d="m9 3-1 3-3 1-2 3 2 2-1 3 2 3 3-1 2 3h3l1-3 3-1 2-3-2-2 1-3-2-3-3 1-2-3Z" />
+      <circle cx="12" cy="12" r="3" />
     </svg>
   );
 }

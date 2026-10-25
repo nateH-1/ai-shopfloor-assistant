@@ -381,9 +381,6 @@ def _create_users_table():
         """)
 
 
-#_create_roles_table()
-#_create_users_table()
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  Routes
@@ -603,6 +600,7 @@ def register_user():
         return jsonify({"error": "Expected a JSON object."}), 400
     username = data.get("username")
     password = data.get("password")
+    full_name = data.get("full_name")
     role = data.get("role")
     if role not in ["Worker", "Admin", "Guest"]:
         return jsonify({"error": "Valid role not in entry"}), 400
@@ -616,6 +614,8 @@ def register_user():
         return jsonify({"error": "Username must be a non-empty string."}), 400
     if not isinstance(password, str) or not password:
         return jsonify({"error": "Password must be a non-empty string."}), 400
+    if not isinstance(full_name, str) or not full_name:
+            return jsonify({"error": "Full name must be a non-empty string."}), 400
     username = username.strip()
 
     try:
@@ -623,14 +623,15 @@ def register_user():
         hashed = password_hasher.hash(password)
 
         with database_connection() as conn:
-
+            # Check if username already exists in database
             username_already_exists = conn.execute(
                 "SELECT username FROM users WHERE username = ?",
                 (username,)
             ).fetchone()
             if username_already_exists:
                 return jsonify({"error": "Username already exists"}), 409
-
+            
+            # Get the role id of the given role
             role_row = conn.execute(
                 "SELECT id FROM roles WHERE name = ?",
                 (role,)
@@ -638,27 +639,42 @@ def register_user():
             if role_row is None:
                 app.logger.error("Registration failed: Worker role is missing.")
                 return jsonify({"error": "Registration is temporarily unavailable."}), 503
+            role_id = role_row["id"]
+
+            # If this is the first admin, they are automatically verified
+            verification_status = "PENDING"
+            if role == "Admin":
+                existing_admin = conn.execute(
+                    "SELECT username FROM users WHERE role_id = ? AND verification_status = ?",
+                    (role_id, "VERIFIED")
+                ).fetchone()
+                if existing_admin is None:
+                    verification_status = "VERIFIED"
             
             conn.execute("""
                 INSERT INTO users (
                     id,
                     username,
+                    full_name,
                     password_hash,
-                    role_id
+                    role_id,
+                    verification_status
                 )
-                VALUES (?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?)
             """, (
                 user_id,
                 username,
+                full_name,
                 hashed,
-                role_row["id"]
+                role_id,
+                verification_status
             ))
 
         session.clear()
         session["user_id"] = user_id
         session["role"] = role
-        session["verification_status"] = "PENDING"
-        return jsonify({"user_id": user_id, "verification_status": "PENDING"}), 201
+        session["verification_status"] = verification_status
+        return jsonify({"user_id": user_id, "verification_status": verification_status}), 201
     except sqlite3.IntegrityError as exc:
         if "users.username" in str(exc):
             return jsonify({"error": "Username already exists."}), 409
@@ -683,14 +699,14 @@ def login_user():
     try:
         with database_connection() as conn:
             user = conn.execute(
-                "SELECT id, password_hash, verification_status, role FROM users WHERE username = ?",
+                "SELECT id, password_hash, verification_status, role_id FROM users WHERE username = ?",
                 (given_username.strip(),)
             ).fetchone()
 
             if user:
                 role_name = conn.execute(
                     "SELECT name FROM roles WHERE id = ?",
-                    (user["role"],)
+                    (user["role_id"],)
                 ).fetchone()
 
         if user is None or not password_hasher.verify(given_password, user["password_hash"]):
@@ -706,11 +722,25 @@ def login_user():
         return jsonify({"error": "Unable to log in."}), 500
 
 
+def _current_user_role():
+    user_id = session.get("user_id")
+    if not user_id:
+        return None
+    if user_id == "Guest":
+        return "Guest"
+    with database_connection() as conn:
+        user_role = conn.execute(
+            "SELECT roles.name FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = ?",
+            (user_id,)
+        ).fetchone()
+    return user_role["name"] if user_role else None
+
+
 @app.route("/roles/permissions", methods=["POST"])
 def get_role_permissions():
-    role = session["role"]
+    role = _current_user_role()
     if not role:
-        return jsonify({"error": "Role not in package"}), 500
+        return jsonify({"error": "Please log in to view your permissions."}), 401
 
     with database_connection() as conn:
         role_info = conn.execute(
@@ -730,6 +760,123 @@ def get_role_permissions():
         }), 200
     else:
         return jsonify({"error": "Failed to fetch role info."}), 500
+
+@app.route("/users", methods=["GET"])
+def get_all_users():
+    if _current_user_role() != "Admin":
+        return jsonify({"error": "Admin access required."}), 403
+    
+    with database_connection() as conn:
+        users = conn.execute(
+            "SELECT users.id, users.username, users.full_name, users.verification_status, roles.name FROM users JOIN roles ON users.role_id = roles.id WHERE verification_status = ?",
+            ("VERIFIED",)
+        ).fetchall()
+
+        pending = conn.execute(
+            "SELECT users.id, users.username, users.full_name, users.verification_status, roles.name FROM users JOIN roles ON users.role_id = roles.id WHERE verification_status = ?",
+            ("PENDING",)
+        ).fetchall()
+
+    return jsonify({"verified_users": [dict(user) for user in users], "pending_users": [dict(pender) for pender in pending]}), 200
+
+@app.route("/users/verify", methods=["POST"])
+def verify_single_user():
+    if _current_user_role() != "Admin":
+        return jsonify({"error": "Admin access required."}), 403
+    
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Expected a JSON object."}), 400
+    user_id = data.get("user_id")
+    if not user_id or not isinstance(user_id, str):
+        return jsonify({"error": "No valid user ID recieved"}), 400
+    new_status = data.get("verification_status")
+    if not new_status or new_status not in ["VERIFIED", "REJECTED"]:
+        return jsonify({"error": "Recieved invalid verification"}), 400
+
+    with database_connection() as conn:
+        conn.execute(
+            "UPDATE users SET verification_status = ? WHERE id = ?",
+            (new_status, user_id,)
+        )
+    return jsonify({"message": "User verified!"}), 200
+
+@app.route("/users/delete", methods=["DELETE"])
+def delete_user():
+    if _current_user_role() != "Admin":
+        return jsonify({"error": "Admin access required."}), 403
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Expected a JSON object."}), 400
+    user_id = data.get("user_id")
+    if not isinstance(user_id, str) or not user_id.strip():
+        return jsonify({"error": "No valid user ID received."}), 400
+
+    with database_connection() as conn:
+        deleted = conn.execute(
+            "DELETE FROM users WHERE id = ?",
+            (user_id,)
+        )
+        if deleted.rowcount == 0:
+            return jsonify({"error": "User not found"}), 404
+
+    if user_id == session.get("user_id"):
+        session.clear()
+    return jsonify({"message": "User successfully deleted!"}), 200
+
+@app.route("/users/change-role", methods=["POST"])
+def change_role():
+    if _current_user_role() != "Admin":
+        return jsonify({"error": "Admin access required."}), 403
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Expected a JSON object."}), 400
+    user_id = data.get("user_id")
+    if not isinstance(user_id, str) or not user_id.strip():
+        return jsonify({"error": "No valid user ID received."}), 400
+    new_role = data.get("role")
+    if new_role not in ["Admin", "Worker"]:
+        return jsonify({"error": "No valid role received."}), 400
+
+    with database_connection() as conn:
+        role_row = conn.execute(
+            "SELECT id FROM roles WHERE name = ?",
+            (new_role,)
+        ).fetchone()
+
+        if role_row is None:
+            return jsonify({"error": "Role not found"}), 404
+
+        updated = conn.execute(
+            "UPDATE users SET role_id = ? WHERE id = ?",
+            (role_row["id"], user_id,)
+        )
+        if updated.rowcount == 0:
+            return jsonify({"error": "User not found"}), 404
+    if user_id == session.get("user_id"):
+        session["role"] = new_role
+    return jsonify({"message": "Role successfully changed!"}), 200
+
+@app.route("/users/verification-status", methods=["GET"])
+def get_verification_status():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Please log in."}), 401
+    if user_id == "Guest":
+        return jsonify({"verification_status": "VERIFIED"})
+
+    with database_connection() as conn:
+        user = conn.execute(
+            "SELECT verification_status FROM users WHERE id = ?",
+            (user_id,)
+        ).fetchone()
+
+    if user is None:
+        return jsonify({"error": "User not found."}), 401
+
+    return jsonify({"verification_status": user["verification_status"]})
+
 
 
 @app.route("/api/health", methods=["GET"])

@@ -3,14 +3,12 @@
 import { useState, useCallback, useRef } from "react";
 import Header from "@/components/Header";
 import ChatPage from "@/components/ChatPage";
-import DocumentSidebar from "@/components/DocumentSidebar";
 import type { Message } from "@/lib/types";
 import { sendMessage } from "@/lib/chatApi";
 
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const sessionIdRef = useRef<string | undefined>(undefined);
 
   const handleSend = useCallback(async (text: string) => {
@@ -102,12 +100,7 @@ export default function Chat() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <Header onDocsClick={() => setIsSidebarOpen(true)} />
-
-      <DocumentSidebar
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-      />
+      <Header showSettings />
 
       <ChatPage
           messages={messages}

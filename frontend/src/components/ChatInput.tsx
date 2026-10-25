@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, KeyboardEvent } from "react";
 import { transcribeAudio } from "@/lib/chatApi";
+import { get_verification_status } from "@/lib/authApi";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -20,12 +21,34 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const animFrameRef = useRef<number>(0);
+  const [verificationStatus, setVerificationStatus] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     return () => {
       streamRef.current?.getTracks().forEach((track) => track.stop());
       cancelAnimationFrame(animFrameRef.current);
       audioCtxRef.current?.close();
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    async function get_status() {
+      try {
+        const data = await get_verification_status();
+        if (active) {
+          setVerificationStatus(data.verification_status);
+        }
+      } catch (error) {
+        if (active) {
+          setError(error instanceof Error ? error.message : "Failed to load verification status.");
+        }
+      }
+    }
+    void get_status();
+    return () => {
+      active = false;
     };
   }, []);
 
@@ -202,72 +225,80 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
         border: "1px solid #e5e7eb",
       }}
     >
-      {/* Attachment icon */}
-      <button
-        className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
-        aria-label="Attach file"
-        type="button"
-      >
-        <PaperclipIcon className="w-5 h-5" />
-      </button>
+      { error ? (
+        <p role="alert" className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-red-700">{error}</p>
+      ) : verificationStatus != "VERIFIED" ? (
+        <p role="status" className="w-full rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-amber-800">Please wait for an admin to verify your account.</p>
+      ) : (
+        <>
+          {/* Attachment icon */}
+        <button
+          className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+          aria-label="Attach file"
+          type="button"
+        >
+          <PaperclipIcon className="w-5 h-5" />
+        </button>
 
-      {/* Text input / Audio visualizer */}
-      <div className="flex-1" style={{ minHeight: "24px" }}>
-        <textarea
-          ref={textareaRef}
-          rows={1}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onInput={handleInput}
-          placeholder={isTranscribing ? "Transcribing audio..." : "Ask Kuldeep about manuals, SOPs, or processes..."}
+        {/* Text input / Audio visualizer */}
+        <div className="flex-1" style={{ minHeight: "24px" }}>
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onInput={handleInput}
+            placeholder={isTranscribing ? "Transcribing audio..." : "Ask Kuldeep about manuals, SOPs, or processes..."}
+            disabled={disabled || isTranscribing}
+            className="w-full resize-none bg-transparent text-[#374151] placeholder-gray-400 text-sm leading-relaxed focus:outline-none"
+            style={{ minHeight: "24px", maxHeight: "160px", display: isRecording ? "none" : undefined }}
+          />
+          {/* Canvas is always mounted so canvasRef is always set; shown only while recording */}
+          <canvas
+            ref={canvasRef}
+            style={{
+              display: isRecording ? "block" : "none",
+              width: "100%",
+              height: "32px",
+            }}
+          />
+        </div>
+
+        {/* Mic icon */}
+        <button
+          className={`relative shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
+            isTranscribing
+              ? "bg-amber-50 text-amber-600 border border-amber-200"
+              : isRecording
+                ? "bg-red-50 text-red-600 border border-red-200 shadow-[0_0_0_6px_rgba(239,68,68,0.10)]"
+                : "bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100 hover:text-gray-700"
+          }`}
+          aria-label={isRecording ? "Stop voice recording" : "Start voice recording"}
+          title={isTranscribing ? "Transcribing" : isRecording ? "Recording" : "Voice input"}
+          type="button"
+          onClick={handleMicClick}
           disabled={disabled || isTranscribing}
-          className="w-full resize-none bg-transparent text-[#374151] placeholder-gray-400 text-sm leading-relaxed focus:outline-none"
-          style={{ minHeight: "24px", maxHeight: "160px", display: isRecording ? "none" : undefined }}
-        />
-        {/* Canvas is always mounted so canvasRef is always set; shown only while recording */}
-        <canvas
-          ref={canvasRef}
-          style={{
-            display: isRecording ? "block" : "none",
-            width: "100%",
-            height: "32px",
-          }}
-        />
-      </div>
+        >
+          {isRecording && (
+            <span className="absolute inset-0 rounded-full border-2 border-red-300 animate-ping" />
+          )}
+          <MicIcon className="w-5 h-5" />
+        </button>
 
-      {/* Mic icon */}
-      <button
-        className={`relative shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
-          isTranscribing
-            ? "bg-amber-50 text-amber-600 border border-amber-200"
-            : isRecording
-              ? "bg-red-50 text-red-600 border border-red-200 shadow-[0_0_0_6px_rgba(239,68,68,0.10)]"
-              : "bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100 hover:text-gray-700"
-        }`}
-        aria-label={isRecording ? "Stop voice recording" : "Start voice recording"}
-        title={isTranscribing ? "Transcribing" : isRecording ? "Recording" : "Voice input"}
-        type="button"
-        onClick={handleMicClick}
-        disabled={disabled || isTranscribing}
-      >
-        {isRecording && (
-          <span className="absolute inset-0 rounded-full border-2 border-red-300 animate-ping" />
-        )}
-        <MicIcon className="w-5 h-5" />
-      </button>
-
-      {/* Send button */}
-      <button
-        onClick={handleSend}
-        disabled={!value.trim() || disabled || isTranscribing || isRecording}
-        className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full transition-opacity"
-        style={{ backgroundColor: "#3B82F6" }}
-        aria-label="Send message"
-        type="button"
-      >
-        <SendIcon className="w-4 h-4 text-white" />
-      </button>
+        {/* Send button */}
+        <button
+          onClick={handleSend}
+          disabled={!value.trim() || disabled || isTranscribing || isRecording}
+          className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full transition-opacity"
+          style={{ backgroundColor: "#3B82F6" }}
+          aria-label="Send message"
+          type="button"
+        >
+          <SendIcon className="w-4 h-4 text-white" />
+        </button>
+        </>
+      )}
     </div>
   );
 }

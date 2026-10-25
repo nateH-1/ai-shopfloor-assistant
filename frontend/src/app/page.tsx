@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import GenericHeader from "@/components/GenericHeader";
 import { SignUpBubble } from "@/components/SignUpBubble";
 import { authenticate } from "@/lib/authApi";
+import { getAuthPagePath, getPostAuthPath } from "@/lib/authNavigation";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -11,8 +12,8 @@ export default function SignUpPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-[#f3f4f6]">
       <GenericHeader
-        onLogIn={() => router.push("/login")}
-        onSignUp={() => router.push("/")}
+        onLogIn={() => router.push(getAuthPagePath("/login"))}
+        onSignUp={() => router.push(getAuthPagePath("/"))}
       />
       <main className="mx-auto grid w-full max-w-5xl flex-1 content-center items-center gap-8 px-4 py-10 md:grid-cols-2">
         <div className="text-center md:text-left">
@@ -28,7 +29,7 @@ export default function SignUpPage() {
         </div>
         <SignUpBubble onSubmit={async (info) => {
           await authenticate("register", info);
-          router.push("/chat");
+          router.replace(getPostAuthPath());
         }} />
       </main>
     </div>
