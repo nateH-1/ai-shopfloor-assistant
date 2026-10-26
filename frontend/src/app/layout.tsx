@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, Cinzel } from "next/font/google";
-// @ts-expect-error Next.js handles global CSS imports at build time.
 import "./globals.css";
 import AuthGuard from "@/components/AuthGuard";
 
