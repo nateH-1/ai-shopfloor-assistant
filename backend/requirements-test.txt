@@ -6,3 +6,5 @@ flask-cors
 python-dotenv
 werkzeug
 pytest==8.3.5
+rank-bm25
+

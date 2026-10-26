@@ -1,6 +1,9 @@
+import re
+
 from langchain_core.documents import Document
 
-from rag.config import NUM_CHUNKS
+from rag.config import KEYWORD_FALLBACK_DISTANCE, NUM_CHUNKS, RRF_K
+from rag.keyword import _keyword_search, _unknown_terms
 
 def _similarity_search(collection, query: str, k: int = NUM_CHUNKS, where: dict = None) -> list[Document]:
     """Query ChromaDB and return LangChain Document objects."""
@@ -24,3 +27,76 @@ def _similarity_search_with_score(collection, query: str, k: int = NUM_CHUNKS) -
                                include=["documents", "metadatas", "distances"])
     return [(Document(page_content=t, metadata=m), d)
             for t, m, d in zip(results["documents"][0], results["metadatas"][0], results["distances"][0])]
+
+
+# ── Hybrid search: vector first, BM25 keyword search as a fallback ───────────
+
+def _is_code_like_query(query: str) -> bool:
+    """True when the query contains an identifier such as 8mm-1.25, CO2, kg/cm2 or M10.
+
+    Adapted from the welding project's search service.
+    """
+    if re.search(r"[A-Za-z0-9]+[-./][A-Za-z0-9]+", query):
+        return True
+    if re.search(r"\b(?:[A-Za-z]+\d+|\d+[A-Za-z]+)\b", query):
+        return True
+    upper_codes = [t for t in re.findall(r"\b[A-Za-z0-9]+\b", query) if len(t) <= 6 and t.isupper()]
+    return len(upper_codes) >= 2
+
+
+def _reciprocal_rank_fusion(ranked_lists: list[list[str]], rrf_k: int = RRF_K) -> list[str]:
+    """Merge ranked ID lists by position: each list adds 1 / (rrf_k + rank) to an ID's score.
+
+    Uses rank only, never raw scores, because vector distances and BM25 scores
+    are on unrelated scales. Ties keep first-seen order.
+    """
+    scores: dict = {}
+    for ranked in ranked_lists:
+        for rank, chunk_id in enumerate(ranked, 1):
+            scores[chunk_id] = scores.get(chunk_id, 0.0) + 1.0 / (rrf_k + rank)
+    return sorted(scores, key=lambda chunk_id: scores[chunk_id], reverse=True)
+
+
+def _hybrid_search(collection, query: str, get_keyword_index, k: int = NUM_CHUNKS,
+                   where: dict = None) -> tuple[list[Document], bool]:
+    """Vector search, plus BM25 keyword results when the query looks like a code
+    or the best vector match is weak (distance >= KEYWORD_FALLBACK_DISTANCE).
+
+    Returns (chunks, enough_evidence). Evidence is NOT enough when the vector match
+    is weak AND the query uses an important word found in no chunk at all; then no
+    chunks are returned, so callers can say the documents don't cover it instead of
+    letting the model guess.
+
+    For a strong, non-code query the chunks are exactly what _similarity_search would
+    return. get_keyword_index is only called when keyword search or the evidence
+    check needs it. where={"source": ...} limits both searches to one file.
+    """
+    n = min(k, collection.count())
+    if n == 0:
+        return [], False
+    kwargs: dict = {"query_texts": [query], "n_results": n, "include": ["documents", "metadatas", "distances"]}
+    if where:
+        kwargs["where"] = where
+    results = collection.query(**kwargs)
+    ids       = results["ids"][0]
+    docs      = {i: Document(page_content=t, metadata=m)
+                 for i, t, m in zip(ids, results["documents"][0], results["metadatas"][0])}
+    distances = results["distances"][0]
+
+    weak = not distances or distances[0] >= KEYWORD_FALLBACK_DISTANCE
+    if not (weak or _is_code_like_query(query)):
+        return [docs[i] for i in ids], True
+
+    index = get_keyword_index()
+    if weak and _unknown_terms(index, query):
+        return [], False
+
+    source = where.get("source") if where else None
+    keyword_hits = _keyword_search(index, query, k=k, source=source)
+    if not keyword_hits:
+        return [docs[i] for i in ids], True
+
+    for hit in keyword_hits:
+        docs.setdefault(hit["id"], Document(page_content=hit["text"], metadata=hit["metadata"]))
+    merged = _reciprocal_rank_fusion([ids, [hit["id"] for hit in keyword_hits]])
+    return [docs[i] for i in merged[:k]], True

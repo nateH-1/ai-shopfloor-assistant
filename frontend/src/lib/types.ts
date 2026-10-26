@@ -4,6 +4,9 @@ export interface Message {
   id: string;
   role: "assistant" | "user";
   content: string;
+  /** Server-issued ID for locally stored answer feedback. */
+  feedbackId?: string;
+  feedbackUnavailable?: boolean;
   /** ISO timestamp — populated by the backend or set client-side as fallback */
   timestamp?: string;
   /** Source references returned by the RAG backend (assistant messages only) */
@@ -50,6 +53,8 @@ export interface ChatRequest {
 /** Flask /chat response body */
 export interface ChatResponse {
   reply: string;
+  message_id?: string;
+  feedback_unavailable?: boolean;
   /** Backend echoes or assigns a session ID */
   session_id?: string;
   /** Metadata including source references */

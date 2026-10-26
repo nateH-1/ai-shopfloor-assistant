@@ -6,6 +6,7 @@
 
 import { useEffect, useRef } from "react";
 import type { Message } from "@/lib/types";
+import type { Feedback } from "@/lib/feedbackApi";
 import { ChatBubble } from "./ChatBubble";
 import ChatInput from "./ChatInput";
 
@@ -13,10 +14,11 @@ interface ChatPageProps {
   messages: Message[];
   onSend: (message: string) => void;
   onClarificationSelect?: (label: string) => void;
+  onRewrite?: (message: Message, feedback: Feedback) => void;
   isLoading?: boolean;
 }
 
-export default function ChatPage({ messages, onSend, onClarificationSelect, isLoading }: ChatPageProps) {
+export default function ChatPage({ messages, onSend, onClarificationSelect, onRewrite, isLoading }: ChatPageProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,7 +49,13 @@ export default function ChatPage({ messages, onSend, onClarificationSelect, isLo
           {/* Messages */}
           <div className="flex flex-col gap-4">
             {messages.map((msg, index) => (
-              <ChatBubble key={msg.id} message={msg} onOptionSelect={onClarificationSelect ?? onSend} isLatest={index === messages.length - 1} />
+              <ChatBubble
+                key={msg.id}
+                message={msg}
+                onOptionSelect={onClarificationSelect ?? onSend}
+                onRewrite={onRewrite}
+                isLatest={index === messages.length - 1}
+              />
             ))}
 
             {/* Typing indicator */}

@@ -11,11 +11,19 @@ venv/
 .venv/
 env/
 
+# Test/cache artifacts
+.pytest_cache/
+.uv-cache/
+backend/.venv-tests/
+
 # Environment
 .env
 .env.local
 .env.*.local
 .dev-pids
+
+# Local dev logs
+*.log
 
 # Vector databases (large binary files — rebuilt locally from PDFs)
 backend/chroma_db/
@@ -24,6 +32,7 @@ chroma_db/
 
 # Uploaded PDFs and document registry (user data, rebuilt locally)
 backend/knowledge_base/*.pdf
+backend/knowledge_base/documents.json
 knowledge_base/*.pdf
 knowledge_base/documents.json
 
@@ -45,4 +54,3 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
-
