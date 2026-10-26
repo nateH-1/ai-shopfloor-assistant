@@ -30,8 +30,14 @@ def test_delete_user_persists_and_missing_user_returns_404(client):
     assert client.delete("/users/delete", json={"user_id": "target"}).status_code == 404
 
 
-@pytest.mark.parametrize("role", ["Guest", "Admin"])
+@pytest.mark.parametrize("role", ["Worker", "Admin"])
 def test_change_role_persists(client, role):
+    # Start with the opposite role so both cases verify a persisted change.
+    with app_module.database_connection() as conn:
+        conn.execute(
+            "UPDATE users SET role_id = (SELECT id FROM roles WHERE name = ?) WHERE id = 'target'",
+            ("Admin" if role == "Worker" else "Worker",),
+        )
     response = client.post("/users/change-role", json={"user_id": "target", "role": role})
     assert response.status_code == 200
     users = client.get("/users").get_json()["verified_users"]
@@ -43,7 +49,7 @@ def test_change_role_missing_user_returns_404(client):
     assert response.status_code == 404
 
 
-@pytest.mark.parametrize("role", [None, "Worker", "Owner", [], {}])
+@pytest.mark.parametrize("role", [None, "Guest", "Owner", [], {}])
 def test_invalid_role_is_rejected(client, role):
     assert client.post("/users/change-role", json={"user_id": "target", "role": role}).status_code == 400
 
@@ -51,7 +57,7 @@ def test_invalid_role_is_rejected(client, role):
 @pytest.mark.parametrize("path,method", [("/users/delete", "DELETE"), ("/users/change-role", "POST")])
 @pytest.mark.parametrize("user_id", [None, "", "   ", 123, []])
 def test_invalid_user_id_is_rejected(client, path, method, user_id):
-    assert client.open(path, method=method, json={"user_id": user_id, "role": "Guest"}).status_code == 400
+    assert client.open(path, method=method, json={"user_id": user_id, "role": "Worker"}).status_code == 400
 
 
 @pytest.mark.parametrize("path,method", [("/users/delete", "DELETE"), ("/users/change-role", "POST")])
@@ -76,7 +82,7 @@ def test_old_admin_session_loses_access_after_account_change(client, deleted):
         if deleted:
             conn.execute("DELETE FROM users WHERE id = 'admin'")
         else:
-            conn.execute("UPDATE users SET role_id = (SELECT id FROM roles WHERE name = 'Guest') WHERE id = 'admin'")
+            conn.execute("UPDATE users SET role_id = (SELECT id FROM roles WHERE name = 'Worker') WHERE id = 'admin'")
     assert client.get("/users").status_code == 403
     assert client.post("/users/verify", json={"user_id": "target", "verification_status": "VERIFIED"}).status_code == 403
     assert client.delete("/users/delete", json={"user_id": "target"}).status_code == 403
@@ -85,7 +91,7 @@ def test_old_admin_session_loses_access_after_account_change(client, deleted):
     if deleted:
         assert permissions.status_code == 401
     else:
-        assert permissions.get_json()["name"] == "Guest"
+        assert permissions.get_json()["name"] == "Worker"
 
 
 def test_self_delete_clears_session(client):
@@ -95,9 +101,9 @@ def test_self_delete_clears_session(client):
 
 
 def test_self_role_change_updates_session(client):
-    assert client.post("/users/change-role", json={"user_id": "admin", "role": "Guest"}).status_code == 200
+    assert client.post("/users/change-role", json={"user_id": "admin", "role": "Worker"}).status_code == 200
     with client.session_transaction() as session:
-        assert session["role"] == "Guest"
+        assert session["role"] == "Worker"
     assert client.get("/users").status_code == 403
 
 

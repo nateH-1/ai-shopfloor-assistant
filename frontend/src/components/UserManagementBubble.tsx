@@ -133,10 +133,10 @@ export default function UserManagementBubble() {
                 }}
                 className="min-w-0 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-wait disabled:opacity-50"
               >
-                {user.name !== "Guest" && user.name !== "Admin" && (
+                {user.name !== "Worker" && user.name !== "Admin" && (
                   <option value={user.name} disabled>{user.name}</option>
                 )}
-                <option value="Guest">Guest</option>
+                <option value="Worker">Worker</option>
                 <option value="Admin">Admin</option>
               </select>
               <button
