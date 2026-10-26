@@ -1,3 +1,19 @@
+export async function logout(): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch("/users/logout", {
+      method: "POST",
+      credentials: "same-origin",
+    });
+  } catch {
+    throw new Error("Unable to reach the server. Please try again.");
+  }
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new Error(data?.error || "Failed to log out. Please try again.");
+  }
+}
+
 export async function authenticate(
   action: "register" | "login",
   info: { email: string; password: string; role: string; full_name?: string },

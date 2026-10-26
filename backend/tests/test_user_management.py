@@ -99,3 +99,22 @@ def test_self_role_change_updates_session(client):
     with client.session_transaction() as session:
         assert session["role"] == "Guest"
     assert client.get("/users").status_code == 403
+
+
+def test_logout_clears_session_and_expires_cookie(client):
+    with client.session_transaction() as session:
+        session["verification_status"] = "VERIFIED"
+    response = client.post("/users/logout")
+    assert response.status_code == 204
+    assert "Max-Age=0" in response.headers["Set-Cookie"]
+    with client.session_transaction() as session:
+        assert dict(session) == {}
+    assert client.get("/users/verification-status").status_code == 401
+    assert client.get("/users").status_code == 403
+    assert client.post("/users/logout").status_code == 204
+
+
+def test_logout_requires_post(client):
+    assert client.get("/users/logout").status_code == 405
+    with client.session_transaction() as session:
+        assert session["user_id"] == "admin"

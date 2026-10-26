@@ -568,6 +568,13 @@ def login_user():
         return jsonify({"error": "Unable to log in."}), 500
 
 
+@app.route("/users/logout", methods=["POST"])
+def logout_user():
+    """Clear the current authentication session, including its cookie."""
+    session.clear()
+    return "", 204
+
+
 def _current_user_role():
     user_id = session.get("user_id")
     if not user_id:

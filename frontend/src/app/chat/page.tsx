@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import ChatPage from "@/components/ChatPage";
 import type { Message } from "@/lib/types";
 import { sendMessage } from "@/lib/chatApi";
+import WelcomePage from "@/components/WelcomePage";
 
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -98,16 +99,22 @@ export default function Chat() {
     }
   }, [messages]);
 
+  const hasMessages = messages.length > 0 || isLoading;
+
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       <Header showSettings />
 
-      <ChatPage
+      {hasMessages ? (
+        <ChatPage
           messages={messages}
           onSend={handleSend}
           onClarificationSelect={handleClarificationSelect}
           isLoading={isLoading}
-      />
-    </div>
+        />
+      ) : (
+        <WelcomePage onSend={handleSend} />
+      )}
+      </div>
   );
 }

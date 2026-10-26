@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Header from "@/components/Header"
 import UserManagementBubble from "@/components/UserManagementBubble";
 import DocumentBubble from "@/components/DocumentBubble";
+import AccountBubble from "@/components/AccountBubble";
 import { get_role_permissions } from "@/lib/settingsAPI";
 import { get_verification_status } from "@/lib/authApi";
 
@@ -59,12 +60,13 @@ export default function Settings() {
         <div className="flex flex-col h-screen overflow-hidden">
           <Header showChat />
           <main className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8 lg:px-8">
+          <AccountBubble />
           {error ? (
             <p role="alert" className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-red-700">{error}</p>
           ) : verificationStatus === null ? (
             <p role="status" className="text-center text-sm text-gray-600">Checking verification status...</p>
           ) : verificationStatus !== "VERIFIED" ? (
-            <p role="status" className="w-full rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-amber-800">Please wait for an admin to verify your account.</p>
+            <p role="status" className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-blue-800">Please wait for an admin to verify your account.</p>
           ) : !roleInfo ? (
             <p role="status" className="text-center text-sm text-gray-600">Loading permissions...</p>
           ) : null}
