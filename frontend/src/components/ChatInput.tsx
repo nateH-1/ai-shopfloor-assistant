@@ -228,7 +228,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
       { error ? (
         <p role="alert" className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-red-700">{error}</p>
       ) : verificationStatus != "VERIFIED" ? (
-        <p role="status" className="w-full rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-amber-800">Please wait for an admin to verify your account.</p>
+        <p role="status" className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-blue-800">Please wait for an admin to verify your account.</p>
       ) : (
         <>
           {/* Attachment icon */}
