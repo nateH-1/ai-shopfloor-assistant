@@ -7,6 +7,17 @@ export type Feedback = {
 };
 export type FeedbackInput = Pick<Feedback, "vote" | "reason" | "comment">;
 
+export async function rewriteFeedback(messageId: string): Promise<import("./types").ChatResponse> {
+  const response = await fetch(`/api/feedback/${encodeURIComponent(messageId)}`, {
+    method: "POST",
+    cache: "no-store",
+    signal: AbortSignal.timeout(120000),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error ?? "The answer could not be rewritten.");
+  return data;
+}
+
 export async function requestFeedback(
   messageId: string,
   method: "GET" | "PUT" | "DELETE" = "GET",

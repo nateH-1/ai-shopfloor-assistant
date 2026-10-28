@@ -162,6 +162,20 @@ def _format_sources(chunks: list) -> list:
 #  Routes
 # ═══════════════════════════════════════════════════════════════════════════════
 
+def _rewrite_feedback_answer(snapshot, feedback):
+    from feedback_rewrite import rewrite_answer
+
+    if collection is None:
+        ok, _ = _init_store()
+        if not ok:
+            raise RuntimeError("The assistant is not ready for rewriting.")
+    answer, chunks = rewrite_answer(snapshot, feedback, collection, llm, _get_keyword_index)
+    return {"reply": answer, "metadata": {"sources": _format_sources(chunks)}}
+
+
+app.extensions["feedback_rewriter"] = _rewrite_feedback_answer
+
+
 @app.route("/chat", methods=["POST"])
 def chat():
     """

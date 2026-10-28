@@ -1,5 +1,6 @@
 """Real local Chroma integration tests; no OpenAI calls or production data."""
 import importlib
+import json
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -166,3 +167,104 @@ def test_missing_owner_keeps_legacy_chat_compatible(system):
     response = client.post("/chat", json={"message": "How?"}).get_json()
     assert "message_id" not in response
     assert response["reply"] == "Use the SOP."
+
+
+@pytest.mark.parametrize("reason,comment", [
+    ("unclear", "Make it shorter."),
+    ("incomplete", "Give more detail supported by the document."),
+    ("unclear", "Use numbered steps."),
+    ("incorrect", "Check and correct the inspection interval."),
+    ("missing_sources", "Include citations."),
+])
+def test_rewrite_uses_selected_snapshot_and_latest_saved_feedback(system, reason, comment):
+    app, client, headers, mid, _ = system
+    seen = []
+    def rewrite(snapshot, feedback):
+        seen.append((snapshot, feedback))
+        return {"reply": "Revised answer.", "metadata": {"sources": []}}
+    app.extensions["feedback_rewriter"] = rewrite
+    # Later turns must not affect the selected older answer.
+    client.post("/chat", json={"message": "A different newer question"}, headers=headers)
+    for latest_comment in (comment, comment + " Please apply this to the selected answer."):
+        client.put(f"/api/feedback/{mid}", headers=headers, json={
+            "vote": "not_helpful", "reason": reason, "comment": latest_comment,
+        })
+        # Client-supplied facts and history cannot override server data.
+        response = client.post(f"/api/feedback/{mid}", headers=headers, json={
+            "question": "forged", "answer": "forged", "history": ["newer turn"],
+        })
+        assert response.status_code == 200
+        payload = response.get_json()
+        assert payload["reply"] == "Revised answer."
+        assert seen[-1][0]["question"] == "How?"
+        assert seen[-1][0]["answer"] == "Use the SOP."
+        assert seen[-1][1]["reason"] == reason
+        assert seen[-1][1]["comment"] == latest_comment
+        # Each rewritten answer can itself be rated and rewritten.
+        client.put(f'/api/feedback/{payload["message_id"]}', headers=headers,
+                   json={"vote": "not_helpful", "comment": "Shorter again"})
+        assert client.post(f'/api/feedback/{payload["message_id"]}', headers=headers).status_code == 200
+        assert seen[-1][0]["question"] == "How?"
+        assert seen[-1][0]["answer"] == "Revised answer."
+    original = app.extensions["feedback_store"].collection.get(ids=[mid], include=["documents"])
+    assert json.loads(original["documents"][0])["answer"] == "Use the SOP."
+
+
+def test_rewrite_requires_owned_saved_negative_feedback(system):
+    app, client, headers, mid, _ = system
+    def unexpected(*args):
+        pytest.fail("Unauthorized or unrated rewrite must not invoke the model")
+    app.extensions["feedback_rewriter"] = unexpected
+    url = f"/api/feedback/{mid}"
+    assert client.post(url).status_code == 401
+    assert client.post(url, headers=headers).status_code == 404
+    client.put(url, headers=headers, json={"vote": "helpful"})
+    assert client.post(url, headers=headers).status_code == 400
+    assert client.post(url, headers={"X-Feedback-Owner": str(uuid4())}).status_code == 404
+    client.delete(url, headers=headers)
+    assert client.post(url, headers=headers).status_code == 404
+
+
+def test_rewrite_failure_preserves_feedback(system):
+    app, client, headers, mid, _ = system
+    def fail(*args):
+        raise RuntimeError("private model failure")
+    app.extensions["feedback_rewriter"] = fail
+    url = f"/api/feedback/{mid}"
+    client.put(url, headers=headers, json={"vote": "not_helpful", "comment": "Shorter"})
+    response = client.post(url, headers=headers)
+    assert response.status_code == 503
+    assert "private model failure" not in response.get_data(as_text=True)
+    assert client.get(url, headers=headers).get_json()["feedback"]["comment"] == "Shorter"
+
+
+@pytest.mark.parametrize("comment", [
+    "Make it shorter.", "Give more detail.", "Use numbered steps.",
+    "Correct the inspection interval.", "Include citations.",
+])
+def test_saved_feedback_to_grounded_generation_workflow(system, monkeypatch, comment):
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+    from langchain_core.documents import Document
+    import feedback_rewrite
+
+    app, client, headers, mid, _ = system
+    chunk = Document(page_content="Inspect the guard daily.", metadata={"source": "sop.pdf"})
+    search = Mock(return_value=([chunk], True))
+    monkeypatch.setattr(feedback_rewrite, "_hybrid_search", search)
+    model = Mock()
+    expected = "1. Inspect daily." if comment == "Use numbered steps." else "Inspect daily."
+    model.invoke.return_value = SimpleNamespace(content=expected + "\nSOURCES_USED: 1")
+    def rewrite(snapshot, feedback):
+        reply, chunks = feedback_rewrite.rewrite_answer(snapshot, feedback, "docs", model, None)
+        return {"reply": reply, "metadata": {"sources": [c.metadata for c in chunks]}}
+    app.extensions["feedback_rewriter"] = rewrite
+    url = f"/api/feedback/{mid}"
+    client.put(url, headers=headers, json={"vote": "not_helpful", "reason": "unclear", "comment": comment})
+    response = client.post(url, headers=headers)
+    assert response.status_code == 200
+    assert response.get_json()["reply"] == expected
+    assert response.get_json()["metadata"]["sources"] == [{"source": "sop.pdf"}]
+    prompt = model.invoke.call_args.args[0]
+    assert comment in prompt and "Use the SOP." in prompt and "How?" in prompt
+    assert search.call_args.args[1] == "How?"

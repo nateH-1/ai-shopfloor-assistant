@@ -40,7 +40,7 @@ async function proxy(req: NextRequest, context: Context) {
       headers: { "Content-Type": "application/json", "X-Feedback-Owner": owner },
       body,
       cache: "no-store",
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(req.method === "POST" ? 120000 : 10000),
     });
     return NextResponse.json(await upstream.json(), {
       status: upstream.status, headers: { "Cache-Control": "no-store" },
@@ -53,3 +53,5 @@ async function proxy(req: NextRequest, context: Context) {
 export const GET = proxy;
 export const PUT = proxy;
 export const DELETE = proxy;
+// POST rewrites the selected server snapshot using its saved feedback.
+export const POST = proxy;
