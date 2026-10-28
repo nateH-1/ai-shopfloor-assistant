@@ -212,7 +212,7 @@ def _format_sources(chunks: list) -> list:
     return sources
 
 
-# ── Helper: creating database tables ─────────────────────────────────────────────────
+# ── Helper: creating users database tables ─────────────────────────────────────────────────
 def _create_roles_table():
     with database_connection() as conn:
         cursor = conn.cursor()
@@ -260,6 +260,7 @@ def _create_roles_table():
                 can_manage_users = excluded.can_manage_users
         """, roles)
 
+# ── Helper: fetch from database ─────────────────────────────────────────────────
 def _create_users_table():
     with database_connection() as conn:
         conn.execute("""
@@ -279,6 +280,21 @@ def _create_users_table():
                     ON UPDATE CASCADE
             )
         """)
+
+
+def _current_user_role():
+    user_id = session.get("user_id")
+    if not user_id:
+        return None
+    if session.get("role") == "Guest":
+        return "Guest"
+    with database_connection() as conn:
+        user_role = conn.execute(
+            "SELECT roles.name FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = ?",
+            (user_id,)
+        ).fetchone()
+    return user_role["name"] if user_role else None
+
 
 
 
@@ -364,10 +380,20 @@ def chat():
 def list_documents():
     """Return a list of all uploaded/ingested documents."""
     registry = _load_doc_registry()
-    docs = [
+    """docs = [
         {"filename": name, "chunks": info.get("chunks", 0), "uploaded_at": info.get("uploaded_at", "")}
         for name, info in registry.items()
-    ]
+    ]"""
+    docs = []
+    if _current_user_role() == "Guest":
+        for name, info in registry.items():
+            if info.get("guest_id", None) == session.get("user_id"):
+                docs.append({"filename": name, "chunks": info.get("chunks", 0), "uploaded_at": info.get("uploaded_at", "")})
+    else:
+        for name, info in registry.items():
+            if info.get("guest_id", None) is None:
+                docs.append({"filename": name, "chunks": info.get("chunks", 0), "uploaded_at": info.get("uploaded_at", "")})
+
     return jsonify({"documents": docs})
 
 
@@ -382,6 +408,19 @@ def upload_document():
     if not file.filename or ext not in ALLOWED_EXTENSIONS:
         allowed = ", ".join(sorted(ALLOWED_EXTENSIONS))
         return jsonify({"success": False, "message": f"Unsupported file type. Allowed: {allowed}"}), 400
+
+    # increment the filename if one already exists
+    registry = _load_doc_registry()
+    original = Path(secure_filename(Path(file.filename).name))
+    filename = original.name
+    count = 1
+
+    while filename in registry or (KNOWLEDGE_BASE_DIR / filename).exists():
+        filename = f"{original.stem}_{count}{original.suffix}"
+        count += 1
+
+    filepath = KNOWLEDGE_BASE_DIR / filename
+    file.save(filepath)
 
     filename = secure_filename(Path(file.filename).name)
     filepath = KNOWLEDGE_BASE_DIR / filename
@@ -400,9 +439,12 @@ def upload_document():
         return jsonify({"success": False, "message": msg}), 500
     _mark_keyword_index_stale()
 
+    # check if current user is a guest. If so, tag file with the guest ID so only they see it.
+    guest_id = session.get("user_id") if _current_user_role() == "Guest" else None
+
     # Update registry
     registry = _load_doc_registry()
-    registry[filename] = {"chunks": chunk_count, "uploaded_at": datetime.now(timezone.utc).isoformat()}
+    registry[filename] = {"chunks": chunk_count, "guest_id": guest_id, "uploaded_at": datetime.now(timezone.utc).isoformat()}
     _save_doc_registry(registry)
 
     # Clear sessions so they don't use stale context
@@ -459,11 +501,12 @@ def register_user():
     if role not in ["Worker", "Admin", "Guest"]:
         return jsonify({"error": "Valid role not in entry"}), 400
     if role == "Guest":
+        user_id = str(uuid.uuid4())
         session.clear()
-        session["user_id"] = "Guest"
+        session["user_id"] = user_id
         session["role"] = "Guest"
         session["verification_status"] = "VERIFIED"
-        return jsonify({"user_id": "Guest", "verification_status": "VERIFIED"})
+        return jsonify({"user_id": user_id, "verification_status": "VERIFIED"})
     if not isinstance(username, str) or not username.strip():
         return jsonify({"error": "Username must be a non-empty string."}), 400
     if not isinstance(password, str) or not password:
@@ -581,20 +624,6 @@ def logout_user():
     """Clear the current authentication session, including its cookie."""
     session.clear()
     return "", 204
-
-
-def _current_user_role():
-    user_id = session.get("user_id")
-    if not user_id:
-        return None
-    if user_id == "Guest":
-        return "Guest"
-    with database_connection() as conn:
-        user_role = conn.execute(
-            "SELECT roles.name FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = ?",
-            (user_id,)
-        ).fetchone()
-    return user_role["name"] if user_role else None
 
 
 @app.route("/roles/permissions", methods=["POST"])
@@ -724,7 +753,7 @@ def get_verification_status():
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "Please log in."}), 401
-    if user_id == "Guest":
+    if session.get("role") == "Guest":
         return jsonify({"verification_status": "VERIFIED"})
 
     with database_connection() as conn:
