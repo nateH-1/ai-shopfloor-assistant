@@ -35,7 +35,6 @@ from rag.config import (
     KNOWLEDGE_BASE_DIR,
     CHROMA_DB_DIR,
     DOCUMENTS_JSON,
-    MODEL_NAME,
     MAX_UPLOAD_MB,
     ALLOWED_EXTENSIONS,
     SESSION_TTL_SECONDS,
@@ -47,6 +46,7 @@ from rag.resources import (
     _create_collection,
     _create_guard_llm,
     _create_llm,
+    _ollama_settings,
     _ollama_status,
 )
 
@@ -81,7 +81,7 @@ app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 
 # Feedback is stored separately from the document collection.  It does not
 # alter retrieval, prompts, citations, or the RAG answer flow.
-register_feedback(app, CHROMA_DB_DIR, MODEL_NAME)
+register_feedback(app, CHROMA_DB_DIR, _ollama_settings()[0])
 
 # ── Global state ─────────────────────────────────────────────────────────────
 collection: chromadb.Collection | None = None
