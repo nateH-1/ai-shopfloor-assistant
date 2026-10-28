@@ -11,6 +11,7 @@ POST   /api/documents/upload         — Upload + ingest a document
 DELETE /api/documents/<filename>     — Delete a document + its vectors
 POST   /api/clear                    — Clear conversation history for a session
 GET    /api/health                   — Health check
+POST   /api/transcribe               — Local-only speech-to-text
 """
 
 import os
@@ -22,6 +23,7 @@ from pathlib import Path
 
 from flask import Flask, request, jsonify, g
 from feedback import register_feedback
+from local_stt import register_transcription
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -62,6 +64,7 @@ KNOWLEDGE_BASE_DIR.mkdir(exist_ok=True)
 app = Flask(__name__)
 CORS(app)
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
+register_transcription(app)
 
 # Feedback is stored separately from the document collection.  It does not
 # alter retrieval, prompts, citations, or the RAG answer flow.

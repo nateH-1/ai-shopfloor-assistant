@@ -61,7 +61,7 @@ winget install OpenJS.NodeJS.LTS
 `npm` must be on your `PATH`. The start script calls `npm run dev` (and `npm install` with `-InstallDeps`) and will fail silently if Node isn't found.
 
 ### OpenAI API key
-Create a `.env` file in the project root (see **Environment Setup** below). Without a valid key, chat and voice transcription will not work.
+Create a `.env` file in the project root (see **Environment Setup** below). Chat and document embeddings currently require a valid key. Local speech transcription does not.
 
 ---
 
@@ -75,6 +75,11 @@ You only need to do this once after cloning, or when dependencies change.
 ---
 
 ## Environment Setup
+
+Microphone transcription now runs locally with faster-whisper. Complete the
+[local speech setup](docs/LOCAL_SPEECH.md) before using the microphone. Speech
+recognition does not require an OpenAI key; chat and document embeddings still
+use their existing configuration.
 
 Create a `.env` file in the project root (one already exists as a template):
 

@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
+import { hasForeignOrigin } from "@/lib/server/feedbackIdentity";
 
-const OPENAI_TRANSCRIBE_URL = "https://api.openai.com/v1/audio/transcriptions";
-const OPENAI_TRANSCRIBE_MODEL = process.env.OPENAI_TRANSCRIBE_MODEL ?? "whisper-1";
-const OPENAI_TRANSCRIBE_LANGUAGE = "en";
-const MAX_AUDIO_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB — Whisper API hard limit
+const FLASK_URL = process.env.FLASK_URL ?? "http://127.0.0.1:5000";
+const MAX_AUDIO_SIZE_BYTES = 25 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
   try {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
+    if (hasForeignOrigin(req)) {
       return NextResponse.json(
-        { error: "OPENAI_API_KEY is not configured on the server." },
-        { status: 500 }
+        { error: "Cross-site transcription is not allowed." },
+        { status: 403 }
       );
+    }
+    if (Number(req.headers.get("content-length")) > MAX_AUDIO_SIZE_BYTES + 65536) {
+      return NextResponse.json({ error: "Audio file exceeds the 25 MB limit." }, { status: 413 });
     }
 
     const form = await req.formData();
@@ -37,26 +38,22 @@ export async function POST(req: NextRequest) {
     }
 
     const upstreamForm = new FormData();
-    upstreamForm.append("file", audio, audio.name || "recording.webm");
-    upstreamForm.append("model", OPENAI_TRANSCRIBE_MODEL);
-    upstreamForm.append("language", OPENAI_TRANSCRIBE_LANGUAGE);
-    upstreamForm.append("temperature", "0");
-    upstreamForm.append("prompt", "Transcribe spoken English only.");
+    upstreamForm.append("audio", audio, audio.name || "recording.webm");
 
-    const upstream = await fetch(OPENAI_TRANSCRIBE_URL, {
+    // Local Flask inference only: no API key or cloud fallback.
+    const upstream = await fetch(`${FLASK_URL}/api/transcribe`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
       body: upstreamForm,
+      cache: "no-store",
+      signal: AbortSignal.timeout(120000),
     });
 
     const data = await upstream.json().catch(() => ({}));
 
     if (!upstream.ok) {
       const errorMessage =
-        (data as { error?: { message?: string } })?.error?.message ||
-        "Whisper transcription request failed.";
+        (typeof data.error === "string" ? data.error : data.error?.message) ||
+        "Local transcription request failed.";
       return NextResponse.json({ error: errorMessage }, { status: upstream.status });
     }
 
@@ -68,12 +65,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({ text });
+    return NextResponse.json({ text }, { headers: { "Cache-Control": "no-store" } });
   } catch (err) {
     console.error("[/api/transcribe] error:", err);
     return NextResponse.json(
-      { error: "Failed to transcribe audio." },
-      { status: 500 }
+      { error: "The local speech service is unavailable or timed out. Check the backend and local speech model." },
+      { status: 502 }
     );
   }
 }

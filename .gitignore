@@ -18,6 +18,8 @@ env/
 backend/.venv-tests/
 # Generated live-test reports, document copies, and isolated test data
 /output/
+# Downloaded local model weights and model download cache
+/.models/
 
 # Environment
 .env
