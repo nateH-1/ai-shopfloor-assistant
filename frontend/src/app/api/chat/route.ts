@@ -15,26 +15,32 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { feedbackOwner, newFeedbackOwner, rememberFeedbackOwner, hasForeignOrigin } from "@/lib/server/feedbackIdentity";
 
 const FLASK_URL = process.env.FLASK_URL ?? "http://localhost:5000";
 
 export async function POST(req: NextRequest) {
+  // Feedback endpoints use this same browser identity to keep anonymous votes
+  // scoped to the browser that received the answer.
+  if (hasForeignOrigin(req)) {
+    return NextResponse.json({ error: "Cross-site chat requests are not allowed." }, { status: 403 });
+  }
+  const owner = feedbackOwner(req) ?? newFeedbackOwner();
   try {
     const body = await req.json();
 
     const upstream = await fetch(`${FLASK_URL}/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      // The header is server-to-server; browser JavaScript never receives it.
+      headers: { "Content-Type": "application/json", "X-Feedback-Owner": owner },
       body: JSON.stringify(body),
     });
 
     const data = await upstream.json();
 
-    if (!upstream.ok) {
-      return NextResponse.json(data, { status: upstream.status });
-    }
-
-    return NextResponse.json(data);
+    const response = NextResponse.json(data, { status: upstream.status });
+    rememberFeedbackOwner(req, response, owner);
+    return response;
   } catch (err) {
     console.error("[/api/chat] upstream error:", err);
     return NextResponse.json(
