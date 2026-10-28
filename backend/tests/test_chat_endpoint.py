@@ -332,6 +332,20 @@ class TestSessionManagement:
 
 class TestHealthEndpoint:
 
+    @pytest.fixture(autouse=True)
+    def ollama_ok(self):
+        # Health checks Ollama; never touch a real server in unit tests.
+        with patch("app._ollama_status", return_value=None):
+            yield
+
+    def test_not_ready_when_ollama_reports_a_problem(self, client):
+        app_module.collection = MagicMock(**{"count.return_value": 5})
+        with patch("app._ollama_status", return_value="Ollama is not reachable"), \
+             patch("app.os.getenv", side_effect=lambda k, *a: "sk-test" if k == "OPENAI_API_KEY" else os.environ.get(k)):
+            data = client.get("/api/health").get_json()
+        assert data["llm_error"] == "Ollama is not reachable"
+        assert data["ready"] is False
+
     def test_returns_200(self, client):
         res = client.get("/api/health")
         assert res.status_code == 200

@@ -14,7 +14,7 @@ import pytest
 
 import app as app_module
 from rag import resources
-from rag.config import CHROMA_DB_DIR, MODEL_NAME
+from rag.config import CHROMA_DB_DIR
 
 
 @pytest.fixture(autouse=True)
@@ -39,13 +39,6 @@ def test_collection_uses_existing_index_settings():
         name="documents", embedding_function=ef.return_value)
 
 
-def test_chat_model_settings():
-    with patch.object(resources, "ChatOpenAI") as chat:
-        resources._create_llm()
-        resources._create_guard_llm()
-    assert chat.call_args_list[0].kwargs == {"model_name": MODEL_NAME, "temperature": 0}
-    assert chat.call_args_list[1].kwargs == {"model_name": "gpt-4o-mini", "temperature": 0, "max_tokens": 3}
-
 
 def test_guard_client_created_once_and_reused():
     with patch("app._create_guard_llm", return_value=MagicMock()) as create:
@@ -67,29 +60,24 @@ def test_init_store_failure_is_reported_not_raised():
         assert app_module._init_store() == (False, "Failed to load vector store: disk locked")
 
 
-# ── Model provider switch (PR D) ──────────────────────────────────────────────
+# ── Local model (Ollama only) ─────────────────────────────────────────────────
 
-def test_ollama_provider_uses_local_model_with_large_context(monkeypatch):
-    monkeypatch.setenv("LLM_PROVIDER", "ollama")
-    monkeypatch.delenv("GUARD_LLM_PROVIDER", raising=False)
-    with patch("langchain_ollama.ChatOllama") as ollama, patch.object(resources, "ChatOpenAI") as openai:
+def test_models_use_local_ollama_with_large_context(monkeypatch):
+    monkeypatch.delenv("OLLAMA_MODEL", raising=False)
+    with patch.object(resources, "ChatOllama") as ollama:
         resources._create_llm()
         resources._create_guard_llm()
-    assert ollama.call_args_list[0].kwargs["num_ctx"] == resources.OLLAMA_NUM_CTX   # no silent truncation
-    assert ollama.call_args_list[1].kwargs["num_predict"] == 3                        # guard follows main
-    openai.assert_not_called()
+    main, guard = ollama.call_args_list[0].kwargs, ollama.call_args_list[1].kwargs
+    assert main["model"] == resources.DEFAULT_OLLAMA_MODEL
+    assert main["num_ctx"] == resources.OLLAMA_NUM_CTX      # no silent truncation
+    assert guard["num_predict"] == 3                         # guard only needs YES/NO
 
 
-def test_guard_provider_can_differ_from_main(monkeypatch):
-    monkeypatch.setenv("LLM_PROVIDER", "ollama")
-    monkeypatch.setenv("GUARD_LLM_PROVIDER", "openai")
-    assert (resources._llm_provider(), resources._llm_provider("guard")) == ("ollama", "openai")
-
-
-def test_unknown_provider_is_rejected(monkeypatch):
-    monkeypatch.setenv("LLM_PROVIDER", "olama")
-    with pytest.raises(ValueError):
-        resources._llm_provider()
+def test_ollama_model_can_be_overridden_in_env(monkeypatch):
+    monkeypatch.setenv("OLLAMA_MODEL", "llama3.2:3b")
+    with patch.object(resources, "ChatOllama") as ollama:
+        resources._create_llm()
+    assert ollama.call_args.kwargs["model"] == "llama3.2:3b"
 
 
 def test_ollama_status_reports_unreachable_server():

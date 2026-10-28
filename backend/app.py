@@ -27,7 +27,7 @@ from dotenv import load_dotenv
 
 import chromadb
 
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 
 from rag.config import (
     KNOWLEDGE_BASE_DIR,
@@ -43,7 +43,6 @@ from rag.resources import (
     _create_collection,
     _create_guard_llm,
     _create_llm,
-    _llm_provider,
     _ollama_status,
 )
 
@@ -64,14 +63,14 @@ app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 
 # ── Global state ─────────────────────────────────────────────────────────────
 collection: chromadb.Collection | None = None
-llm:        ChatOpenAI | None          = None
-_guard_llm: ChatOpenAI | None          = None   # cheap off-topic classifier
+llm:        ChatOllama | None          = None
+_guard_llm: ChatOllama | None          = None   # off-topic classifier
 conversation_sessions: dict            = {}      # session_id → { memory, last_accessed }
 _keyword_index:       dict | None      = None    # BM25 index over the collection's chunks
 _keyword_index_stale: bool             = True    # rebuild on next use
 
-def _get_guard_llm() -> ChatOpenAI:
-    """Return the cheap off-topic classifier client, creating it on first use."""
+def _get_guard_llm() -> ChatOllama:
+    """Return the off-topic classifier client, creating it on first use."""
     global _guard_llm
     if _guard_llm is None:
         _guard_llm = _create_guard_llm()
@@ -317,16 +316,11 @@ def health():
     """Health / readiness check."""
     has_api_key  = bool(os.getenv("OPENAI_API_KEY"))
     has_docs     = collection is not None and collection.count() > 0
-    try:
-        llm_provider = _llm_provider()
-        llm_error    = _ollama_status() if "ollama" in (llm_provider, _llm_provider("guard")) else None
-    except ValueError as exc:
-        llm_provider, llm_error = None, str(exc)
+    llm_error    = _ollama_status()
     return jsonify({
         "status":          "healthy",
         "has_documents":   has_docs,
         "has_api_key":     has_api_key,
-        "llm_provider":    llm_provider,
         "llm_error":       llm_error,
         "ready":           has_docs and has_api_key and collection is not None and llm_error is None,
         "active_sessions": len(conversation_sessions),
