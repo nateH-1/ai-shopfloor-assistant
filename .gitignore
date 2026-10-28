@@ -54,3 +54,10 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+
+# Claude Code
+CLAUDE.md
+
+#Codex
+AGENTS.md

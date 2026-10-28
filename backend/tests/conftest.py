@@ -11,6 +11,7 @@ from unittest.mock import MagicMock
 _MOCKED = [
     "langchain_openai",
     "langchain_openai.embeddings",
+    "langchain_ollama",
     "langchain_community",
     "langchain_community.vectorstores",
     "langchain_community.document_loaders",
@@ -36,9 +37,9 @@ from unittest.mock import MagicMock as _M
 
 sys.modules["langchain_openai"].OpenAIEmbeddings = _M
 sys.modules["langchain_openai"].ChatOpenAI = _M
+sys.modules["langchain_ollama"].ChatOllama = _M
 sys.modules["langchain_community.document_loaders"].PyPDFLoader = _M
 sys.modules["langchain.prompts"].PromptTemplate = _M
 sys.modules["langchain.memory"].ConversationBufferMemory = _M
 sys.modules["langchain_text_splitters"].RecursiveCharacterTextSplitter = _M
 sys.modules["chromadb.utils.embedding_functions"].OpenAIEmbeddingFunction = _M
-

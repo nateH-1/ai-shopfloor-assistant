@@ -29,13 +29,12 @@ from dotenv import load_dotenv
 
 import chromadb
 
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 
 from rag.config import (
     KNOWLEDGE_BASE_DIR,
     CHROMA_DB_DIR,
     DOCUMENTS_JSON,
-    MODEL_NAME,
     MAX_UPLOAD_MB,
     ALLOWED_EXTENSIONS,
     SESSION_TTL_SECONDS,
@@ -47,6 +46,8 @@ from rag.resources import (
     _create_collection,
     _create_guard_llm,
     _create_llm,
+    _ollama_settings,
+    _ollama_status,
 )
 
 from rag.ingestion import _ingest_file
@@ -80,18 +81,18 @@ app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 
 # Feedback is stored separately from the document collection.  It does not
 # alter retrieval, prompts, citations, or the RAG answer flow.
-register_feedback(app, CHROMA_DB_DIR, MODEL_NAME)
+register_feedback(app, CHROMA_DB_DIR, _ollama_settings()[0])
 
 # ── Global state ─────────────────────────────────────────────────────────────
 collection: chromadb.Collection | None = None
-llm:        ChatOpenAI | None          = None
-_guard_llm: ChatOpenAI | None          = None   # cheap off-topic classifier
+llm:        ChatOllama | None          = None
+_guard_llm: ChatOllama | None          = None   # off-topic classifier
 conversation_sessions: dict            = {}      # session_id → { memory, last_accessed }
 _keyword_index:       dict | None      = None    # BM25 index over the collection's chunks
-_keyword_index_stale: bool             = True    # rebuild before next use (documents changed)
+_keyword_index_stale: bool             = True    # rebuild on next use
 
-def _get_guard_llm() -> ChatOpenAI:
-    """Return the cheap off-topic classifier client, creating it on first use."""
+def _get_guard_llm() -> ChatOllama:
+    """Return the off-topic classifier client, creating it on first use."""
     global _guard_llm
     if _guard_llm is None:
         _guard_llm = _create_guard_llm()
@@ -347,6 +348,13 @@ def chat():
             "metadata":   metadata,
         })
 
+    except ConnectionError as exc:
+        traceback.print_exc()
+        return jsonify({
+            "reply":      "The local AI model isn't reachable right now. Please make sure Ollama is running and try again.",
+            "session_id": session_id,
+            "metadata":   {"sources": []},
+        }), 503
     except Exception as exc:
         traceback.print_exc()
         return jsonify({"error": str(exc)}), 500
@@ -737,11 +745,13 @@ def health():
     """Health / readiness check."""
     has_api_key  = bool(os.getenv("OPENAI_API_KEY"))
     has_docs     = collection is not None and collection.count() > 0
+    llm_error    = _ollama_status()
     return jsonify({
         "status":          "healthy",
         "has_documents":   has_docs,
         "has_api_key":     has_api_key,
-        "ready":           has_docs and has_api_key and collection is not None,
+        "llm_error":       llm_error,
+        "ready":           has_docs and has_api_key and collection is not None and llm_error is None,
         "active_sessions": len(conversation_sessions),
     })
 
