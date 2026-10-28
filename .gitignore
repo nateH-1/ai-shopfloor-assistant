@@ -14,7 +14,10 @@ env/
 # Test/cache artifacts
 .pytest_cache/
 .uv-cache/
+/.tmp-uv-cache/
 backend/.venv-tests/
+# Generated live-test reports, document copies, and isolated test data
+/output/
 
 # Environment
 .env
