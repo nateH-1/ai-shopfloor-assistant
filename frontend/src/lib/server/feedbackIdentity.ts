@@ -25,7 +25,27 @@ export function rememberFeedbackOwner(req: NextRequest, res: NextResponse, owner
   res.headers.set("Cache-Control", "no-store");
 }
 
+
+
+
+export function hasForeignOrigin(req: NextRequest): boolean {
+  const origin = req.headers.get("origin");
+
+  return (
+    origin !== null &&
+    origin !== req.nextUrl.origin &&
+    origin !== process.env.APP_ORIGIN
+  );
+}
+
+
+
+
+
+
+/*
 export function hasForeignOrigin(req: NextRequest): boolean {
   const origin = req.headers.get("origin");
   return origin !== null && origin !== req.nextUrl.origin;
 }
+*/

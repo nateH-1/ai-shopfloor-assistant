@@ -35,8 +35,12 @@ backend/chroma_db/
 backend/faiss_db/
 chroma_db/
 
+# Local user accounts and SQLite runtime files
+/backend/users_database/
+
 # Uploaded PDFs and document registry (user data, rebuilt locally)
 backend/knowledge_base/*.pdf
+backend/knowledge_base/documents.json
 knowledge_base/*.pdf
 knowledge_base/documents.json
 
@@ -58,3 +62,10 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+
+# Claude Code
+CLAUDE.md
+
+#Codex
+AGENTS.md

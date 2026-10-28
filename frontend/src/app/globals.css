@@ -126,3 +126,7 @@
 nextjs-portal {
   display: none !important;
 }
+
+#signup-password::-ms-reveal {
+  display: none;
+}

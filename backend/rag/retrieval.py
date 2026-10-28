@@ -29,13 +29,8 @@ def _similarity_search_with_score(collection, query: str, k: int = NUM_CHUNKS) -
             for t, m, d in zip(results["documents"][0], results["metadatas"][0], results["distances"][0])]
 
 
-# ── Hybrid search: vector first, BM25 keyword search as a fallback ───────────
-
 def _is_code_like_query(query: str) -> bool:
-    """True when the query contains an identifier such as 8mm-1.25, CO2, kg/cm2 or M10.
-
-    Adapted from the welding project's search service.
-    """
+    """True if the query contains a code like 8mm-1.25, CO2 or kg/cm2 (from the welding project)."""
     if re.search(r"[A-Za-z0-9]+[-./][A-Za-z0-9]+", query):
         return True
     if re.search(r"\b(?:[A-Za-z]+\d+|\d+[A-Za-z]+)\b", query):
@@ -45,11 +40,7 @@ def _is_code_like_query(query: str) -> bool:
 
 
 def _reciprocal_rank_fusion(ranked_lists: list[list[str]], rrf_k: int = RRF_K) -> list[str]:
-    """Merge ranked ID lists by position: each list adds 1 / (rrf_k + rank) to an ID's score.
-
-    Uses rank only, never raw scores, because vector distances and BM25 scores
-    are on unrelated scales. Ties keep first-seen order.
-    """
+    """Merge ranked ID lists by position only; vector and BM25 scores are on unrelated scales."""
     scores: dict = {}
     for ranked in ranked_lists:
         for rank, chunk_id in enumerate(ranked, 1):
@@ -59,18 +50,7 @@ def _reciprocal_rank_fusion(ranked_lists: list[list[str]], rrf_k: int = RRF_K) -
 
 def _hybrid_search(collection, query: str, get_keyword_index, k: int = NUM_CHUNKS,
                    where: dict = None) -> tuple[list[Document], bool]:
-    """Vector search, plus BM25 keyword results when the query looks like a code
-    or the best vector match is weak (distance >= KEYWORD_FALLBACK_DISTANCE).
-
-    Returns (chunks, enough_evidence). Evidence is NOT enough when the vector match
-    is weak AND the query uses an important word found in no chunk at all; then no
-    chunks are returned, so callers can say the documents don't cover it instead of
-    letting the model guess.
-
-    For a strong, non-code query the chunks are exactly what _similarity_search would
-    return. get_keyword_index is only called when keyword search or the evidence
-    check needs it. where={"source": ...} limits both searches to one file.
-    """
+    """Vector search plus BM25 fallback; returns (chunks, enough_evidence)."""
     n = min(k, collection.count())
     if n == 0:
         return [], False

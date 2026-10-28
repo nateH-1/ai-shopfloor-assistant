@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Cinzel } from "next/font/google";
 import "./globals.css";
+import AuthGuard from "@/components/AuthGuard";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -31,7 +32,7 @@ export default function RootLayout({
         className={`${inter.variable} ${cinzel.variable} antialiased`}
         style={{ fontFamily: "var(--font-inter), sans-serif" }}
       >
-        {children}
+        <AuthGuard>{children}</AuthGuard>
       </body>
     </html>
   );
