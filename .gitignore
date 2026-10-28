@@ -46,3 +46,9 @@ Thumbs.db
 *.swp
 *.swo
 
+
+# Claude Code
+CLAUDE.md
+
+#Codex
+AGENTS.md
