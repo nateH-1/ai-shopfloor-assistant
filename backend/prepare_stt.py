@@ -17,7 +17,7 @@ def main():
     try:
         from faster_whisper.utils import download_model
     except ImportError:
-        parser.exit(1, "Install dependencies first: python -m pip install -r backend/requirements-stt.txt\n")
+        parser.exit(1, "Install dependencies first: python -m pip install -r backend/requirements.txt\n")
     target = Path(args.output).expanduser().resolve()
     download_model(args.model, output_dir=str(target), cache_dir=str(ROOT / ".models/cache"))
     print(f"Local speech model ready: {target}")
