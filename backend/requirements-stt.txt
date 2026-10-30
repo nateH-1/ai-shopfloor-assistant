@@ -1,3 +1,0 @@
-# Install only the speech runtime, constrained by the application version pin.
--c requirements.txt
-faster-whisper

@@ -284,6 +284,11 @@ def _create_users_table():
         """)
 
 
+def _initialize_sqlite():
+    """Create account tables before requests. Repeating this keeps existing rows."""
+    _create_roles_table()
+    _create_users_table()
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  Routes
@@ -778,6 +783,7 @@ if __name__ == "__main__":
     print("\n" + "=" * 60)
     print("  Kuldeep RAG Chatbot  —  Flask Backend (ChromaDB)")
     print("=" * 60)
+    _initialize_sqlite()
     _init_store()   # best-effort on startup; 
     print("  Open: http://localhost:5000")
     print("=" * 60 + "\n")
