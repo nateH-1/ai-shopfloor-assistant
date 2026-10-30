@@ -1,12 +1,13 @@
+import { tabFetch } from "./tabSession";
+
 /**
  * chatApi.ts — thin client that talks to the Next.js /api/chat proxy.
  *
  * The proxy (src/app/api/chat/route.ts) forwards requests to the Flask
  * backend, keeping FLASK_URL server-side and avoiding CORS issues.
  *
- * To point directly at Flask from the browser (e.g. without the proxy),
- * set NEXT_PUBLIC_API_BASE_URL to the Flask origin and update the fetch
- * call to hit that URL directly.
+ * NEXT_PUBLIC_API_BASE_URL may specify a same-origin prefix. Authentication
+ * uses the Next.js proxies so the browser cookie stays on this app's origin.
  */
 
 import type { ChatRequest, ChatResponse, Message } from "./types";
@@ -33,7 +34,7 @@ export async function sendMessage(
     ...(sessionId ? { session_id: sessionId } : {}),
   };
 
-  const res = await fetch(`${API_BASE}/api/chat`, {
+  const res = await tabFetch(`${API_BASE}/api/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -63,7 +64,7 @@ export async function transcribeAudio(
   const formData = new FormData();
   formData.append("audio", audioBlob, filename);
 
-  const res = await fetch(`${API_BASE}/api/transcribe`, {
+  const res = await tabFetch(`${API_BASE}/api/transcribe`, {
     method: "POST",
     body: formData,
   });

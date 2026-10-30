@@ -75,6 +75,7 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true",
+    AUTH_SESSION_TTL_SECONDS=int(os.getenv("AUTH_SESSION_TTL_SECONDS", str(8 * 60 * 60))),
 )
 CORS(app)
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
@@ -282,18 +283,127 @@ def _create_users_table():
         """)
 
 
-def _current_user_role():
-    user_id = session.get("user_id")
-    if not user_id:
-        return None
-    if session.get("role") == "Guest":
-        return "Guest"
+def _create_tab_sessions_table():
     with database_connection() as conn:
-        user_role = conn.execute(
-            "SELECT roles.name FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = ?",
-            (user_id,)
+        # Guests have UUIDs but no account in users, so user_id is not a foreign key.
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS tab_sessions (
+                browser_session_id TEXT NOT NULL,
+                tab_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                is_guest INTEGER NOT NULL DEFAULT 0 CHECK (is_guest IN (0, 1)),
+                login_id TEXT NOT NULL UNIQUE,
+                expires_at REAL NOT NULL,
+                PRIMARY KEY (browser_session_id, tab_id)
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS tab_sessions_expiry ON tab_sessions(expires_at)")
+        conn.execute("CREATE INDEX IF NOT EXISTS tab_sessions_user ON tab_sessions(user_id)")
+
+
+def _request_tab_id():
+    value = request.headers.get("X-Tab-ID", "")
+    try:
+        parsed = uuid.UUID(value)
+    except (ValueError, AttributeError):
+        return None
+    return str(parsed) if str(parsed) == value.lower() else None
+
+
+def _current_user():
+    """Resolve this tab's login; cookie contents never grant an account role."""
+    if "tab_user" in g:
+        return g.tab_user
+    g.tab_user = None
+    browser_id = session.get("browser_session_id")
+    tab_id = _request_tab_id()
+    if not browser_id or not tab_id:
+        return None
+    with database_connection() as conn:
+        row = conn.execute("""
+            SELECT tab_sessions.user_id, tab_sessions.is_guest, tab_sessions.login_id,
+                   users.id AS account_id, users.verification_status, roles.name AS role
+            FROM tab_sessions
+            LEFT JOIN users ON users.id = tab_sessions.user_id
+            LEFT JOIN roles ON roles.id = users.role_id
+            WHERE browser_session_id = ? AND tab_id = ? AND expires_at > ?
+        """, (browser_id, tab_id, time.time())).fetchone()
+    if row is not None and (row["is_guest"] or row["account_id"] is not None):
+        g.tab_user = {
+            "user_id": row["user_id"],
+            "role": "Guest" if row["is_guest"] else row["role"],
+            "verification_status": "VERIFIED" if row["is_guest"] else row["verification_status"],
+            "login_id": row["login_id"],
+        }
+    return g.tab_user
+
+
+def _current_user_role():
+    user = _current_user()
+    return user["role"] if user else None
+
+
+def _current_user_id():
+    user = _current_user()
+    return user["user_id"] if user else None
+
+
+def _discard_login_memory(login_id):
+    prefix = f"tab:{login_id}:"
+    for key in list(conversation_sessions):
+        if key.startswith(prefix):
+            conversation_sessions.pop(key, None)
+
+
+def _start_tab_login(user_id, *, is_guest=False):
+    browser_id = session["browser_session_id"]
+    tab_id = _request_tab_id()
+    now = time.time()
+    with database_connection() as conn:
+        old = conn.execute(
+            "SELECT login_id FROM tab_sessions WHERE browser_session_id = ? AND tab_id = ?",
+            (browser_id, tab_id),
         ).fetchone()
-    return user_role["name"] if user_role else None
+        conn.execute("DELETE FROM tab_sessions WHERE expires_at <= ?", (now,))
+        conn.execute("""
+            INSERT INTO tab_sessions (browser_session_id, tab_id, user_id, is_guest, login_id, expires_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(browser_session_id, tab_id) DO UPDATE SET
+                user_id = excluded.user_id,
+                is_guest = excluded.is_guest,
+                login_id = excluded.login_id,
+                expires_at = excluded.expires_at
+        """, (browser_id, tab_id, user_id, int(is_guest), str(uuid.uuid4()),
+              now + app.config["AUTH_SESSION_TTL_SECONDS"]))
+    if old:
+        _discard_login_memory(old["login_id"])
+    g.pop("tab_user", None)
+
+
+def _conversation_key(session_id):
+    return f"tab:{_current_user()['login_id']}:{session_id}"
+
+
+@app.before_request
+def require_tab_authentication():
+    if request.method == "OPTIONS":
+        return None
+    if request.endpoint in {"register_user", "login_user", "logout_user"}:
+        if not _request_tab_id():
+            return jsonify({"error": "A valid X-Tab-ID header is required."}), 400
+        if request.endpoint != "logout_user" and not session.get("browser_session_id"):
+            return jsonify({"error": "Initialize the browser session before logging in."}), 401
+    if request.endpoint in {"chat", "list_documents", "upload_document", "delete_document", "clear_conversation"}:
+        if not _current_user():
+            return jsonify({"error": "Please log in."}), 401
+
+
+@app.after_request
+def prevent_auth_response_caching(response):
+    if (request.path.startswith("/users") or request.path.startswith("/roles/")
+            or request.path.startswith("/api/documents") or request.path in {"/chat", "/api/clear"}):
+        response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 
@@ -313,6 +423,7 @@ def chat():
         data       = request.get_json(silent=True) or {}
         message    = (data.get("message") or "").strip()
         session_id = data.get("session_id") or "default"
+        conversation_key = _conversation_key(session_id)
 
         if not message:
             return jsonify({"error": "Message cannot be empty"}), 400
@@ -341,13 +452,13 @@ def chat():
         # When a document-choice button resolves a prior question, preserve the
         # original question with the answer snapshot used by feedback storage.
         # Capture it before answer_question, which clears pending_clarification.
-        session_data = conversation_sessions.get(session_id, {})
+        session_data = conversation_sessions.get(conversation_key, {})
         g.feedback_question = (session_data.get("pending_clarification") or {}).get("original_question", message)
 
         result = answer_question(
             message,
             conversation_sessions,
-            session_id,
+            conversation_key,
             collection,
             llm,
             _get_guard_llm,
@@ -387,7 +498,7 @@ def list_documents():
     docs = []
     if _current_user_role() == "Guest":
         for name, info in registry.items():
-            if info.get("guest_id", None) == session.get("user_id"):
+            if info.get("guest_id", None) == _current_user_id():
                 docs.append({"filename": name, "chunks": info.get("chunks", 0), "uploaded_at": info.get("uploaded_at", "")})
     else:
         for name, info in registry.items():
@@ -422,10 +533,6 @@ def upload_document():
     filepath = KNOWLEDGE_BASE_DIR / filename
     file.save(filepath)
 
-    filename = secure_filename(Path(file.filename).name)
-    filepath = KNOWLEDGE_BASE_DIR / filename
-    file.save(filepath)
-
     # Ensure ChromaDB collection is initialised before ingestion
     if collection is None:
         ok, msg = _init_store()
@@ -440,7 +547,7 @@ def upload_document():
     _mark_keyword_index_stale()
 
     # check if current user is a guest. If so, tag file with the guest ID so only they see it.
-    guest_id = session.get("user_id") if _current_user_role() == "Guest" else None
+    guest_id = _current_user_id() if _current_user_role() == "Guest" else None
 
     # Update registry
     registry = _load_doc_registry()
@@ -485,8 +592,23 @@ def clear_conversation():
     """Clear conversation history for a session."""
     data       = request.get_json(silent=True) or {}
     session_id = data.get("session_id", "default")
-    conversation_sessions.pop(session_id, None)
+    conversation_sessions.pop(_conversation_key(session_id), None)
     return jsonify({"status": "success", "message": "Conversation cleared."})
+
+
+@app.route("/users/session", methods=["POST"])
+def initialize_browser_session():
+    """Create a stable browser credential; each tab authenticates separately."""
+    _create_roles_table()
+    _create_users_table()
+    _create_tab_sessions_table()
+    with database_connection() as conn:
+        conn.execute("DELETE FROM tab_sessions WHERE expires_at <= ?", (time.time(),))
+    if not session.get("browser_session_id"):
+        # Old account cookies are deliberately not migrated into a tab login.
+        session.clear()
+        session["browser_session_id"] = secrets.token_urlsafe(32)
+    return "", 204
 
 
 @app.route("/users/register", methods=["POST"])
@@ -502,10 +624,7 @@ def register_user():
         return jsonify({"error": "Valid role not in entry"}), 400
     if role == "Guest":
         user_id = str(uuid.uuid4())
-        session.clear()
-        session["user_id"] = user_id
-        session["role"] = "Guest"
-        session["verification_status"] = "VERIFIED"
+        _start_tab_login(user_id, is_guest=True)
         return jsonify({"user_id": user_id, "verification_status": "VERIFIED"})
     if not isinstance(username, str) or not username.strip():
         return jsonify({"error": "Username must be a non-empty string."}), 400
@@ -567,10 +686,7 @@ def register_user():
                 verification_status
             ))
 
-        session.clear()
-        session["user_id"] = user_id
-        session["role"] = role
-        session["verification_status"] = verification_status
+        _start_tab_login(user_id)
         return jsonify({"user_id": user_id, "verification_status": verification_status}), 201
     except sqlite3.IntegrityError as exc:
         if "users.username" in str(exc):
@@ -600,19 +716,10 @@ def login_user():
                 (given_username.strip(),)
             ).fetchone()
 
-            if user:
-                role_name = conn.execute(
-                    "SELECT name FROM roles WHERE id = ?",
-                    (user["role_id"],)
-                ).fetchone()
-
         if user is None or not password_hasher.verify(given_password, user["password_hash"]):
             return jsonify({"error": "Invalid username or password."}), 401
 
-        session.clear()
-        session["user_id"] = user["id"]
-        session["role"] = role_name["name"]
-        session["verification_status"] = user["verification_status"]
+        _start_tab_login(user["id"])
         return jsonify({"user_id": user["id"], "verification_status": user["verification_status"]}), 200
     except Exception:
         app.logger.exception("Login failed.")
@@ -621,8 +728,21 @@ def login_user():
 
 @app.route("/users/logout", methods=["POST"])
 def logout_user():
-    """Clear the current authentication session, including its cookie."""
-    session.clear()
+    """Revoke only this tab's login, leaving the shared browser cookie intact."""
+    if not session.get("browser_session_id"):
+        return "", 204
+    with database_connection() as conn:
+        row = conn.execute(
+            "SELECT login_id FROM tab_sessions WHERE browser_session_id = ? AND tab_id = ?",
+            (session["browser_session_id"], _request_tab_id()),
+        ).fetchone()
+        conn.execute(
+            "DELETE FROM tab_sessions WHERE browser_session_id = ? AND tab_id = ?",
+            (session["browser_session_id"], _request_tab_id()),
+        )
+    if row:
+        _discard_login_memory(row["login_id"])
+    g.pop("tab_user", None)
     return "", 204
 
 
@@ -711,8 +831,11 @@ def delete_user():
         if deleted.rowcount == 0:
             return jsonify({"error": "User not found"}), 404
 
-    if user_id == session.get("user_id"):
-        session.clear()
+        logins = conn.execute("SELECT login_id FROM tab_sessions WHERE user_id = ?", (user_id,)).fetchall()
+        conn.execute("DELETE FROM tab_sessions WHERE user_id = ?", (user_id,))
+    for login in logins:
+        _discard_login_memory(login["login_id"])
+    g.pop("tab_user", None)
     return jsonify({"message": "User successfully deleted!"}), 200
 
 @app.route("/users/change-role", methods=["POST"])
@@ -744,27 +867,14 @@ def change_role():
         )
         if updated.rowcount == 0:
             return jsonify({"error": "User not found"}), 404
-    if user_id == session.get("user_id"):
-        session["role"] = new_role
+    g.pop("tab_user", None)
     return jsonify({"message": "Role successfully changed!"}), 200
 
 @app.route("/users/verification-status", methods=["GET"])
 def get_verification_status():
-    user_id = session.get("user_id")
-    if not user_id:
+    user = _current_user()
+    if not user:
         return jsonify({"error": "Please log in."}), 401
-    if session.get("role") == "Guest":
-        return jsonify({"verification_status": "VERIFIED"})
-
-    with database_connection() as conn:
-        user = conn.execute(
-            "SELECT verification_status FROM users WHERE id = ?",
-            (user_id,)
-        ).fetchone()
-
-    if user is None:
-        return jsonify({"error": "User not found."}), 401
-
     return jsonify({"verification_status": user["verification_status"]})
 
 
@@ -787,6 +897,9 @@ def health():
 
 # ── Startup ──────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
+    _create_roles_table()
+    _create_users_table()
+    _create_tab_sessions_table()
     print("\n" + "=" * 60)
     print("  Kuldeep RAG Chatbot  —  Flask Backend (ChromaDB)")
     print("=" * 60)

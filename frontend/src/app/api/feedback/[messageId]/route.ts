@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { authHeaders } from "@/lib/server/authHeaders";
 import { feedbackOwner, hasForeignOrigin } from "@/lib/server/feedbackIdentity";
 
 const FLASK_URL = process.env.FLASK_URL ?? "http://127.0.0.1:5000";
@@ -37,7 +38,7 @@ async function proxy(req: NextRequest, context: Context) {
     // Only our HttpOnly cookie supplies ownership; ignore browser-supplied headers.
     const upstream = await fetch(`${FLASK_URL}/api/feedback/${messageId}`, {
       method: req.method,
-      headers: { "Content-Type": "application/json", "X-Feedback-Owner": owner },
+      headers: authHeaders(req, { "Content-Type": "application/json", "X-Feedback-Owner": owner }),
       body,
       cache: "no-store",
       signal: AbortSignal.timeout(10000),

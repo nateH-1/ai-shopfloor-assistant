@@ -9,6 +9,8 @@ Run: cd backend && pytest tests/test_chat_endpoint.py -v
 import io
 import os
 import pytest
+import time
+from uuid import uuid4
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 import app as app_module
@@ -19,9 +21,24 @@ from app import app
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
 @pytest.fixture
-def client():
+def client(tmp_path, monkeypatch):
     app.config["TESTING"] = True
+    monkeypatch.setattr(app_module, "USERS_DB_PATH", tmp_path / "users.db")
+    app_module._create_roles_table()
+    app_module._create_users_table()
+    app_module._create_tab_sessions_table()
+    tab_id, login_id = str(uuid4()), str(uuid4())
+    with app_module.database_connection() as conn:
+        conn.execute("""INSERT INTO users (id, username, full_name, password_hash, role_id, verification_status)
+                        VALUES ('test-user', 'test@example.com', 'Test User', 'unused',
+                                (SELECT id FROM roles WHERE name = 'Admin'), 'VERIFIED')""")
+        conn.execute("INSERT INTO tab_sessions VALUES (?, ?, ?, ?, ?, ?)",
+                     ("test-browser", tab_id, "test-user", 0, login_id, time.time() + 3600))
     with app.test_client() as c:
+        c.environ_base["HTTP_X_TAB_ID"] = tab_id
+        c.conversation_key = lambda value: f"tab:{login_id}:{value}"
+        with c.session_transaction() as session:
+            session["browser_session_id"] = "test-browser"
         yield c
 
 
@@ -174,7 +191,7 @@ class TestOffTopicGuard:
 
     def test_guard_skipped_while_clarification_pending(self, client):
         """A reply to a document-choice prompt must never be classified as off-topic."""
-        app_module.conversation_sessions["sess-3"] = {
+        app_module.conversation_sessions[client.conversation_key("sess-3")] = {
             "pending_clarification": {
                 "original_question": "what is the torque spec",
                 "options": [
@@ -316,7 +333,7 @@ class TestSessionManagement:
     def test_two_sessions_get_independent_chains(self, client):
         """Two different session IDs must not share memory."""
         def pick_response(question, session, collection, llm, get_keyword_index):
-            is_a = session is app_module.conversation_sessions.get("session-a")
+            is_a = session is app_module.conversation_sessions.get(client.conversation_key("session-a"))
             return _mock_chat_response("Answer for A") if is_a else _mock_chat_response("Answer for B")
 
         with patch("rag.pipeline._is_off_topic", return_value=False), \
@@ -515,7 +532,7 @@ class TestClarificationResolution:
         assert app_module.conversation_sessions["sess-1"]["pending_clarification"] is None
 
     def test_chat_does_not_reask_after_clarification_selection(self, client):
-        app_module.conversation_sessions["sess-2"] = {
+        app_module.conversation_sessions[client.conversation_key("sess-2")] = {
             "pending_clarification": {
                 "original_question": "what are all the cs project class assignments and their grade percentages",
                 "options": [
@@ -542,16 +559,16 @@ class TestClarificationResolution:
 class TestClearConversationEndpoint:
 
     def test_clears_named_session(self, client):
-        app_module.conversation_sessions["test-session"] = {"memory": MagicMock()}
+        app_module.conversation_sessions[client.conversation_key("test-session")] = {"memory": MagicMock()}
         res = client.post("/api/clear", json={"session_id": "test-session"})
         assert res.status_code == 200
-        assert "test-session" not in app_module.conversation_sessions
+        assert client.conversation_key("test-session") not in app_module.conversation_sessions
 
     def test_missing_session_id_clears_default(self, client):
-        app_module.conversation_sessions["default"] = {"memory": MagicMock()}
+        app_module.conversation_sessions[client.conversation_key("default")] = {"memory": MagicMock()}
         res = client.post("/api/clear", json={})
         assert res.status_code == 200
-        assert "default" not in app_module.conversation_sessions
+        assert client.conversation_key("default") not in app_module.conversation_sessions
 
     def test_nonexistent_session_returns_success(self, client):
         """Clearing a session that doesn't exist must not raise an error."""

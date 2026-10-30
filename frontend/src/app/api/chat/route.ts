@@ -15,6 +15,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { authHeaders } from "@/lib/server/authHeaders";
 import { feedbackOwner, newFeedbackOwner, rememberFeedbackOwner, hasForeignOrigin } from "@/lib/server/feedbackIdentity";
 
 const FLASK_URL = process.env.FLASK_URL ?? "http://localhost:5000";
@@ -32,8 +33,9 @@ export async function POST(req: NextRequest) {
     const upstream = await fetch(`${FLASK_URL}/chat`, {
       method: "POST",
       // The header is server-to-server; browser JavaScript never receives it.
-      headers: { "Content-Type": "application/json", "X-Feedback-Owner": owner },
+      headers: authHeaders(req, { "Content-Type": "application/json", "X-Feedback-Owner": owner }),
       body: JSON.stringify(body),
+      cache: "no-store",
     });
 
     const data = await upstream.json();

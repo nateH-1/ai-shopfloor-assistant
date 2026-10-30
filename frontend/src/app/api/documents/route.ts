@@ -3,15 +3,21 @@
  * Proxies to Flask GET /api/documents
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { authHeaders } from "@/lib/server/authHeaders";
 
 const FLASK_URL = process.env.FLASK_URL ?? "http://localhost:5000";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const upstream = await fetch(`${FLASK_URL}/api/documents`);
+    const upstream = await fetch(`${FLASK_URL}/api/documents`, {
+      headers: authHeaders(req),
+      cache: "no-store",
+    });
     const data = await upstream.json();
-    return NextResponse.json(data, { status: upstream.status });
+    return NextResponse.json(data, {
+      status: upstream.status, headers: { "Cache-Control": "no-store" },
+    });
   } catch (err) {
     console.error("[/api/documents] upstream error:", err);
     return NextResponse.json(

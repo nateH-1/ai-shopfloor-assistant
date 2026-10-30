@@ -31,6 +31,7 @@ From `frontend/`:
 
 ```shell
 npm ci
+npm test
 npx tsc --noEmit
 npm run build
 ```
@@ -75,6 +76,9 @@ You only need to do this once after cloning, or when dependencies change.
 ---
 
 ## Environment Setup
+
+See [tab-specific authentication](docs/AUTHENTICATION.md) for independent tab
+logins, session expiration, and cookie configuration.
 
 Create a `.env` file in the project root (one already exists as a template):
 

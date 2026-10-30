@@ -1,4 +1,6 @@
 import pytest
+import time
+from uuid import uuid4
 
 import app as app_module
 
@@ -9,6 +11,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setitem(app_module.app.config, "TESTING", True)
     app_module._create_roles_table()
     app_module._create_users_table()
+    app_module._create_tab_sessions_table()
     with app_module.database_connection() as conn:
         for user_id, role in [("admin", "Admin"), ("target", "Worker")]:
             conn.execute("""
@@ -16,9 +19,14 @@ def client(tmp_path, monkeypatch):
                 VALUES (?, ?, ?, 'unused-test-hash', (SELECT id FROM roles WHERE name = ?), 'VERIFIED')
             """, (user_id, f"{user_id}@example.com", user_id, role))
     with app_module.app.test_client() as client:
+        tab_id = str(uuid4())
+        browser_id = "test-browser"
+        client.environ_base["HTTP_X_TAB_ID"] = tab_id
         with client.session_transaction() as session:
-            session["user_id"] = "admin"
-            session["role"] = "Admin"
+            session["browser_session_id"] = browser_id
+        with app_module.database_connection() as conn:
+            conn.execute("INSERT INTO tab_sessions VALUES (?, ?, ?, ?, ?, ?)",
+                         (browser_id, tab_id, "admin", 0, str(uuid4()), time.time() + 3600))
         yield client
 
 
@@ -94,27 +102,28 @@ def test_old_admin_session_loses_access_after_account_change(client, deleted):
         assert permissions.get_json()["name"] == "Worker"
 
 
-def test_self_delete_clears_session(client):
+def test_self_delete_revokes_login_and_preserves_browser_cookie(client):
     assert client.delete("/users/delete", json={"user_id": "admin"}).status_code == 200
     with client.session_transaction() as session:
         assert "user_id" not in session
+        assert session["browser_session_id"] == "test-browser"
+    assert client.get("/users/verification-status").status_code == 401
+    with app_module.database_connection() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM tab_sessions WHERE user_id = 'admin'").fetchone()[0] == 0
 
 
-def test_self_role_change_updates_session(client):
+def test_self_role_change_is_reflected_in_next_request(client):
     assert client.post("/users/change-role", json={"user_id": "admin", "role": "Worker"}).status_code == 200
-    with client.session_transaction() as session:
-        assert session["role"] == "Worker"
+    assert client.post("/roles/permissions").get_json()["name"] == "Worker"
     assert client.get("/users").status_code == 403
 
 
-def test_logout_clears_session_and_expires_cookie(client):
-    with client.session_transaction() as session:
-        session["verification_status"] = "VERIFIED"
+def test_logout_revokes_tab_login_without_expiring_cookie(client):
     response = client.post("/users/logout")
     assert response.status_code == 204
-    assert "Max-Age=0" in response.headers["Set-Cookie"]
+    assert "Set-Cookie" not in response.headers
     with client.session_transaction() as session:
-        assert dict(session) == {}
+        assert dict(session) == {"browser_session_id": "test-browser"}
     assert client.get("/users/verification-status").status_code == 401
     assert client.get("/users").status_code == 403
     assert client.post("/users/logout").status_code == 204
@@ -122,5 +131,4 @@ def test_logout_clears_session_and_expires_cookie(client):
 
 def test_logout_requires_post(client):
     assert client.get("/users/logout").status_code == 405
-    with client.session_transaction() as session:
-        assert session["user_id"] == "admin"
+    assert client.post("/roles/permissions").get_json()["name"] == "Admin"

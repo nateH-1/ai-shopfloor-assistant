@@ -1,3 +1,5 @@
+import { tabFetch } from "./tabSession";
+
 export type Vote = "helpful" | "not_helpful";
 export type Feedback = {
   vote: Vote;
@@ -14,7 +16,7 @@ export async function requestFeedback(
   signal?: AbortSignal,
 ): Promise<Feedback | null> {
   // All browser feedback calls go through Next.js, not directly to Flask.
-  const response = await fetch(`/api/feedback/${encodeURIComponent(messageId)}`, {
+  const response = await tabFetch(`/api/feedback/${encodeURIComponent(messageId)}`, {
     method,
     headers: { "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,

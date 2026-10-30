@@ -1,11 +1,14 @@
+import { tabFetch, TabSessionError } from "./tabSession";
+
 export async function logout(): Promise<void> {
   let response: Response;
   try {
-    response = await fetch("/users/logout", {
+    response = await tabFetch("/users/logout", {
       method: "POST",
       credentials: "same-origin",
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof TabSessionError) throw error;
     throw new Error("Unable to reach the server. Please try again.");
   }
   if (!response.ok) {
@@ -20,7 +23,7 @@ export async function authenticate(
 ) {
   let response: Response;
   try {
-    response = await fetch(`/users/${action}`, {
+    response = await tabFetch(`/users/${action}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "same-origin",
@@ -30,8 +33,9 @@ export async function authenticate(
         role: info.role,
         ...(action === "register" ? { full_name: info.full_name?.trim() } : {}),
       }),
-    });
-  } catch {
+    }, { refreshBrowserSession: true });
+  } catch (error) {
+    if (error instanceof TabSessionError) throw error;
     throw new Error("Unable to reach the server. Please try again.");
   }
   const data = await response.json().catch(() => null);
@@ -53,13 +57,14 @@ export async function get_verification_status(): Promise<{
 }> {
   let response: Response;
   try {
-    response = await fetch("/users/verification-status", {
+    response = await tabFetch("/users/verification-status", {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       credentials: "same-origin",
       cache: "no-store",
       });
-  } catch {
+  } catch (error) {
+    if (error instanceof TabSessionError) throw error;
     throw new Error("Unable to reach the backend server. Please try again.");
   }
   const data = await response.json().catch(() => null);

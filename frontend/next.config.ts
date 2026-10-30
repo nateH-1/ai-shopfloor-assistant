@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     const backend = (process.env.FLASK_URL ?? "http://localhost:5000").replace(/\/$/, "");
     return [
+      { source: "/users/session", destination: `${backend}/users/session` },
       { source: "/users/register", destination: `${backend}/users/register` },
       { source: "/users/login", destination: `${backend}/users/login` },
       { source: "/users/logout", destination: `${backend}/users/logout` },
