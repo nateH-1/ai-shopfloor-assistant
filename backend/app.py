@@ -11,6 +11,7 @@ POST   /api/documents/upload         — Upload + ingest a document
 DELETE /api/documents/<filename>     — Delete a document + its vectors
 POST   /api/clear                    — Clear conversation history for a session
 GET    /api/health                   — Health check
+POST   /api/transcribe               — Local-only speech-to-text
 """
 
 import os
@@ -23,6 +24,7 @@ from pathlib import Path
 
 from flask import Flask, request, jsonify, g, session
 from feedback import register_feedback
+from local_stt import register_transcription
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -78,6 +80,7 @@ app.config.update(
 )
 CORS(app)
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
+register_transcription(app)
 
 # Feedback is stored separately from the document collection.  It does not
 # alter retrieval, prompts, citations, or the RAG answer flow.
@@ -281,10 +284,29 @@ def _create_users_table():
         """)
 
 
+def _initialize_sqlite():
+    """Create account tables before requests. Repeating this keeps existing rows."""
+    _create_roles_table()
+    _create_users_table()
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  Routes
 # ═══════════════════════════════════════════════════════════════════════════════
+
+def _rewrite_feedback_answer(snapshot, feedback):
+    from feedback_rewrite import rewrite_answer
+
+    if collection is None:
+        ok, _ = _init_store()
+        if not ok:
+            raise RuntimeError("The assistant is not ready for rewriting.")
+    answer, chunks = rewrite_answer(snapshot, feedback, collection, llm, _get_keyword_index)
+    return {"reply": answer, "metadata": {"sources": _format_sources(chunks)}}
+
+
+app.extensions["feedback_rewriter"] = _rewrite_feedback_answer
+
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -761,6 +783,7 @@ if __name__ == "__main__":
     print("\n" + "=" * 60)
     print("  Kuldeep RAG Chatbot  —  Flask Backend (ChromaDB)")
     print("=" * 60)
+    _initialize_sqlite()
     _init_store()   # best-effort on startup; 
     print("  Open: http://localhost:5000")
     print("=" * 60 + "\n")

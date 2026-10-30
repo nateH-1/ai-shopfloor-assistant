@@ -14,7 +14,12 @@ env/
 # Test/cache artifacts
 .pytest_cache/
 .uv-cache/
+/.tmp-uv-cache/
 backend/.venv-tests/
+# Generated live-test reports, document copies, and isolated test data
+/output/
+# Downloaded local model weights and model download cache
+/.models/
 
 # Environment
 .env
@@ -29,6 +34,9 @@ backend/.venv-tests/
 backend/chroma_db/
 backend/faiss_db/
 chroma_db/
+
+# Local user accounts and SQLite runtime files
+/backend/users_database/
 
 # Uploaded PDFs and document registry (user data, rebuilt locally)
 backend/knowledge_base/*.pdf

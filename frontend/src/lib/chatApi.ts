@@ -54,7 +54,7 @@ export async function sendMessage(
 }
 
 /**
- * Send a recorded audio blob to the server-side Whisper proxy and get text back.
+ * Send recorded audio to the local speech-to-text proxy and get text back.
  */
 export async function transcribeAudio(
   audioBlob: Blob,
@@ -66,6 +66,7 @@ export async function transcribeAudio(
   const res = await fetch(`${API_BASE}/api/transcribe`, {
     method: "POST",
     body: formData,
+    signal: AbortSignal.timeout(125000),
   });
 
   if (!res.ok) {
