@@ -15,11 +15,11 @@ retrieval retain their existing configuration. The whole chatbot is not yet offl
 From the repository root, with Python 3.10+ and the project's virtual environment:
 
 ```powershell
-.\backend\venv\Scripts\python.exe -m pip install -r backend/requirements-stt.txt
+.\backend\venv\Scripts\python.exe -m pip install -r backend/requirements.txt
 .\backend\venv\Scripts\python.exe backend/prepare_stt.py
 ```
 
-The complete backend requirements also include the speech dependency. The setup
+The backend requirements include faster-whisper==1.2.1. The prepare_stt.py
 command downloads the `base.en` model into `.models/whisper-base.en`, ignored by
 Git. Internet is needed to download dependencies/model files once; transcription
 loads local files only (`local_files_only=True`). Copy that complete model folder
