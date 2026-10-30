@@ -35,7 +35,7 @@ class LocalSpeech:
             try:
                 from faster_whisper import WhisperModel
             except ImportError as exc:
-                raise SpeechSetupError("Install backend/requirements-stt.txt to enable local speech-to-text.") from exc
+                raise SpeechSetupError("Install backend/requirements.txt to enable local speech-to-text.") from exc
             self._model = WhisperModel(
                 str(self.model_path), device=self.device, compute_type=self.compute_type,
                 local_files_only=True,
