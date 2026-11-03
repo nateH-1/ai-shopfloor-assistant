@@ -26,6 +26,10 @@ STYLE_REASON_GUIDANCE = {
 }
 
 
+class RewriteFeedbackRequired(ValueError):
+    pass
+
+
 def canonical_uuid(value):
     """Accept only canonical UUIDs, not arbitrary paths or query expressions."""
     if not isinstance(value, str):
@@ -230,6 +234,18 @@ class FeedbackStore:
             raise LookupError("Answer not found.")
         return result["metadatas"][0]
 
+    def rewrite_input(self, message_id, owner):
+        """Read the selected immutable answer and its current saved feedback."""
+        with self._lock:
+            self.cleanup_expired()
+            metadata = self._owned_metadata(message_id, owner)
+            if metadata.get("vote") != "not_helpful":
+                raise RewriteFeedbackRequired("Save not-helpful feedback before rewriting this answer.")
+            result = self.collection.get(
+                ids=[message_id], where={"owner": owner_hash(owner)}, include=["documents"],
+            )
+            return json.loads(result["documents"][0]), self.public_feedback(metadata)
+
     def remove(self, message_id, owner):
         with self._lock:
             self.cleanup_expired()
@@ -276,7 +292,7 @@ def register_feedback(app, database_path, model):
         response.headers["Cache-Control"] = "no-store"
         return response
 
-    @bp.route("/api/feedback/<message_id>", methods=["GET", "PUT", "DELETE"])
+    @bp.route("/api/feedback/<message_id>", methods=["GET", "PUT", "DELETE", "POST"])
     def answer_feedback(message_id):
         owner = canonical_uuid(request.headers.get("X-Feedback-Owner"))
         if not owner:
@@ -288,7 +304,12 @@ def register_feedback(app, database_path, model):
 
         store = current_app.extensions["feedback_store"]
         try:
-            if request.method == "GET":
+            if request.method == "POST":
+                snapshot, feedback = store.rewrite_input(message_id, owner)
+                payload = current_app.extensions["feedback_rewriter"](snapshot, feedback)
+                payload["message_id"] = store.prepare_answer(owner, snapshot["question"], payload, model)
+                response = jsonify(payload)
+            elif request.method == "GET":
                 response = jsonify(feedback=store.get(message_id, owner))
             elif request.method == "DELETE":
                 store.remove(message_id, owner)
@@ -313,6 +334,8 @@ def register_feedback(app, database_path, model):
                 ))
             response.headers["Cache-Control"] = "no-store"
             return response
+        except RewriteFeedbackRequired as exc:
+            return jsonify(error=str(exc)), 400
         except LookupError:
             # Do not reveal whether the answer belongs to a different browser.
             return jsonify(error="Answer not found."), 404

@@ -8,8 +8,9 @@ Supabase account, additional database service, or additional dependency is neede
 
 Start the backend and frontend as described in the main README. Ask a new
 question. Use the feedback buttons below a completed answer. A Not helpful vote
-is saved immediately; selecting a reason or writing a comment is optional.
-Click Save details to save those details. Remove feedback withdraws the vote
+can include an optional reason or comment. Click Save feedback to save it, or
+Save changes to update it. Rewrite now uses saved details; Save and rewrite saves
+edited details first. Remove feedback withdraws the vote
 and erases its reason/comment.
 
 Existing answers from before this feature have no server answer ID and cannot
@@ -32,10 +33,14 @@ no longer be editable from that browser.
 - Each answer has one rating. PUT updates rating fields in that existing record;
   repeated clicks and retries cannot insert duplicate votes.
 - Chroma stores metadata and JSON with an explicit constant vector and no
-  embedding function. Feedback is never embedded or sent to OpenAI.
+  embedding function. Feedback is never embedded. Saving feedback makes no model
+  call; explicitly requesting a rewrite sends the selected feedback to the
+  existing answer model.
 - Feedback text is limited to 2,000 characters and reasons/votes use allowlists.
   Votes cannot replace the stored answer, sources, or ownership.
-- No feedback data is added to retrieval, prompts, or model training.
+- Normal chat never adds saved feedback to retrieval, prompts, or model training.
+  Explicit rewrites send only the selected answer's saved reason/comment to the
+  answer model, alongside its original question and answer. Feedback is not evidence.
 - DELETE removes the saved feedback record.
 - Saved feedback is automatically deleted after 7 days.
 
@@ -55,6 +60,10 @@ Backend: same path. Internal header: X-Feedback-Owner (UUID browser credential).
 - GET: returns {feedback: null} or the current vote, reason, comment, updated_at.
 - PUT: JSON {vote: "helpful" | "not_helpful", reason?: string, comment?: string}.
 - DELETE: returns {feedback: null} after withdrawing the rating.
+- POST: rewrite this answer using its current saved Not helpful feedback. The
+  server loads the owned original question/answer snapshot by ID; client-supplied
+  answer text and conversation history are not used. Returns a chat-shaped reply
+  with sources and a new rateable message_id. No conversation memory is changed.
 - 400 invalid input, 401 missing browser identity, 404 absent or other-browser
   answer, 413 oversized body, 503 local database failure (502 for proxy failures).
 
@@ -100,6 +109,19 @@ cd frontend
 
 Integration tests cover persistence, answer integrity, changes, repeat/concurrent
 votes, ownership isolation, validation, withdrawal, and database failure handling.
+Run the feedback rewrite tests with the integration tests (separately from the
+mocked backend suite):
+
+```powershell
+.\backend\venv\Scripts\python.exe -m pytest tests/test_feedback_integration.py tests/test_feedback_rewrite.py -q -p no:langsmith
+```
+
+Rewrites reuse the existing hybrid retrieval, QA grounding prompt, and citation
+parser. Retrieval uses the stored original question, while revision instructions
+go directly to generation without condensation. Tests cover older answers,
+successive comments, rating rewritten answers, grounding boundaries, and feedback
+delivery for brevity, detail, numbered steps, corrections, and citations. Controlled
+model tests verify the contract, not real-model compliance or factual accuracy.
 The store's lock covers one Flask process; this deployment is single-process.
 Before scaling to multiple workers or hosts, revisit concurrency and use a local
 Chroma server or another supported production deployment.

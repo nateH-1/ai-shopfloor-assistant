@@ -68,7 +68,7 @@ if ([string]::IsNullOrWhiteSpace($env:FLASK_URL)) {
 }
 
 if ([string]::IsNullOrWhiteSpace($env:OPENAI_API_KEY)) {
-    Write-Warning "OPENAI_API_KEY is not set. Voice transcription and RAG calls may fail."
+    Write-Warning "OPENAI_API_KEY is not set. Chat and document embeddings may fail. Local speech transcription does not require this key."
 }
 
 $backendInstallCmd = ""
