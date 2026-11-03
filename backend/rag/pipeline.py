@@ -29,6 +29,7 @@ def answer_question(
     get_guard_llm,
     get_num_docs,
     get_keyword_index,
+    guest_id: str = "",
 ) -> dict:
     """
     Run one chat turn: off-topic guard → condense follow-up → scope detection →
@@ -68,6 +69,7 @@ def answer_question(
         condensed_for_scope,
         sessions.get(session_id, {}),
         collection,
+        guest_id=guest_id,
     )
 
     if scope == "ambiguous":
@@ -90,12 +92,15 @@ def answer_question(
             collection,
             llm,
             get_keyword_index,
+            guest_id=guest_id,
         )
         return {"reply": answer, "chunks": used_chunks, "clarification": None}
 
     if scope == "resolved_single":
         filename, original_q = scope_data
-        answer, used_chunks = _answer_single_doc(original_q, filename, collection, llm, get_keyword_index)
+        answer, used_chunks = _answer_single_doc(
+            original_q, filename, collection, llm, get_keyword_index, guest_id=guest_id,
+        )
         return {"reply": answer, "chunks": used_chunks, "clarification": None}
 
     # ── Default: manual conversational RAG pipeline ─────────────────────────
@@ -105,11 +110,13 @@ def answer_question(
         collection,
         llm,
         get_keyword_index,
+        guest_id=guest_id,
     )
     return {"reply": answer, "chunks": source_docs, "clarification": None}
 
 
-def _answer_single_doc(question: str, filename: str, collection, llm, get_keyword_index) -> tuple[str, list[Document]]:
+def _answer_single_doc(question: str, filename: str, collection, llm, get_keyword_index,
+                       guest_id: str = "") -> tuple[str, list[Document]]:
     """Retrieve chunks from a specific file using ChromaDB metadata filter."""
     doc_chunks, enough_evidence = _hybrid_search(
         collection,
@@ -117,6 +124,7 @@ def _answer_single_doc(question: str, filename: str, collection, llm, get_keywor
         get_keyword_index,
         k=NUM_CHUNKS,
         where={"source": str(KNOWLEDGE_BASE_DIR / filename)},
+        guest_id=guest_id,
     )
 
     if not doc_chunks or not enough_evidence:
@@ -128,7 +136,8 @@ def _answer_single_doc(question: str, filename: str, collection, llm, get_keywor
     return answer, used_chunks
 
 
-def _answer_multi_doc(question: str, num_docs: int, collection, llm, get_keyword_index) -> tuple[str, list[Document]]:
+def _answer_multi_doc(question: str, num_docs: int, collection, llm, get_keyword_index,
+                      guest_id: str = "") -> tuple[str, list[Document]]:
     """Retrieve chunks balanced across sources and synthesize with multi-doc prompt.
 
     num_docs is the number of registered documents (used to size retrieval).
@@ -138,8 +147,10 @@ def _answer_multi_doc(question: str, num_docs: int, collection, llm, get_keyword
     num_docs       = max(1, num_docs)
     pool_k         = min(num_docs * 5, 80)            # retrieve a wide pool
     chunks_per_src = max(2, MAX_MULTI_DOC_CHUNKS // num_docs)  # balance per source
-    candidates, enough_evidence = _hybrid_search(collection, question, get_keyword_index, k=pool_k)
-    if not enough_evidence:
+    candidates, enough_evidence = _hybrid_search(
+        collection, question, get_keyword_index, k=pool_k, guest_id=guest_id,
+    )
+    if not candidates or not enough_evidence:
         return NO_INFO_REPLY, []
     by_source: dict = {}
     for doc in candidates:
@@ -168,7 +179,8 @@ def _answer_multi_doc(question: str, num_docs: int, collection, llm, get_keyword
     return answer, used_chunks
 
 
-def _chat_with_memory(question: str, session: dict, collection, llm, get_keyword_index) -> tuple[str, list[Document]]:
+def _chat_with_memory(question: str, session: dict, collection, llm, get_keyword_index,
+                      guest_id: str = "") -> tuple[str, list[Document]]:
     """
     Manual replacement for ConversationalRetrievalChain.
     1. Condense follow-up questions using CONDENSE_PROMPT + chat history.
@@ -198,7 +210,9 @@ def _chat_with_memory(question: str, session: dict, collection, llm, get_keyword
         condensed = question
 
     # Step 2: Retrieve relevant chunks
-    chunks, enough_evidence = _hybrid_search(collection, condensed, get_keyword_index, k=NUM_CHUNKS)
+    chunks, enough_evidence = _hybrid_search(
+        collection, condensed, get_keyword_index, k=NUM_CHUNKS, guest_id=guest_id,
+    )
     if not chunks or not enough_evidence:
         answer = NO_INFO_REPLY
         memory.save_context({"input": question}, {"output": answer})

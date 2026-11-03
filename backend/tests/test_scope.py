@@ -12,6 +12,8 @@ Run: cd backend && pytest tests/test_scope.py -v
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from rag.scope import _build_clarification_question, _detect_scope
 
 
@@ -70,6 +72,12 @@ class TestClarificationResolution:
 # ── When to ask "which document?" ─────────────────────────────────────────────
 
 class TestScopeDecision:
+
+    @pytest.mark.parametrize("guest_id", ["", "guest-a"])
+    def test_candidate_search_is_limited_to_current_owner(self, guest_id):
+        with patch("rag.scope._similarity_search_with_score", return_value=[]) as search:
+            assert _detect_scope("what is the torque spec", {}, "COLLECTION", guest_id=guest_id) == ("pass", None)
+        assert search.call_args.kwargs["guest_id"] == guest_id
 
     def test_broad_phrase_returns_broad(self):
         assert _scope("Compare the safety rules", []) == ("broad", None)

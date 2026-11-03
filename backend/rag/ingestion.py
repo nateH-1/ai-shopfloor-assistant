@@ -53,8 +53,15 @@ def _load_docs(filepath: Path) -> list:
 
 
 # ── Helper: ingest a single file ──────────────────────────────────────────────
-def _ingest_file(filepath: Path, collection) -> tuple[bool, str, int]:
-    """Chunk and embed any supported file into the given Chroma collection. Returns (ok, message, chunk_count)."""
+def _ingest_file(
+    filepath: Path,
+    collection,
+    guest_id: str | None = None,
+) -> tuple[bool, str, int]:
+    """Chunk and embed a file, tagging its guest owner (empty for shared documents).
+
+    Returns (ok, message, chunk_count).
+    """
     try:
         docs = _load_docs(filepath)
         if not docs:
@@ -68,7 +75,18 @@ def _ingest_file(filepath: Path, collection) -> tuple[bool, str, int]:
 
         ids       = [f"{filepath.name}__chunk_{i}" for i in range(len(chunks))]
         texts     = [c.page_content for c in chunks]
-        metadatas = [{"source": str(filepath), **{k: v for k, v in c.metadata.items() if isinstance(v, (str, int, float, bool))}} for c in chunks]
+        metadatas = [
+            {
+                **{
+                    k: v
+                    for k, v in c.metadata.items()
+                    if isinstance(v, (str, int, float, bool))
+                },
+                "source": str(filepath),
+                "guest_id": guest_id or "",
+            }
+            for c in chunks
+        ]
 
         # Send in batches to stay under OpenAI's 300k token-per-request limit.
         EMBED_BATCH = 100

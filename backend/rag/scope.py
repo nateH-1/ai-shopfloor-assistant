@@ -61,7 +61,7 @@ def _build_clarification_question(sources: list) -> str:
     )
 
 
-def _detect_scope(message: str, session: dict, collection) -> tuple:
+def _detect_scope(message: str, session: dict, collection, guest_id: str = "") -> tuple:
     """
     Determine retrieval scope. Returns (scope, data):
       ("pass",            None)             — proceed with full chain as-is
@@ -97,7 +97,9 @@ def _detect_scope(message: str, session: dict, collection) -> tuple:
         return ("broad", None)
 
     # 3 — Candidate retrieval + score-based competition check
-    candidates = _similarity_search_with_score(collection, message, k=_SCOPE_CANDIDATE_K)
+    candidates = _similarity_search_with_score(
+        collection, message, k=_SCOPE_CANDIDATE_K, guest_id=guest_id,
+    )
     if not candidates:
         return ("pass", None)
 

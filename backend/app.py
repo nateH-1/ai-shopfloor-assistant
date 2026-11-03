@@ -424,6 +424,7 @@ def chat():
         message    = (data.get("message") or "").strip()
         session_id = data.get("session_id") or "default"
         conversation_key = _conversation_key(session_id)
+        guest_id = _current_user_id() if _current_user_role() == "Guest" else ""
 
         if not message:
             return jsonify({"error": "Message cannot be empty"}), 400
@@ -462,8 +463,12 @@ def chat():
             collection,
             llm,
             _get_guard_llm,
-            lambda: len(_load_doc_registry()),
+            lambda: sum(
+                (info.get("guest_id") or "") == guest_id
+                for info in _load_doc_registry().values()
+            ),
             _get_keyword_index,
+            guest_id=guest_id,
         )
 
         metadata = {"sources": _format_sources(result["chunks"])}
@@ -540,14 +545,13 @@ def upload_document():
             filepath.unlink(missing_ok=True)
             return jsonify({"success": False, "message": msg}), 503
 
-    ok, msg, chunk_count = _ingest_file(filepath, collection)
+    # Use the authenticated identity for both chunk metadata and the registry.
+    guest_id = _current_user_id() if _current_user_role() == "Guest" else None
+    ok, msg, chunk_count = _ingest_file(filepath, collection, guest_id=guest_id)
     if not ok:
         filepath.unlink(missing_ok=True)
         return jsonify({"success": False, "message": msg}), 500
     _mark_keyword_index_stale()
-
-    # check if current user is a guest. If so, tag file with the guest ID so only they see it.
-    guest_id = _current_user_id() if _current_user_role() == "Guest" else None
 
     # Update registry
     registry = _load_doc_registry()

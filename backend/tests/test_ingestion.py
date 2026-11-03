@@ -12,17 +12,19 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from rag import ingestion
 
 
-def _ingest(chunks, collection=None):
+def _ingest(chunks, collection=None, guest_id=None):
     """Run _ingest_file on a fake file whose splitter returns `chunks`."""
     collection = collection or MagicMock()
     splitter = MagicMock()
     splitter.split_documents.return_value = chunks
     with patch.object(ingestion, "_load_docs", return_value=["page"]), \
          patch.object(ingestion, "RecursiveCharacterTextSplitter", return_value=splitter):
-        result = ingestion._ingest_file(Path("knowledge_base/manual.pdf"), collection)
+        result = ingestion._ingest_file(Path("knowledge_base/manual.pdf"), collection, guest_id=guest_id)
     return result, collection
 
 
@@ -38,8 +40,26 @@ def test_replaces_old_chunks_with_stable_ids_and_source():
     coll.add.assert_called_once_with(
         ids=["manual.pdf__chunk_0", "manual.pdf__chunk_1"],
         documents=["text 0", "text 1"],
-        metadatas=[{"source": source, "page": 0}, {"source": source, "page": 1}],  # non-primitive "bad" dropped
+        metadatas=[
+            {"source": source, "page": 0, "guest_id": ""},
+            {"source": source, "page": 1, "guest_id": ""},
+        ],  # non-primitive "bad" dropped
     )
+
+
+@pytest.mark.parametrize("guest_id", [None, "guest-a", "guest-b"])
+def test_every_chunk_uses_trusted_source_and_owner(guest_id):
+    chunks = [_chunk(0), _chunk(1)]
+    for chunk in chunks:
+        chunk.metadata.update(source="untrusted/path.pdf", guest_id="other-guest")
+
+    result, coll = _ingest(chunks, guest_id=guest_id)
+
+    assert result[0] is True
+    assert coll.add.call_args.kwargs["metadatas"] == [
+        {"page": i, "source": str(Path("knowledge_base/manual.pdf")), "guest_id": guest_id or ""}
+        for i in range(2)
+    ]
 
 
 def test_adds_in_batches_of_100():

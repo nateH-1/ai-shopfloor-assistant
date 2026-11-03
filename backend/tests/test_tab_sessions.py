@@ -216,7 +216,7 @@ def test_chat_and_clear_are_scoped_to_login_even_with_same_conversation_id(brows
     register(browser, tab_a)
     register(browser, tab_b)
     monkeypatch.setattr(app_module, "collection", MagicMock())
-    def answer(message, sessions, key, *_args):
+    def answer(message, sessions, key, *_args, guest_id=""):
         state = sessions.setdefault(key, {"messages": [], "last_accessed": time.monotonic()})
         state["messages"].append(message)
         return {"reply": ",".join(state["messages"]), "chunks": [], "clarification": None}
@@ -237,6 +237,37 @@ def test_chat_and_clear_are_scoped_to_login_even_with_same_conversation_id(brows
     assert chat(tab_b, "b3") == "b1,b2,b3"
 
 
+def test_chat_uses_authenticated_owner_and_counts_only_their_documents(browser, monkeypatch):
+    tab_a, tab_b, admin_tab = (str(uuid4()) for _ in range(3))
+    guest_a = register(browser, tab_a)
+    guest_b = register(browser, tab_b)
+    register(browser, admin_tab, "Admin", "admin@example.com")
+    collection = MagicMock()
+    collection.count.return_value = 5
+    monkeypatch.setattr(app_module, "collection", collection)
+    monkeypatch.setattr(app_module, "_load_doc_registry", lambda: {
+        "a1.txt": {"guest_id": guest_a},
+        "a2.txt": {"guest_id": guest_a},
+        "b.txt": {"guest_id": guest_b},
+        "shared.txt": {"guest_id": None},
+        "legacy-shared.txt": {},
+    })
+    calls = []
+
+    def answer(message, sessions, key, collection, llm, guard, get_num_docs, keyword_index, *, guest_id):
+        calls.append((guest_id, get_num_docs()))
+        return {"reply": "Answer.", "chunks": [], "clarification": None}
+
+    monkeypatch.setattr(app_module, "answer_question", answer)
+    for tab, spoofed_owner in [(tab_a, guest_b), (tab_b, ""), (admin_tab, guest_a)]:
+        response = browser.post("/chat", headers=headers(tab), json={
+            "message": "Summarize all documents", "guest_id": spoofed_owner,
+        })
+        assert response.status_code == 200, response.get_json()
+
+    assert calls == [(guest_a, 2), (guest_b, 1), ("", 2)]
+
+
 def test_guest_upload_tags_tab_owner_and_preserves_numbered_path(browser, monkeypatch, tmp_path):
     tab = str(uuid4())
     guest_id = register(browser, tab)
@@ -248,16 +279,17 @@ def test_guest_upload_tags_tab_owner_and_preserves_numbered_path(browser, monkey
     saved = []
     monkeypatch.setattr(app_module, "_save_doc_registry", saved.append)
     ingested = []
-    def ingest(path, _collection):
-        ingested.append(path)
+    def ingest(path, _collection, guest_id=None):
+        ingested.append((path, guest_id))
         return True, "Ingested.", 1
     monkeypatch.setattr(app_module, "_ingest_file", ingest)
     response = browser.post("/api/documents/upload", headers=headers(tab), data={
         "file": (io.BytesIO(b"new content"), "notes.txt"),
+        "guest_id": "other-guest",
     })
     assert response.status_code == 200
     assert response.get_json()["filename"] == "notes_1.txt"
-    assert ingested == [tmp_path / "notes_1.txt"]
+    assert ingested == [(tmp_path / "notes_1.txt", guest_id)]
     assert (tmp_path / "notes.txt").read_text() == "existing"
     assert saved[0]["notes_1.txt"]["guest_id"] == guest_id
 

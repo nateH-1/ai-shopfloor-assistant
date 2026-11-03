@@ -332,7 +332,7 @@ class TestSessionManagement:
 
     def test_two_sessions_get_independent_chains(self, client):
         """Two different session IDs must not share memory."""
-        def pick_response(question, session, collection, llm, get_keyword_index):
+        def pick_response(question, session, collection, llm, get_keyword_index, guest_id=""):
             is_a = session is app_module.conversation_sessions.get(client.conversation_key("session-a"))
             return _mock_chat_response("Answer for A") if is_a else _mock_chat_response("Answer for B")
 
@@ -553,6 +553,7 @@ class TestClarificationResolution:
             app_module.collection,
             app_module.llm,
             app_module._get_keyword_index,
+            guest_id="",
         )
 
 
