@@ -61,3 +61,7 @@ CLAUDE.md
 
 #Codex
 AGENTS.md
+
+# eval index and run output
+evals/chroma_db/
+evals/results/

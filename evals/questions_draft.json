@@ -1,0 +1,669 @@
+{
+  "_readme": [
+    "DRAFT 1 - written by Claude from the PDFs in testing-documentation/. NOT yet verified by a human.",
+    "ground_truth is copied or closely condensed from the page named in pdf_pages. pdf_pages are PDF page numbers (position in the file), not the page numbers printed on the page.",
+    "split: 'tune' questions may be used to set thresholds; 'heldout' questions must stay untouched until the final measurement.",
+    "answerable=false means the documents do not contain the answer (checked by searching the text); the expected behavior is a refusal.",
+    "All 15 documents now covered at least once (manufacturing_processes, basic_machine_tool_operations, server error-code guide, both syllabi, SOP, Boeing lean, FDA Food Code, lean_manufacturing, autodesk_cncbook, gmp_audit_standard, maintenance and operation, c4isr, modern_manufacturing, processes_definitions_handbook). Still missing: follow-up (multi-turn) questions, more multi-passage and multi-document questions, and the welding books.",
+    "2026-11-04: EV-24 label corrected (pages 14 and 41). Added EV-43..EV-55: 10 unanswerable (mostly 'hard' cases where related words exist but the answer does not) and 3 off-topic. Each unanswerable question was checked against the indexed PDF text. Still NOT human-verified."
+  ],
+  "questions": [
+    {
+      "id": "EV-01",
+      "category": "exact_figure",
+      "split": "tune",
+      "answerable": true,
+      "question": "How long should I flush my eyes if chemicals get in them?",
+      "ground_truth": "Wash the eye(s) for 15 minutes in an open flow of water before proceeding for medical treatment.",
+      "source_file": "basic_machine_tool_operations_aug_2017.pdf",
+      "pdf_pages": [
+        5
+      ]
+    },
+    {
+      "id": "EV-02",
+      "category": "plain",
+      "split": "tune",
+      "answerable": true,
+      "question": "Can I wear gloves while operating machinery in the machine shop?",
+      "ground_truth": "No. Gloves must not be worn while operating machinery. The exception is that, with the approval of the machine shop supervisor, thin skin-tight latex gloves of the correct size may be worn if required as PPE.",
+      "source_file": "basic_machine_tool_operations_aug_2017.pdf",
+      "pdf_pages": [
+        5
+      ]
+    },
+    {
+      "id": "EV-03",
+      "category": "paraphrase",
+      "split": "tune",
+      "answerable": true,
+      "question": "My drill bit is jammed in the hole, what should I do?",
+      "ground_truth": "If the drill binds in a hole, stop the machine and turn the spindle backwards by hand to release the bit.",
+      "source_file": "basic_machine_tool_operations_aug_2017.pdf",
+      "pdf_pages": [
+        13
+      ],
+      "note": "Wording avoids the document's 'binds'."
+    },
+    {
+      "id": "EV-04",
+      "category": "paraphrase",
+      "split": "heldout",
+      "answerable": true,
+      "question": "How do I stop a drill bit from slipping away from where I want to start the hole?",
+      "ground_truth": "To keep a drill bit from wandering or 'walking off' location, create an accurate starting point by using a center drill or spot drill.",
+      "source_file": "basic_machine_tool_operations_aug_2017.pdf",
+      "pdf_pages": [
+        14
+      ]
+    },
+    {
+      "id": "EV-05",
+      "category": "plain",
+      "split": "tune",
+      "answerable": true,
+      "question": "How should I remove chips from the lathe?",
+      "ground_truth": "Chips are razor sharp, so do not remove them with your fingers. Stop the machine and use pliers to remove them.",
+      "source_file": "basic_machine_tool_operations_aug_2017.pdf",
+      "pdf_pages": [
+        62
+      ]
+    },
+    {
+      "id": "EV-06",
+      "category": "exact_figure",
+      "split": "tune",
+      "answerable": true,
+      "question": "How many people have to be in the machine shop at the same time?",
+      "ground_truth": "When working in the shop, two people must be present at all times. Students also may not work without a Supervisor: an approved Florida Tech paid employee must be present at all times.",
+      "source_file": "basic_machine_tool_operations_aug_2017.pdf",
+      "pdf_pages": [
+        3
+      ]
+    },
+    {
+      "id": "EV-07",
+      "category": "exact_figure",
+      "split": "tune",
+      "answerable": true,
+      "question": "What carbon percentage makes a steel mild steel versus medium carbon steel?",
+      "ground_truth": "Plain carbon steels are classified by carbon percentage: low carbon or dead mild steel below 0.15%, mild steel 0.15-0.3%, medium carbon steel 0.3-0.7%, and high carbon steel above 0.7% (the higher practical limit is 1.3%).",
+      "source_file": "manufacturing_processes.pdf",
+      "pdf_pages": [
+        27
+      ]
+    },
+    {
+      "id": "EV-08",
+      "category": "exact_figure",
+      "split": "heldout",
+      "answerable": true,
+      "question": "What temperature should medium carbon steel be heated to for annealing?",
+      "ground_truth": "Medium carbon steel (carbon 0.3-0.7%) is annealed at 780-840 degrees C (Table 2.1). Soaking time is 3-4 minutes for every mm of cross-section thickness.",
+      "source_file": "manufacturing_processes.pdf",
+      "pdf_pages": [
+        32
+      ]
+    },
+    {
+      "id": "EV-09",
+      "category": "multi_passage",
+      "split": "tune",
+      "answerable": true,
+      "question": "What is the difference between annealing and hardening steel?",
+      "ground_truth": "Annealing softens the material and removes internal stresses: the piece is heated, then allowed to cool slowly inside the furnace, which increases ductility. Hardening heats and soaks the piece to the same temperatures, then quenches it quickly in cold water or oil, making it harder but brittle; the steel needs at least 0.25% carbon to harden, so dead mild steel cannot be hardened this way.",
+      "source_file": "manufacturing_processes.pdf",
+      "pdf_pages": [
+        32,
+        33
+      ],
+      "note": "Needs two adjacent pages; check retrieval returns both."
+    },
+    {
+      "id": "EV-10",
+      "category": "paraphrase",
+      "split": "heldout",
+      "answerable": true,
+      "question": "At what temperature does the filler metal used in brazing have to melt?",
+      "ground_truth": "The brazing filler material (called spelter) is non-ferrous and has a melting point above 427 degrees C but below the melting point of the parent metals being joined.",
+      "source_file": "manufacturing_processes.pdf",
+      "pdf_pages": [
+        155
+      ]
+    },
+    {
+      "id": "EV-11",
+      "category": "unanswerable",
+      "split": "tune",
+      "answerable": false,
+      "question": "What is the torque specification for the lathe chuck bolts?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Searched both texts: no torque specification for chuck bolts; 'torque' appears once, in a general drilling passage."
+    },
+    {
+      "id": "EV-12",
+      "category": "unanswerable",
+      "split": "heldout",
+      "answerable": false,
+      "question": "What is the warranty period for the bench grinder?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Searched both texts: 'warranty' does not appear."
+    },
+    {
+      "id": "EV-13",
+      "category": "off_topic",
+      "split": "tune",
+      "answerable": false,
+      "question": "Tell me a joke",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Expected: refused by the off-topic guard."
+    },
+    {
+      "id": "EV-14",
+      "category": "exact_code",
+      "split": "tune",
+      "answerable": true,
+      "question": "The inverter is showing error 3xB, what do I do?",
+      "ground_truth": "Error 3xB means 'No Country Selected'. The fix is to select the country.",
+      "source_file": "server_installation-guide-error-codes.pdf",
+      "pdf_pages": [
+        5
+      ]
+    },
+    {
+      "id": "EV-15",
+      "category": "exact_code",
+      "split": "tune",
+      "answerable": true,
+      "question": "What should I do if the inverter shows error 3xA?",
+      "ground_truth": "Error 3xA means the phase is unbalanced. Select Power Control -> Phase Balance -> Disable.",
+      "source_file": "server_installation-guide-error-codes.pdf",
+      "pdf_pages": [
+        5
+      ]
+    },
+    {
+      "id": "EV-16",
+      "category": "exact_code",
+      "split": "heldout",
+      "answerable": true,
+      "question": "What does error 2x1F mean and how do I fix it?",
+      "ground_truth": "Error 2x1F: the grid voltage is above the country limit. Verify the inverter is set to the correct country; turn OFF the inverters in the site and verify the AC grid voltage; if the inverter is far from the grid connection point, use a larger gauge AC wire; consult the grid operator; and, if permitted by local authorities, change the grid protection values.",
+      "source_file": "server_installation-guide-error-codes.pdf",
+      "pdf_pages": [
+        11
+      ]
+    },
+    {
+      "id": "EV-17",
+      "category": "exact_code",
+      "split": "tune",
+      "answerable": true,
+      "question": "What does error 2xE mean?",
+      "ground_truth": "Error 2xE is an AC voltage surge. If the fault persists: check the AC connection to the inverter, verify the correct country is set, check with the grid operator for a large surge source or irregular load near the site, verify the output wire size matches the distance to the grid connection, and use a larger gauge wire for the AC output.",
+      "source_file": "server_installation-guide-error-codes.pdf",
+      "pdf_pages": [
+        8
+      ],
+      "note": "Confusable with 8x1A (also 'AC voltage surge', page 29, commercial inverters). Tests exact identifier matching."
+    },
+    {
+      "id": "EV-18",
+      "category": "plain",
+      "split": "tune",
+      "answerable": true,
+      "question": "How far ahead of class do I have to tell the TAs if I'm going to miss seminar?",
+      "ground_truth": "You must let the CS Teaching Assistants know why at least 15 minutes ahead of class time, and give supporting evidence (such as a doctor's note or evidence of an internet/power outage).",
+      "source_file": "cs_seminar_syllabus_spring_2026_v1.pdf",
+      "pdf_pages": [
+        5
+      ]
+    },
+    {
+      "id": "EV-19",
+      "category": "exact_figure",
+      "split": "heldout",
+      "answerable": true,
+      "question": "How many hours of community service are CS students expected to do each semester?",
+      "ground_truth": "MSU CS students are expected to serve the community at least 15 hours per semester. The hours should be documented and provided to faculty.",
+      "source_file": "cs_seminar_syllabus_spring_2026_v1.pdf",
+      "pdf_pages": [
+        5
+      ]
+    },
+    {
+      "id": "EV-20",
+      "category": "plain",
+      "split": "tune",
+      "answerable": true,
+      "question": "Are late assignments accepted in the seminar?",
+      "ground_truth": "No. Late assignments will not be accepted and will receive a score of 0.",
+      "source_file": "cs_seminar_syllabus_spring_2026_v1.pdf",
+      "pdf_pages": [
+        8
+      ],
+      "note": "Checked: the project syllabus has no such sentence, so only one document answers this."
+    },
+    {
+      "id": "EV-21",
+      "category": "exact_code",
+      "split": "heldout",
+      "answerable": true,
+      "question": "What are the prerequisites for CS 492W?",
+      "ground_truth": "CS 492W requires CS 491W and at least 4 credits of elective courses chosen from CS 306, CS 401, CS 403, CS 406, CS 410, CS 420, CS 435, CS 440, CS 445, CS 450, CS 465, CS 470, CS 480, or CS 485.",
+      "source_file": "cs_project_syllabus_spring_2026_v2.pdf",
+      "pdf_pages": [
+        1
+      ]
+    },
+    {
+      "id": "EV-22",
+      "category": "multi_document",
+      "split": "tune",
+      "answerable": true,
+      "question": "Which courses have to be taken at the same time as CS 495?",
+      "ground_truth": "CS 391W, CS 392W, CS 491W and CS 492W must each be taken concurrently with CS 495.",
+      "source_file": "cs_project_syllabus_spring_2026_v2.pdf",
+      "pdf_pages": [
+        1
+      ],
+      "note": "CS 495 is also the seminar course (seminar syllabus). Tests document choice / clarification."
+    },
+    {
+      "id": "EV-23",
+      "category": "paraphrase",
+      "split": "tune",
+      "answerable": true,
+      "question": "Does the lab do its own preventive maintenance on special equipment?",
+      "ground_truth": "No. VHIO's policy is to outsource the preventive (and corrective) maintenance of special equipment to a supplier. The supplier makes a periodic visit to verify correct operation and carry out the maintenance, the lab/ITMU quality manager records the operations, and the supplier issues a certificate that is kept on file.",
+      "source_file": "sop_maintenance_and_calibration_of_equipment.pdf",
+      "pdf_pages": [
+        7
+      ]
+    },
+    {
+      "id": "EV-24",
+      "category": "exact_figure",
+      "split": "tune",
+      "answerable": true,
+      "question": "How much did productivity improve at Boeing's machine fabrication plant after it moved to production cells?",
+      "ground_truth": "After moving from batch-and-queue to production cells with single-piece flow, overall productivity at the plant improved by 39 percent.",
+      "source_file": "boeing_lean_manufacturing_studies.pdf",
+      "pdf_pages": [
+        14,
+        41
+      ],
+      "note": "Label corrected 2026-11-04: the 39 percent figure is on page 14 AND page 41 (High Level Results) of the same PDF."
+    },
+    {
+      "id": "EV-25",
+      "category": "exact_figure",
+      "split": "heldout",
+      "answerable": true,
+      "question": "How much did Lean cut raw material spending at Boeing's Auburn machine fabrication shop?",
+      "ground_truth": "The Auburn Machine Fabrication shop's Lean efforts reduced raw materials spending by $22 million.",
+      "source_file": "boeing_lean_manufacturing_studies.pdf",
+      "pdf_pages": [
+        21
+      ]
+    },
+    {
+      "id": "EV-26",
+      "category": "exact_figure",
+      "split": "tune",
+      "answerable": true,
+      "question": "How long does fish have to be frozen at -20°C before it can be served raw?",
+      "ground_truth": "To destroy parasites, fish must be frozen and stored at -20°C (-4°F) or below for at least 168 hours (7 days) in a freezer. Alternatives: frozen at -35°C (-31°F) until solid and stored at -35°C for at least 15 hours, or frozen at -35°C until solid and stored at -20°C for at least 24 hours (section 3-402.11).",
+      "source_file": "fda_food_code_2019.pdf",
+      "pdf_pages": [
+        119
+      ]
+    },
+    {
+      "id": "EV-27",
+      "category": "plain",
+      "split": "tune",
+      "answerable": true,
+      "question": "What kinds of waste does Lean get rid of?",
+      "ground_truth": "Lean eliminates defects, overproduction, waiting, non-utilized resources, transportation, inventory, motion, and extra processing.",
+      "source_file": "lean_manufacturing.pdf",
+      "pdf_pages": [
+        8
+      ],
+      "note": "Slide deck: the eight items are one slide."
+    },
+    {
+      "id": "EV-28",
+      "category": "paraphrase",
+      "split": "heldout",
+      "answerable": true,
+      "question": "How does the Lean and Environment training define Lean?",
+      "ground_truth": "Lean is 'a systematic approach to identifying and eliminating waste (non-value added activities) through continuous improvement by flowing the product at the pull of the customer in pursuit of perfection' (The MEP Lean Network).",
+      "source_file": "lean_manufacturing.pdf",
+      "pdf_pages": [
+        5
+      ]
+    },
+    {
+      "id": "EV-29",
+      "category": "exact_code",
+      "split": "tune",
+      "answerable": true,
+      "question": "What does G83 do in a CNC program?",
+      "ground_truth": "G83 is the peck drill cycle.",
+      "source_file": "autodesk_cncbook.pdf",
+      "pdf_pages": [
+        63
+      ]
+    },
+    {
+      "id": "EV-30",
+      "category": "exact_code",
+      "split": "heldout",
+      "answerable": true,
+      "question": "What is G43 used for?",
+      "ground_truth": "G43 is the tool length offset (TLO).",
+      "source_file": "autodesk_cncbook.pdf",
+      "pdf_pages": [
+        63
+      ]
+    },
+    {
+      "id": "EV-31",
+      "category": "multi_document",
+      "split": "tune",
+      "answerable": true,
+      "question": "Is it okay to wear gloves in the shop?",
+      "ground_truth": "Generally no. The machine tool guide says do not wear gloves while operating machinery, with an exception: with the machine shop supervisor's approval, thin skin-tight latex gloves of the correct size may be worn if required as PPE. The Autodesk CNC book also says never wear gloves because they can be caught in the machine, and that latex gloves are acceptable.",
+      "source_file": "basic_machine_tool_operations_aug_2017.pdf ; autodesk_cncbook.pdf",
+      "pdf_pages": [
+        5,
+        19
+      ],
+      "note": "Two documents agree. Expect source citations from both, or a clarification prompt."
+    },
+    {
+      "id": "EV-32",
+      "category": "exact_figure",
+      "split": "tune",
+      "answerable": true,
+      "question": "How often does a mock recall have to be done?",
+      "ground_truth": "The operation must perform a mock recall that is proven effective at least annually; the auditor asks to see the record of a mock recall performed in the last 12 months.",
+      "source_file": "gmp_audit_standard.pdf",
+      "pdf_pages": [
+        7
+      ],
+      "note": "Text extracts with odd spacing ('a t lea st a nnually'); a keyword-matching stress test."
+    },
+    {
+      "id": "EV-33",
+      "category": "exact_figure",
+      "split": "heldout",
+      "answerable": true,
+      "question": "How often does the FDA facility registration have to be renewed?",
+      "ground_truth": "The FDA registration is renewed every other year. The auditor verifies the registration is current and records the expiration date, but does not document the facility number.",
+      "source_file": "gmp_audit_standard.pdf",
+      "pdf_pages": [
+        6
+      ]
+    },
+    {
+      "id": "EV-34",
+      "category": "paraphrase",
+      "split": "tune",
+      "answerable": true,
+      "question": "How long do food records need to be kept?",
+      "ground_truth": "Records must be retained for 6 months to 2 years depending on food type. Records identifying the immediate previous source and immediate subsequent recipient of a product, by lot number or other unique identifier, are kept for 1 year from the date of the transaction.",
+      "source_file": "gmp_audit_standard.pdf",
+      "pdf_pages": [
+        7
+      ],
+      "note": "Two different retention periods on the same page."
+    },
+    {
+      "id": "EV-35",
+      "category": "exact_figure",
+      "split": "tune",
+      "answerable": true,
+      "question": "What voltage should I set on the variable transformer when checking if the heated probe works?",
+      "ground_truth": "Plug the probe's power cord into a variable transformer set to about 55 volts. The probe should become warm to the touch along its whole length within a few minutes. If it does not heat, check the transformer voltage and loose connections in the plug and Nichrome wire; partial heating indicates shorts.",
+      "source_file": "maintenance and operation.pdf",
+      "pdf_pages": [
+        9
+      ],
+      "note": "Low-text PDF (cover pages empty); EPA source-sampling equipment."
+    },
+    {
+      "id": "EV-36",
+      "category": "plain",
+      "split": "tune",
+      "answerable": true,
+      "question": "What counts as major maintenance on a diesel engine?",
+      "ground_truth": "Any maintenance procedure that requires disassembly of the engine or removal of components is considered major maintenance.",
+      "source_file": "c4isr_maintenance_practices.pdf",
+      "pdf_pages": [
+        20
+      ]
+    },
+    {
+      "id": "EV-37",
+      "category": "exact_figure",
+      "split": "heldout",
+      "answerable": true,
+      "question": "What is the difference between short-term and long-term diesel engine maintenance activities?",
+      "ground_truth": "Short-term activities are scheduled maintenance activities with a frequency of 1,000 hours run time or less (Table 3-2); long-term activities are those with a frequency greater than 1,000 hours run time (Table 3-3).",
+      "source_file": "c4isr_maintenance_practices.pdf",
+      "pdf_pages": [
+        20
+      ]
+    },
+    {
+      "id": "EV-38",
+      "category": "exact_figure",
+      "split": "tune",
+      "answerable": true,
+      "question": "What size holes do most drills make?",
+      "ground_truth": "Most drilled holes are 1/8 to 1 inch (3.2 to 40 mm) in diameter. Drills are available for holes as small as 0.001 in (0.03 mm) (microdrilling) and as large as 6 in (150 mm).",
+      "source_file": "modern_manufacturing.pdf",
+      "pdf_pages": [
+        16
+      ]
+    },
+    {
+      "id": "EV-39",
+      "category": "plain",
+      "split": "heldout",
+      "answerable": true,
+      "question": "How fast can I ream a hole compared to how fast it was drilled?",
+      "ground_truth": "Reamers are more easily damaged than drills, so the practice is to ream a hole at no more than two thirds of the speed at which it was drilled.",
+      "source_file": "modern_manufacturing.pdf",
+      "pdf_pages": [
+        16
+      ]
+    },
+    {
+      "id": "EV-40",
+      "category": "plain",
+      "split": "tune",
+      "answerable": true,
+      "question": "How is process variability measured on an individuals control chart?",
+      "ground_truth": "When the sample size is 1, variability is measured with the moving range of two successive observations: the absolute value of the first difference between consecutive data points.",
+      "source_file": "processes_definitions_handbook.pdf",
+      "pdf_pages": [
+        58
+      ],
+      "note": "Handbook is the NIST statistics e-Handbook."
+    },
+    {
+      "id": "EV-41",
+      "category": "unanswerable",
+      "split": "tune",
+      "answerable": false,
+      "question": "How much does a SolarEdge inverter cost?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Checked: 'SolarEdge' appears only in the server guide, which has no price or cost."
+    },
+    {
+      "id": "EV-42",
+      "category": "off_topic",
+      "split": "heldout",
+      "answerable": false,
+      "question": "Who won the Super Bowl last year?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Expected: refused by the off-topic guard."
+    },
+    {
+      "id": "EV-43",
+      "category": "unanswerable",
+      "split": "tune",
+      "answerable": false,
+      "question": "What is the maximum payload of the overhead crane?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Hard case: cranes are mentioned (Boeing report) but 'payload' does not appear anywhere. Checked 2026-11-04."
+    },
+    {
+      "id": "EV-44",
+      "category": "unanswerable",
+      "split": "heldout",
+      "answerable": false,
+      "question": "What is the Wi-Fi password for the shop floor network?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Easy case: 'wifi' and 'password' do not appear in any document. Checked 2026-11-04."
+    },
+    {
+      "id": "EV-45",
+      "category": "unanswerable",
+      "split": "tune",
+      "answerable": false,
+      "question": "How do I update the firmware on the inverter?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Hard case: inverters are covered (server guide) but 'firmware' does not appear. Checked 2026-11-04."
+    },
+    {
+      "id": "EV-46",
+      "category": "unanswerable",
+      "split": "heldout",
+      "answerable": false,
+      "question": "How much does a Boeing machine fabrication employee earn per year?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Hard case: Boeing machine fabrication is covered but no pay/salary/earnings figures exist. Checked 2026-11-04."
+    },
+    {
+      "id": "EV-47",
+      "category": "unanswerable",
+      "split": "tune",
+      "answerable": false,
+      "question": "What is the maximum operating temperature of the inverter?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Hard case: server guide only says ambient temperature must be within the datasheet range, no figure. Checked 2026-11-04."
+    },
+    {
+      "id": "EV-48",
+      "category": "unanswerable",
+      "split": "heldout",
+      "answerable": false,
+      "question": "What is the shelf life of cutting fluid?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Hard case: both 'shelf life' (food, tape) and 'cutting fluid' appear, but never together. Checked 2026-11-04."
+    },
+    {
+      "id": "EV-49",
+      "category": "unanswerable",
+      "split": "tune",
+      "answerable": false,
+      "question": "What torque should I use to clamp a part in the vise?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Hard case: Autodesk CNC book says to use a torque wrench on the vise for consistent pressure but gives no value. Checked 2026-11-04."
+    },
+    {
+      "id": "EV-50",
+      "category": "unanswerable",
+      "split": "heldout",
+      "answerable": false,
+      "question": "Who is the current CEO of Boeing?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Easy case: no CEO/chief executive mention in the Boeing report. Checked 2026-11-04."
+    },
+    {
+      "id": "EV-51",
+      "category": "unanswerable",
+      "split": "tune",
+      "answerable": false,
+      "question": "What is the capital of France?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "General knowledge: not blocked by the guard's categories (personal, small talk, entertainment), so retrieval must refuse. 'Paris' appears nowhere. Checked 2026-11-04."
+    },
+    {
+      "id": "EV-52",
+      "category": "unanswerable",
+      "split": "heldout",
+      "answerable": false,
+      "question": "What temperature should the cooling water be for the generator?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Hard case: c4isr text mentions cooling water inlet/outlet temperatures for monitoring but gives no target value (regex found no figure near 'cooling water'). Checked 2026-11-04."
+    },
+    {
+      "id": "EV-53",
+      "category": "off_topic",
+      "split": "tune",
+      "answerable": false,
+      "question": "What's your favorite movie?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Expected: refused by the off-topic guard."
+    },
+    {
+      "id": "EV-54",
+      "category": "off_topic",
+      "split": "heldout",
+      "answerable": false,
+      "question": "Can you write me a poem about spring?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Expected: refused by the off-topic guard."
+    },
+    {
+      "id": "EV-55",
+      "category": "off_topic",
+      "split": "tune",
+      "answerable": false,
+      "question": "Do you like pizza?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Expected: refused by the off-topic guard."
+    }
+  ]
+}
