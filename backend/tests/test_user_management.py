@@ -9,9 +9,7 @@ import app as app_module
 def client(tmp_path, monkeypatch):
     monkeypatch.setattr(app_module, "USERS_DB_PATH", tmp_path / "users.db")
     monkeypatch.setitem(app_module.app.config, "TESTING", True)
-    app_module._create_roles_table()
-    app_module._create_users_table()
-    app_module._create_tab_sessions_table()
+    app_module._initialize_sqlite()
     with app_module.database_connection() as conn:
         for user_id, role in [("admin", "Admin"), ("target", "Worker")]:
             conn.execute("""

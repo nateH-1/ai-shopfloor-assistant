@@ -15,6 +15,8 @@ BROAD_INTENT_PHRASES = {
     "every document", "every doc", "from every",
 }
 SESSION_TTL_SECONDS      = 2 * 60 * 60   # evict sessions idle for 2 hours
+GUEST_DOCUMENT_TTL_SECONDS = 24 * 60 * 60
+GUEST_CLEANUP_INTERVAL_SECONDS = 60
 MAX_MULTI_DOC_CHUNKS     = 40            # hard cap on total chunks sent to LLM (≈10K tokens)
 KEYWORD_FALLBACK_DISTANCE = 0.20         # best vector distance at which keyword results are added
 RRF_K                    = 60            # reciprocal rank fusion constant

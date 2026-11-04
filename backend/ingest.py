@@ -72,14 +72,16 @@ def ingest_files(file_paths: list[Path]) -> None:
             existing_store.delete(where={"source": str(filepath)})
         docs   = _load_docs(filepath)
         chunks = splitter.split_documents(docs)
-        guest_id = registry.get(filepath.name, {}).get("guest_id") or None
+        previous = registry.get(filepath.name, {})
+        guest_id = previous.get("guest_id") or None
+        uploaded_at = (previous.get("uploaded_at") if guest_id else None) or datetime.now(timezone.utc).isoformat()
         for chunk in chunks:
             chunk.metadata["guest_id"] = guest_id or ""
         all_chunks.extend(chunks)
         registry[filepath.name] = {
             "chunks":      len(chunks),
             "guest_id":    guest_id,
-            "uploaded_at": datetime.now(timezone.utc).isoformat(),
+            "uploaded_at": uploaded_at,
         }
         print(f"    → {len(chunks)} chunks")
 

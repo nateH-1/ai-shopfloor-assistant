@@ -13,6 +13,7 @@ import app as app_module
 @pytest.fixture
 def browser(tmp_path, monkeypatch):
     monkeypatch.setattr(app_module, "USERS_DB_PATH", tmp_path / "users.db")
+    app_module._initialize_sqlite()
     monkeypatch.setitem(app_module.app.config, "TESTING", True)
     monkeypatch.setattr(app_module, "password_hasher", SimpleNamespace(
         hash=lambda password: f"test:{password}",

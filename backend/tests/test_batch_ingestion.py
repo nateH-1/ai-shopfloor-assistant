@@ -22,7 +22,9 @@ def test_batch_tags_shared_chunks_and_preserves_existing_guest_owner(monkeypatch
     splitter = MagicMock()
     splitter.split_documents.side_effect = chunks_by_file
 
-    with patch.object(ingest, "load_registry", return_value={"guest.txt": {"guest_id": "guest-a"}}), \
+    original_upload = "2026-01-01T12:00:00+00:00"
+    with patch.object(ingest, "load_registry", return_value={
+            "guest.txt": {"guest_id": "guest-a", "uploaded_at": original_upload}}), \
          patch.object(ingest, "save_registry") as save_registry, \
          patch.object(ingest, "_load_docs", return_value=["loaded page"]), \
          patch.object(ingest, "RecursiveCharacterTextSplitter", return_value=splitter), \
@@ -43,4 +45,6 @@ def test_batch_tags_shared_chunks_and_preserves_existing_guest_owner(monkeypatch
     saved = save_registry.call_args.args[0]
     assert saved["shared.txt"]["guest_id"] is None
     assert saved["guest.txt"]["guest_id"] == "guest-a"
+    assert saved["guest.txt"]["uploaded_at"] == original_upload
+    assert saved["shared.txt"]["uploaded_at"] != original_upload
     assert all(info["chunks"] == 2 for info in saved.values())

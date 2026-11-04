@@ -19,8 +19,11 @@ import json
 import time
 import traceback
 import secrets
-from datetime import datetime, timezone
+import atexit
+from datetime import datetime, timedelta, timezone
+from functools import wraps
 from pathlib import Path
+from threading import Event, RLock, Thread
 
 from flask import Flask, request, jsonify, g, session
 from feedback import register_feedback
@@ -40,6 +43,8 @@ from rag.config import (
     MAX_UPLOAD_MB,
     ALLOWED_EXTENSIONS,
     SESSION_TTL_SECONDS,
+    GUEST_DOCUMENT_TTL_SECONDS,
+    GUEST_CLEANUP_INTERVAL_SECONDS,
 )
 
 from rag.context import _dedup_chunks
@@ -94,6 +99,19 @@ _guard_llm: ChatOllama | None          = None   # off-topic classifier
 conversation_sessions: dict            = {}      # session_id → { memory, last_accessed }
 _keyword_index:       dict | None      = None    # BM25 index over the collection's chunks
 _keyword_index_stale: bool             = True    # rebuild on next use
+_documents_lock = RLock()
+_guest_cleanup_stop = Event()
+_guest_cleanup_thread: Thread | None = None
+atexit.register(_guest_cleanup_stop.set)
+
+
+def _with_document_lock(func):
+    """Keep document mutations and keyword-cache rebuilds consistent with cleanup."""
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        with _documents_lock:
+            return func(*args, **kwargs)
+    return wrapped
 
 def _get_guard_llm() -> ChatOllama:
     """Return the off-topic classifier client, creating it on first use."""
@@ -103,23 +121,7 @@ def _get_guard_llm() -> ChatOllama:
     return _guard_llm
 
 
-def _get_keyword_index() -> dict | None:
-    """Return the BM25 keyword index, rebuilding it first if the documents changed."""
-    global _keyword_index, _keyword_index_stale
-    if collection is None:
-        return None
-    if _keyword_index_stale:
-        _keyword_index = _build_keyword_index(collection)
-        _keyword_index_stale = False
-    return _keyword_index
-
-
-def _mark_keyword_index_stale() -> None:
-    """Call after documents are added or removed so the next search rebuilds the index."""
-    global _keyword_index_stale
-    _keyword_index_stale = True
-
-
+@_with_document_lock
 def _get_keyword_index() -> dict | None:
     """Return the BM25 keyword index, rebuilding it first if the documents changed."""
     global _keyword_index, _keyword_index_stale
@@ -159,6 +161,7 @@ def database_connection():
         conn.close()
 
 # ── Helper: document registry ─────────────────────────────────────────────────
+@_with_document_lock
 def _load_doc_registry() -> dict:
     """Load the JSON registry of ingested documents."""
     if DOCUMENTS_JSON.exists():
@@ -166,8 +169,122 @@ def _load_doc_registry() -> dict:
     return {}
 
 
+@_with_document_lock
 def _save_doc_registry(registry: dict) -> None:
-    DOCUMENTS_JSON.write_text(json.dumps(registry, indent=2))
+    temporary = DOCUMENTS_JSON.with_suffix(".json.tmp")
+    temporary.write_text(json.dumps(registry, indent=2), encoding="utf-8")
+    temporary.replace(DOCUMENTS_JSON)
+
+
+def _get_guest_cleanup_collections() -> list:
+    """Open document stores for deletion without needing embeddings or an LLM."""
+    stores = [collection] if collection is not None else []
+    if Path(CHROMA_DB_DIR).exists():
+        client = chromadb.PersistentClient(path=CHROMA_DB_DIR)
+        for item in client.list_collections():
+            name = getattr(item, "name", item)
+            # Older batch ingestion used LangChain's default collection name.
+            if name in {"documents", "langchain"} and not (name == "documents" and collection is not None):
+                stores.append(client.get_collection(name=name, embedding_function=None))
+    return stores
+
+
+@_with_document_lock
+def _cleanup_expired_guest_documents(now: datetime | None = None) -> int:
+    """Remove guest uploads aged 24 hours; keep incomplete removals for retry."""
+    global _keyword_index
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    cutoff = now - timedelta(seconds=GUEST_DOCUMENT_TTL_SECONDS)
+    registry = _load_doc_registry()
+    expired = []
+    root = KNOWLEDGE_BASE_DIR.resolve()
+    for filename, info in registry.items():
+        if not isinstance(info, dict):
+            app.logger.warning("Skipping invalid document registry entry: %s", filename)
+            continue
+        guest_id = info.get("guest_id")
+        if not isinstance(guest_id, str) or not guest_id:
+            continue
+        try:
+            uploaded_at = datetime.fromisoformat(info["uploaded_at"])
+            if uploaded_at.tzinfo is None:
+                uploaded_at = uploaded_at.replace(tzinfo=timezone.utc)
+        except (KeyError, TypeError, ValueError):
+            app.logger.warning("Skipping guest document with invalid upload time: %s", filename)
+            continue
+        if uploaded_at > cutoff:
+            continue
+        filepath = KNOWLEDGE_BASE_DIR / filename
+        if (Path(filename).name != filename or filepath.resolve().parent != root
+                or filepath.resolve() == DOCUMENTS_JSON.resolve()):
+            app.logger.warning("Skipping unsafe guest document path: %s", filename)
+            continue
+        expired.append((filename, filepath, guest_id))
+
+    if not expired:
+        return 0
+    try:
+        stores = _get_guest_cleanup_collections()
+    except Exception:
+        app.logger.exception("Could not open document stores for guest cleanup; will retry")
+        return 0
+
+    removed = 0
+    for filename, filepath, guest_id in expired:
+        invalidate_context = False
+        try:
+            sources = list(dict.fromkeys([
+                str(filepath), filepath.as_posix(),
+                str(filepath.resolve()), filepath.resolve().as_posix(),
+            ]))
+            for store in stores:
+                data = store.get(where={"source": {"$in": sources}}, include=["metadatas"])
+                ids = [chunk_id for chunk_id, metadata in zip(data["ids"], data["metadatas"])
+                       if (metadata or {}).get("guest_id") in (guest_id, None)]
+                if ids:
+                    # A delete can partially succeed before raising, so evict caches on errors too.
+                    invalidate_context = True
+                    store.delete(ids=ids)
+            filepath.unlink(missing_ok=True)
+            del registry[filename]
+            removed += 1
+            invalidate_context = True
+        except Exception:
+            app.logger.exception("Could not finish deleting expired guest document %s; will retry", filename)
+        finally:
+            if invalidate_context:
+                _keyword_index = None
+                _mark_keyword_index_stale()
+                conversation_sessions.clear()
+    if removed:
+        _save_doc_registry(registry)
+    return removed
+
+
+def _run_guest_cleanup_safely() -> None:
+    try:
+        _cleanup_expired_guest_documents()
+    except Exception:
+        app.logger.exception("Guest document cleanup failed; will retry")
+
+
+def _guest_cleanup_loop() -> None:
+    while not _guest_cleanup_stop.wait(GUEST_CLEANUP_INTERVAL_SECONDS):
+        _run_guest_cleanup_safely()
+
+
+@_with_document_lock
+def _start_guest_cleanup() -> None:
+    """Sweep at server startup, then once a minute even when there is no traffic."""
+    global _guest_cleanup_thread
+    if _guest_cleanup_thread is not None and _guest_cleanup_thread.is_alive():
+        return
+    _run_guest_cleanup_safely()
+    _guest_cleanup_stop.clear()
+    _guest_cleanup_thread = Thread(target=_guest_cleanup_loop, name="guest-document-cleanup", daemon=True)
+    _guest_cleanup_thread.start()
 
 
 # ── Helper: initialise / reload vector store ─────────────────────────────────
@@ -191,7 +308,7 @@ def _init_store() -> tuple[bool, str]:
 def _evict_stale_sessions() -> None:
     """Remove sessions that have been idle longer than SESSION_TTL_SECONDS."""
     now     = time.monotonic()
-    stale   = [sid for sid, s in conversation_sessions.items()
+    stale   = [sid for sid, s in list(conversation_sessions.items())
                if now - s.get("last_accessed", now) > SESSION_TTL_SECONDS]
     for sid in stale:
         conversation_sessions.pop(sid, None)
@@ -516,6 +633,7 @@ def chat():
 
 
 @app.route("/api/documents", methods=["GET"])
+@_with_document_lock
 def list_documents():
     """Return a list of all uploaded/ingested documents."""
     registry = _load_doc_registry()
@@ -537,6 +655,7 @@ def list_documents():
 
 
 @app.route("/api/documents/upload", methods=["POST"])
+@_with_document_lock
 def upload_document():
     """Upload and ingest a PDF file."""
     if "file" not in request.files:
@@ -588,6 +707,7 @@ def upload_document():
 
 
 @app.route("/api/documents/<filename>", methods=["DELETE"])
+@_with_document_lock
 def delete_document(filename: str):
     """
     Delete a document file and remove its vectors from ChromaDB.
@@ -926,6 +1046,9 @@ if __name__ == "__main__":
     print("=" * 60)
     _initialize_sqlite()
     _init_store()   # best-effort on startup; 
+    # Debug mode serves requests in the reloader child, not its parent process.
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        _start_guest_cleanup()
     print("  Open: http://localhost:5000")
     print("=" * 60 + "\n")
     app.run(debug=True, host="0.0.0.0", port=5000)

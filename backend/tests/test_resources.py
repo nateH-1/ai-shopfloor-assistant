@@ -87,6 +87,7 @@ def test_ollama_status_reports_unreachable_server():
 
 def test_chat_explains_when_ollama_is_down(tmp_path, monkeypatch):
     monkeypatch.setattr(app_module, "USERS_DB_PATH", tmp_path / "users.db")
+    app_module._initialize_sqlite()
     client = app_module.app.test_client()
     client.environ_base["HTTP_X_TAB_ID"] = "7e8fd964-c9c4-40bf-b7fa-4b48444bf45c"
     assert client.post("/users/session").status_code == 204

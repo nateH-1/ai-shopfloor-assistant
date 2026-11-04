@@ -24,9 +24,7 @@ from app import app
 def client(tmp_path, monkeypatch):
     app.config["TESTING"] = True
     monkeypatch.setattr(app_module, "USERS_DB_PATH", tmp_path / "users.db")
-    app_module._create_roles_table()
-    app_module._create_users_table()
-    app_module._create_tab_sessions_table()
+    app_module._initialize_sqlite()
     tab_id, login_id = str(uuid4()), str(uuid4())
     with app_module.database_connection() as conn:
         conn.execute("""INSERT INTO users (id, username, full_name, password_hash, role_id, verification_status)
