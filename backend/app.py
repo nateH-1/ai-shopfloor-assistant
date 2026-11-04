@@ -420,6 +420,20 @@ def _create_tab_sessions_table():
         conn.execute("CREATE INDEX IF NOT EXISTS tab_sessions_expiry ON tab_sessions(expires_at)")
         conn.execute("CREATE INDEX IF NOT EXISTS tab_sessions_user ON tab_sessions(user_id)")
 
+def _create_app_settings_table():
+    """ Table to keep track of whether guests are enabled or disabled.
+    1 = enabled, 0 = disabled"""
+
+    with database_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS app_settings (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                guests_enabled INTEGER NOT NULL DEFAULT 1
+                    CHECK (guests_enabled IN (0, 1))
+            )
+        """)
+        conn.execute("INSERT OR IGNORE INTO app_settings (id, guests_enabled) VALUES (1, 1)")
+
 
 def _request_tab_id():
     value = request.headers.get("X-Tab-ID", "")
@@ -475,11 +489,34 @@ def _discard_login_memory(login_id):
             conversation_sessions.pop(key, None)
 
 
-def _start_tab_login(user_id, *, is_guest=False):
+def logout_all_guests(conn: sqlite3.Connection | None = None) -> int:
+    """Revoke every guest login and its memory, preserving account logins and cookies.
+
+    Pass a connection to include revocation in the caller's transaction.
+    """
+    if conn is None:
+        with database_connection() as connection:
+            return logout_all_guests(connection)
+
+    logins = conn.execute("SELECT login_id FROM tab_sessions WHERE is_guest = 1").fetchall()
+    conn.execute("DELETE FROM tab_sessions WHERE is_guest = 1")
+    for login in logins:
+        _discard_login_memory(login["login_id"])
+    return len(logins)
+
+
+def _start_tab_login(user_id, *, is_guest=False) -> bool:
     browser_id = session["browser_session_id"]
     tab_id = _request_tab_id()
     now = time.time()
     with database_connection() as conn:
+        if is_guest:
+            # Serialize this final policy check with disabling/revoking guests.
+            # A registration that started before the toggle must not add a login afterward.
+            conn.execute("BEGIN IMMEDIATE")
+            setting = conn.execute("SELECT guests_enabled FROM app_settings WHERE id = 1").fetchone()
+            if setting is None or setting["guests_enabled"] != 1:
+                return False
         old = conn.execute(
             "SELECT login_id FROM tab_sessions WHERE browser_session_id = ? AND tab_id = ?",
             (browser_id, tab_id),
@@ -498,6 +535,7 @@ def _start_tab_login(user_id, *, is_guest=False):
     if old:
         _discard_login_memory(old["login_id"])
     g.pop("tab_user", None)
+    return True
 
 
 def _conversation_key(session_id):
@@ -532,6 +570,7 @@ def _initialize_sqlite():
     _create_roles_table()
     _create_users_table()
     _create_tab_sessions_table()
+    _create_app_settings_table()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -559,6 +598,9 @@ def chat():
     Body:   { message: str, history: list, session_id?: str }
     Reply:  { reply: str, session_id: str, metadata: { sources: [] } }
     """
+    if _current_user_role() == "Guest" and not guest_is_enabled():
+        logout_user()
+        return jsonify({"error": "Admin has disabled guest features"}), 403
     try:
         data       = request.get_json(silent=True) or {}
         message    = (data.get("message") or "").strip()
@@ -658,6 +700,10 @@ def list_documents():
 @_with_document_lock
 def upload_document():
     """Upload and ingest a PDF file."""
+    if _current_user_role() == "Guest" and not guest_is_enabled():
+        logout_user()
+        return jsonify({"error": "Admin has disabled guest features"}), 403
+
     if "file" not in request.files:
         return jsonify({"success": False, "message": "No file field in request"}), 400
 
@@ -713,9 +759,17 @@ def delete_document(filename: str):
     Delete a document file and remove its vectors from ChromaDB.
     ChromaDB supports selective deletion by metadata — no full index rebuild needed.
     """
+    if _current_user_role() == "Guest" and not guest_is_enabled():
+        logout_user()
+        return jsonify({"error": "Admin has disabled guest features"}), 403
+
     registry = _load_doc_registry()
     if filename not in registry:
         return jsonify({"success": False, "message": "Document not found"}), 404
+
+    owner = _current_user_id() if _current_user_role() == "Guest" else ""
+    if (registry[filename].get("guest_id") or "") != owner:
+        return jsonify({"success": False, "message": "You cannot delete another owner's document."}), 403
 
     # Remove the file from disk
     (KNOWLEDGE_BASE_DIR / filename).unlink(missing_ok=True)
@@ -767,8 +821,11 @@ def register_user():
     if role not in ["Worker", "Admin", "Guest"]:
         return jsonify({"error": "Valid role not in entry"}), 400
     if role == "Guest":
+        if not guest_is_enabled():
+            return jsonify({"error": "Admin has disabled guest features."}), 403
         user_id = str(uuid.uuid4())
-        _start_tab_login(user_id, is_guest=True)
+        if not _start_tab_login(user_id, is_guest=True):
+            return jsonify({"error": "Admin has disabled guest features."}), 403
         return jsonify({"user_id": user_id, "verification_status": "VERIFIED"})
     if not isinstance(username, str) or not username.strip():
         return jsonify({"error": "Username must be a non-empty string."}), 400
@@ -1020,6 +1077,45 @@ def get_verification_status():
     if not user:
         return jsonify({"error": "Please log in."}), 401
     return jsonify({"verification_status": user["verification_status"]})
+
+
+def guest_is_enabled() -> bool:
+    """Return the saved policy for internal checks; missing settings deny guest access."""
+    with database_connection() as conn:
+        row = conn.execute(
+            "SELECT guests_enabled FROM app_settings WHERE id = 1"
+        ).fetchone()
+    return row is not None and row["guests_enabled"] == 1
+
+
+@app.route("/guest/status", methods=["GET"])
+def get_guest_enabled():
+    return jsonify({"guests_enabled": guest_is_enabled()}), 200
+
+
+@app.route("/guest/enable", methods=["POST"])
+def enable_guest():
+    """Receive 'enabled' or 'disabled' and persist the policy for a verified admin."""
+    user = _current_user()
+    if not user or user["role"] != "Admin" or user["verification_status"] != "VERIFIED":
+        return jsonify({"error": "Admin access required."}), 403
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Expected a JSON object."}), 400
+    enabled = data.get("enabled")
+    if not isinstance(enabled, str) or enabled not in ("enabled", "disabled"):
+        return jsonify({"error": "No valid enable/disable status received."}), 400
+    enabled = int(enabled == "enabled")
+
+    with database_connection() as conn:
+        conn.execute(
+            """INSERT INTO app_settings (id, guests_enabled) VALUES (1, ?)
+               ON CONFLICT(id) DO UPDATE SET guests_enabled = excluded.guests_enabled""",
+            (enabled,),
+        )
+        if not enabled:
+            logout_all_guests(conn)
+    return jsonify({"guests_enabled": bool(enabled)}), 200
 
 
 

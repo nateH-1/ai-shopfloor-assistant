@@ -269,7 +269,7 @@ test("account, document, chat, and feedback clients all send the selected tab's 
   const tab = document({
     fetch: async () => ({
       ok: true, status: 200,
-      json: async () => ({ user_id: randomUUID(), verification_status: "VERIFIED", documents: [], text: "hello", feedback: null }),
+      json: async () => ({ user_id: randomUUID(), verification_status: "VERIFIED", documents: [], text: "hello", feedback: null, guests_enabled: false }),
     }),
   });
   function client(filename) {
@@ -295,6 +295,13 @@ test("account, document, chat, and feedback clients all send the selected tab's 
   await settings.verify_user("user", "VERIFIED");
   await settings.change_user_role("user", "Worker");
   await settings.delete_user("user");
+  assert.equal((await settings.get_guest_status()).guests_enabled, false);
+  assert.equal((await settings.enable_guest("disabled")).guests_enabled, false);
+  const guestStatusRequest = tab.requests.find(({ url }) => url === "/guest/status");
+  assert.equal(guestStatusRequest.init.method, "GET");
+  const guestUpdateRequest = tab.requests.find(({ url }) => url === "/guest/enable");
+  assert.equal(guestUpdateRequest.init.method, "POST");
+  assert.deepEqual(JSON.parse(guestUpdateRequest.init.body), { enabled: "disabled" });
   const documents = client("documentApi.ts");
   await documents.listDocuments();
   await documents.uploadDocument(new File(["content"], "manual.pdf"));

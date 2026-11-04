@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
       { source: "/users/delete", destination: `${backend}/users/delete` },
       { source: "/users/change-role", destination: `${backend}/users/change-role` },
       { source: "/users/verification-status", destination: `${backend}/users/verification-status`},
+      { source: "/guest/status", destination: `${backend}/guest/status` },
+      { source: "/guest/enable", destination: `${backend}/guest/enable` },
     ];
   },
 };

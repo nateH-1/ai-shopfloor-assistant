@@ -5,6 +5,7 @@ import Header from "@/components/Header"
 import UserManagementBubble from "@/components/UserManagementBubble";
 import DocumentBubble from "@/components/DocumentBubble";
 import AccountBubble from "@/components/AccountBubble";
+import GuestManagementBubble from "@/components/GuestManagementBubble";
 import { get_role_permissions } from "@/lib/settingsAPI";
 import { get_verification_status } from "@/lib/authApi";
 
@@ -76,7 +77,9 @@ export default function Settings() {
           {roleInfo?.can_upload_files ? (
             <DocumentBubble/>
           ) : null}
-            
+          {roleInfo?.can_manage_users ? (
+            <GuestManagementBubble/>
+          ) : null}
           </main>
         </div>
       );
