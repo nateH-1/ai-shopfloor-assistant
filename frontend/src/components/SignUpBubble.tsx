@@ -1,6 +1,7 @@
 ﻿"use client";
 
-import { useState, type SubmitEvent } from "react";
+import { useState, useEffect, useCallback, type SubmitEvent } from "react";
+import { get_guest_status } from "@/lib/settingsAPI";
 
 interface SignUpInputProps {
   onSubmit: (info: SignUpInfo) => Promise<void>;
@@ -23,6 +24,9 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
   const passwordFormat = /^(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*:?><]).*$/i;
   const [organization, setOrganization] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [guestEnabled, setGuestEnabled] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(false)
+  const [signInOptions, setSignInOptions] = useState<SignUpInfo["role"][]>(["Worker", "Admin"]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -63,16 +67,37 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
     void submit({ role: role, email: email.trim(), full_name: fullName.trim(), password: password, organization: organization.trim() });
   };
 
+  const getGuestStatus = useCallback(async () => {
+      setIsLoading(true);
+      try {
+        const status = await get_guest_status();
+        setErrorMessage("");
+        setGuestEnabled(status.guests_enabled);
+        setSignInOptions(status.guests_enabled ? ["Worker", "Admin", "Guest"] : ["Worker", "Admin"])
+      } catch (err) {
+        setErrorMessage(err instanceof Error ? err.message : "Failed to load guest settings.");
+      } finally {
+        setIsLoading(false);
+      }
+    }, []);
+  
+  useEffect(() => {
+      void getGuestStatus();
+  }, [getGuestStatus]);
+
   const inputClassName = "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-[#2d3748] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200";
 
   return (
     <div className="mx-auto w-full max-w-md rounded-2xl rounded-tl-sm border border-gray-200 bg-white px-5 py-6 shadow-sm sm:px-6">
-      <form onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate className="flex flex-col gap-4">
+      { isLoading ? (
+        <p>Loading, one moment...</p>
+      ) : (
+        <form onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate className="flex flex-col gap-4">
         {/* Role Selection */}
         <fieldset>
           <legend className="mb-3 text-lg font-semibold text-[#1a202c]">Sign up as:</legend>
           <div className="grid grid-cols-3 gap-2">
-            {(["Worker", "Admin", "Guest"] as const).map((option) => (
+            {signInOptions.map((option) => (
               <label key={option} className="cursor-pointer">
                 <input
                   type="radio"
@@ -90,7 +115,7 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
           </div>
         </fieldset>
         {/* Sign Up Information */}
-        {role == "Guest" ? (
+        {role == "Guest" && guestEnabled? (
           <div className="flex flex-col gap-4">
             <p>If you continue as a guest, you will still be able to upload files and ask questions, but you will not be able to connect to other machines and files will be deleted after you sign out.</p>
             <button type="submit" disabled={isSubmitting} className="mt-1 w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
@@ -164,6 +189,8 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
         {errorMessage && <p role="alert" className="text-sm text-red-600">{errorMessage}</p>}
         {isSubmitting && <p role="status" className="text-sm text-gray-500">Please wait...</p>}
       </form>
+      )}
+      
     </div>
   );
 }

@@ -5,26 +5,34 @@ from langchain_core.documents import Document
 from rag.config import KEYWORD_FALLBACK_DISTANCE, NUM_CHUNKS, RRF_K
 from rag.keyword import _keyword_search, _unknown_terms
 
-def _similarity_search(collection, query: str, k: int = NUM_CHUNKS, where: dict = None) -> list[Document]:
+def _with_guest_filter(where: dict | None, guest_id: str) -> dict:
+    """Require explicit ownership, preserving any document-specific filter."""
+    owner = {"guest_id": guest_id}
+    return {"$and": [owner, where]} if where else owner
+
+
+def _similarity_search(collection, query: str, k: int = NUM_CHUNKS, where: dict = None,
+                       guest_id: str = "") -> list[Document]:
     """Query ChromaDB and return LangChain Document objects."""
     n = min(k, collection.count())
     if n == 0:
         return []
     kwargs: dict = {"query_texts": [query], "n_results": n, "include": ["documents", "metadatas"]}
-    if where:
-        kwargs["where"] = where
+    kwargs["where"] = _with_guest_filter(where, guest_id)
     results = collection.query(**kwargs)
     return [Document(page_content=t, metadata=m)
             for t, m in zip(results["documents"][0], results["metadatas"][0])]
 
 
-def _similarity_search_with_score(collection, query: str, k: int = NUM_CHUNKS) -> list[tuple[Document, float]]:
+def _similarity_search_with_score(collection, query: str, k: int = NUM_CHUNKS,
+                                  guest_id: str = "") -> list[tuple[Document, float]]:
     """Query ChromaDB and return (Document, distance) tuples."""
     n = min(k, collection.count())
     if n == 0:
         return []
     results = collection.query(query_texts=[query], n_results=n,
-                               include=["documents", "metadatas", "distances"])
+                               include=["documents", "metadatas", "distances"],
+                               where=_with_guest_filter(None, guest_id))
     return [(Document(page_content=t, metadata=m), d)
             for t, m, d in zip(results["documents"][0], results["metadatas"][0], results["distances"][0])]
 
@@ -49,14 +57,13 @@ def _reciprocal_rank_fusion(ranked_lists: list[list[str]], rrf_k: int = RRF_K) -
 
 
 def _hybrid_search(collection, query: str, get_keyword_index, k: int = NUM_CHUNKS,
-                   where: dict = None) -> tuple[list[Document], bool]:
-    """Vector search plus BM25 fallback; returns (chunks, enough_evidence)."""
+                   where: dict = None, guest_id: str = "") -> tuple[list[Document], bool]:
+    """Search one guest's chunks (or shared chunks for guest_id="")."""
     n = min(k, collection.count())
     if n == 0:
         return [], False
     kwargs: dict = {"query_texts": [query], "n_results": n, "include": ["documents", "metadatas", "distances"]}
-    if where:
-        kwargs["where"] = where
+    kwargs["where"] = _with_guest_filter(where, guest_id)
     results = collection.query(**kwargs)
     ids       = results["ids"][0]
     docs      = {i: Document(page_content=t, metadata=m)
@@ -68,13 +75,13 @@ def _hybrid_search(collection, query: str, get_keyword_index, k: int = NUM_CHUNK
         return [docs[i] for i in ids], True
 
     index = get_keyword_index()
-    if weak and _unknown_terms(index, query):
+    if weak and _unknown_terms(index, query, guest_id=guest_id):
         return [], False
 
     source = where.get("source") if where else None
-    keyword_hits = _keyword_search(index, query, k=k, source=source)
+    keyword_hits = _keyword_search(index, query, k=k, source=source, guest_id=guest_id)
     if not keyword_hits:
-        return [docs[i] for i in ids], True
+        return [docs[i] for i in ids], bool(ids)
 
     for hit in keyword_hits:
         docs.setdefault(hit["id"], Document(page_content=hit["text"], metadata=hit["metadata"]))

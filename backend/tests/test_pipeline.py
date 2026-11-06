@@ -12,6 +12,9 @@ Run: cd backend && pytest tests/test_pipeline.py -v
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+import pytest
+
+from rag.config import KNOWLEDGE_BASE_DIR
 from rag.pipeline import NO_INFO_REPLY, OFF_TOPIC_REPLY, _chat_with_memory, answer_question
 
 
@@ -46,7 +49,7 @@ def test_ambiguous_question_asks_and_remembers_it():
 def test_broad_question_uses_multi_doc_path():
     llm = MagicMock()
     result, _, fakes = _ask("compare the safety rules", scope=("broad", None), llm=llm)
-    fakes.multi.assert_called_once_with("compare the safety rules", 3, "COLLECTION", llm, "KEYWORD_GETTER")
+    fakes.multi.assert_called_once_with("compare the safety rules", 3, "COLLECTION", llm, "KEYWORD_GETTER", guest_id="")
     assert result == {"reply": "multi answer", "chunks": ["m"], "clarification": None}
 
 
@@ -82,3 +85,34 @@ def test_not_enough_evidence_answers_without_calling_the_model():
     assert (answer, chunks) == (NO_INFO_REPLY, [])
     llm.invoke.assert_not_called()
     session["memory"].save_context.assert_called_once()   # the turn is still remembered
+
+
+@pytest.mark.parametrize("guest_id", ["", "guest-a"])
+@pytest.mark.parametrize("scope", [
+    ("pass", None),
+    ("broad", None),
+    ("resolved_all", "what is the torque spec"),
+    ("resolved_single", ("manual.pdf", "what is the torque spec")),
+])
+def test_every_answer_path_passes_owner_to_scope_and_retrieval(guest_id, scope):
+    memory = MagicMock()
+    memory.load_memory_variables.return_value = {"chat_history": ""}
+    sessions = {"s1": {"memory": memory}}
+    llm = MagicMock()
+    with patch("rag.pipeline._is_off_topic", return_value=False), \
+         patch("rag.pipeline._detect_scope", return_value=scope) as detect_scope, \
+         patch("rag.pipeline._hybrid_search", return_value=([], True)) as search:
+        result = answer_question(
+            "what is the torque spec", sessions, "s1", "COLLECTION", llm,
+            "GUARD_GETTER", lambda: 3, "KEYWORD_GETTER", guest_id=guest_id,
+        )
+
+    assert detect_scope.call_args.kwargs["guest_id"] == guest_id
+    search.assert_called_once()
+    assert search.call_args.kwargs["guest_id"] == guest_id
+    if scope[0] == "resolved_single":
+        assert search.call_args.kwargs["where"] == {
+            "source": str(KNOWLEDGE_BASE_DIR / "manual.pdf"),
+        }
+    assert result["chunks"] == []
+    llm.invoke.assert_not_called()

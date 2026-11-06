@@ -1,3 +1,5 @@
+import { tabFetch } from "./tabSession";
+
 /**
  * documentApi.ts — client for the Flask document-management endpoints.
  *
@@ -19,7 +21,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 /** Fetch the list of ingested documents from the knowledge base. */
 export async function listDocuments(): Promise<Document[]> {
-  const res = await fetch(`${API_BASE}/api/documents`);
+  const res = await tabFetch(`${API_BASE}/api/documents`);
   if (!res.ok) {
     const text = await res.text().catch(() => "Unknown error");
     throw new Error(`Failed to list documents (${res.status}): ${text}`);
@@ -36,7 +38,7 @@ export async function uploadDocument(file: File): Promise<UploadResponse> {
   const form = new FormData();
   form.append("file", file);
 
-  const res = await fetch(`${API_BASE}/api/documents/upload`, {
+  const res = await tabFetch(`${API_BASE}/api/documents/upload`, {
     method: "POST",
     body: form,
   });
@@ -51,7 +53,7 @@ export async function uploadDocument(file: File): Promise<UploadResponse> {
 /** Delete a document from the knowledge base by filename. */
 export async function deleteDocument(filename: string): Promise<DeleteResponse> {
   const encoded = encodeURIComponent(filename);
-  const res = await fetch(`${API_BASE}/api/documents/${encoded}`, {
+  const res = await tabFetch(`${API_BASE}/api/documents/${encoded}`, {
     method: "DELETE",
   });
 

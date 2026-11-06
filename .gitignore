@@ -44,6 +44,9 @@ backend/knowledge_base/documents.json
 knowledge_base/*.pdf
 knowledge_base/documents.json
 
+# Users database
+backend/users_database/
+
 # Node.js / Next.js
 frontend/node_modules/
 frontend/.next/

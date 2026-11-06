@@ -10,7 +10,15 @@ function loadSource(filename, globals = {}) {
   const { outputText } = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX },
   });
-  const context = { exports: {}, require, URL, URLSearchParams, ...globals };
+  const context = {
+    exports: {}, URL, URLSearchParams, ...globals,
+    require: (name) => {
+      if (name === "./tabSession") {
+        return { tabFetch: globals.fetch, TabSessionError: class extends Error {} };
+      }
+      return (globals.require ?? require)(name);
+    },
+  };
   vm.runInNewContext(outputText, context);
   return context.exports;
 }

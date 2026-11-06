@@ -9,8 +9,10 @@ Run: cd backend && pytest tests/test_keyword.py -v
 
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 import app as app_module
-from rag.keyword import _build_keyword_index, _keyword_search, _tokenize
+from rag.keyword import _build_keyword_index, _keyword_search, _tokenize, _unknown_terms
 
 
 def _collection(chunks):
@@ -19,7 +21,7 @@ def _collection(chunks):
     coll.get.return_value = {
         "ids":       [c[0] for c in chunks],
         "documents": [c[1] for c in chunks],
-        "metadatas": [{"source": c[2], "page": 0} for c in chunks],
+        "metadatas": [{"source": c[2], "page": 0, "guest_id": ""} for c in chunks],
     }
     return coll
 
@@ -60,6 +62,44 @@ def test_empty_collection_gives_no_index_and_no_results():
     index = _build_keyword_index(_collection([]))
     assert index is None
     assert _keyword_search(index, "anything") == []
+
+
+@pytest.mark.parametrize("guest_id,expected", [("guest-a", "a"), ("guest-b", "b"), ("", "shared")])
+def test_keyword_filters_owner_before_top_k_and_excludes_legacy(guest_id, expected):
+    index = {
+        "ids": ["legacy", "b", "shared", "a"],
+        "texts": ["CO2 welding"] * 4,
+        "metadatas": [
+            {"source": "kb/manual.pdf"},
+            {"source": "kb/manual.pdf", "guest_id": "guest-b"},
+            {"source": "kb/manual.pdf", "guest_id": ""},
+            {"source": "kb/manual.pdf", "guest_id": "guest-a"},
+        ],
+        "bm25": MagicMock(),
+    }
+    index["bm25"].get_scores.return_value = [100, 90, 80, 10]
+    hits = _keyword_search(index, "CO2 welding", k=1, guest_id=guest_id)
+    assert [hit["id"] for hit in hits] == [expected]
+    assert _keyword_search(index, "CO2 welding", guest_id="unknown-guest") == []
+
+
+def test_owner_vocabulary_excludes_other_guests_shared_and_legacy_terms():
+    collection = _collection([
+        ("a", "welding", "kb/a.pdf"),
+        ("b", "warranty", "kb/b.pdf"),
+        ("shared", "assembly", "kb/shared.pdf"),
+        ("legacy", "secret", "kb/legacy.pdf"),
+    ])
+    collection.get.return_value["metadatas"][0]["guest_id"] = "guest-a"
+    collection.get.return_value["metadatas"][1]["guest_id"] = "guest-b"
+    del collection.get.return_value["metadatas"][3]["guest_id"]
+    index = _build_keyword_index(collection)
+    assert _unknown_terms(index, "welding warranty assembly secret", guest_id="guest-a") == [
+        "warranty", "assembly", "secret",
+    ]
+    assert _unknown_terms(index, "welding warranty assembly secret", guest_id="") == [
+        "welding", "warranty", "secret",
+    ]
 
 
 def test_app_rebuilds_index_only_after_documents_change():

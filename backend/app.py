@@ -19,8 +19,11 @@ import json
 import time
 import traceback
 import secrets
-from datetime import datetime, timezone
+import atexit
+from datetime import datetime, timedelta, timezone
+from functools import wraps
 from pathlib import Path
+from threading import Event, RLock, Thread
 
 from flask import Flask, request, jsonify, g, session
 from feedback import register_feedback
@@ -40,6 +43,8 @@ from rag.config import (
     MAX_UPLOAD_MB,
     ALLOWED_EXTENSIONS,
     SESSION_TTL_SECONDS,
+    GUEST_DOCUMENT_TTL_SECONDS,
+    GUEST_CLEANUP_INTERVAL_SECONDS,
 )
 
 from rag.context import _dedup_chunks
@@ -77,6 +82,7 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true",
+    AUTH_SESSION_TTL_SECONDS=int(os.getenv("AUTH_SESSION_TTL_SECONDS", str(8 * 60 * 60))),
 )
 CORS(app)
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
@@ -93,6 +99,19 @@ _guard_llm: ChatOllama | None          = None   # off-topic classifier
 conversation_sessions: dict            = {}      # session_id → { memory, last_accessed }
 _keyword_index:       dict | None      = None    # BM25 index over the collection's chunks
 _keyword_index_stale: bool             = True    # rebuild on next use
+_documents_lock = RLock()
+_guest_cleanup_stop = Event()
+_guest_cleanup_thread: Thread | None = None
+atexit.register(_guest_cleanup_stop.set)
+
+
+def _with_document_lock(func):
+    """Keep document mutations and keyword-cache rebuilds consistent with cleanup."""
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        with _documents_lock:
+            return func(*args, **kwargs)
+    return wrapped
 
 def _get_guard_llm() -> ChatOllama:
     """Return the off-topic classifier client, creating it on first use."""
@@ -102,23 +121,7 @@ def _get_guard_llm() -> ChatOllama:
     return _guard_llm
 
 
-def _get_keyword_index() -> dict | None:
-    """Return the BM25 keyword index, rebuilding it first if the documents changed."""
-    global _keyword_index, _keyword_index_stale
-    if collection is None:
-        return None
-    if _keyword_index_stale:
-        _keyword_index = _build_keyword_index(collection)
-        _keyword_index_stale = False
-    return _keyword_index
-
-
-def _mark_keyword_index_stale() -> None:
-    """Call after documents are added or removed so the next search rebuilds the index."""
-    global _keyword_index_stale
-    _keyword_index_stale = True
-
-
+@_with_document_lock
 def _get_keyword_index() -> dict | None:
     """Return the BM25 keyword index, rebuilding it first if the documents changed."""
     global _keyword_index, _keyword_index_stale
@@ -158,6 +161,7 @@ def database_connection():
         conn.close()
 
 # ── Helper: document registry ─────────────────────────────────────────────────
+@_with_document_lock
 def _load_doc_registry() -> dict:
     """Load the JSON registry of ingested documents."""
     if DOCUMENTS_JSON.exists():
@@ -165,8 +169,122 @@ def _load_doc_registry() -> dict:
     return {}
 
 
+@_with_document_lock
 def _save_doc_registry(registry: dict) -> None:
-    DOCUMENTS_JSON.write_text(json.dumps(registry, indent=2))
+    temporary = DOCUMENTS_JSON.with_suffix(".json.tmp")
+    temporary.write_text(json.dumps(registry, indent=2), encoding="utf-8")
+    temporary.replace(DOCUMENTS_JSON)
+
+
+def _get_guest_cleanup_collections() -> list:
+    """Open document stores for deletion without needing embeddings or an LLM."""
+    stores = [collection] if collection is not None else []
+    if Path(CHROMA_DB_DIR).exists():
+        client = chromadb.PersistentClient(path=CHROMA_DB_DIR)
+        for item in client.list_collections():
+            name = getattr(item, "name", item)
+            # Older batch ingestion used LangChain's default collection name.
+            if name in {"documents", "langchain"} and not (name == "documents" and collection is not None):
+                stores.append(client.get_collection(name=name, embedding_function=None))
+    return stores
+
+
+@_with_document_lock
+def _cleanup_expired_guest_documents(now: datetime | None = None) -> int:
+    """Remove guest uploads aged 24 hours; keep incomplete removals for retry."""
+    global _keyword_index
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    cutoff = now - timedelta(seconds=GUEST_DOCUMENT_TTL_SECONDS)
+    registry = _load_doc_registry()
+    expired = []
+    root = KNOWLEDGE_BASE_DIR.resolve()
+    for filename, info in registry.items():
+        if not isinstance(info, dict):
+            app.logger.warning("Skipping invalid document registry entry: %s", filename)
+            continue
+        guest_id = info.get("guest_id")
+        if not isinstance(guest_id, str) or not guest_id:
+            continue
+        try:
+            uploaded_at = datetime.fromisoformat(info["uploaded_at"])
+            if uploaded_at.tzinfo is None:
+                uploaded_at = uploaded_at.replace(tzinfo=timezone.utc)
+        except (KeyError, TypeError, ValueError):
+            app.logger.warning("Skipping guest document with invalid upload time: %s", filename)
+            continue
+        if uploaded_at > cutoff:
+            continue
+        filepath = KNOWLEDGE_BASE_DIR / filename
+        if (Path(filename).name != filename or filepath.resolve().parent != root
+                or filepath.resolve() == DOCUMENTS_JSON.resolve()):
+            app.logger.warning("Skipping unsafe guest document path: %s", filename)
+            continue
+        expired.append((filename, filepath, guest_id))
+
+    if not expired:
+        return 0
+    try:
+        stores = _get_guest_cleanup_collections()
+    except Exception:
+        app.logger.exception("Could not open document stores for guest cleanup; will retry")
+        return 0
+
+    removed = 0
+    for filename, filepath, guest_id in expired:
+        invalidate_context = False
+        try:
+            sources = list(dict.fromkeys([
+                str(filepath), filepath.as_posix(),
+                str(filepath.resolve()), filepath.resolve().as_posix(),
+            ]))
+            for store in stores:
+                data = store.get(where={"source": {"$in": sources}}, include=["metadatas"])
+                ids = [chunk_id for chunk_id, metadata in zip(data["ids"], data["metadatas"])
+                       if (metadata or {}).get("guest_id") in (guest_id, None)]
+                if ids:
+                    # A delete can partially succeed before raising, so evict caches on errors too.
+                    invalidate_context = True
+                    store.delete(ids=ids)
+            filepath.unlink(missing_ok=True)
+            del registry[filename]
+            removed += 1
+            invalidate_context = True
+        except Exception:
+            app.logger.exception("Could not finish deleting expired guest document %s; will retry", filename)
+        finally:
+            if invalidate_context:
+                _keyword_index = None
+                _mark_keyword_index_stale()
+                conversation_sessions.clear()
+    if removed:
+        _save_doc_registry(registry)
+    return removed
+
+
+def _run_guest_cleanup_safely() -> None:
+    try:
+        _cleanup_expired_guest_documents()
+    except Exception:
+        app.logger.exception("Guest document cleanup failed; will retry")
+
+
+def _guest_cleanup_loop() -> None:
+    while not _guest_cleanup_stop.wait(GUEST_CLEANUP_INTERVAL_SECONDS):
+        _run_guest_cleanup_safely()
+
+
+@_with_document_lock
+def _start_guest_cleanup() -> None:
+    """Sweep at server startup, then once a minute even when there is no traffic."""
+    global _guest_cleanup_thread
+    if _guest_cleanup_thread is not None and _guest_cleanup_thread.is_alive():
+        return
+    _run_guest_cleanup_safely()
+    _guest_cleanup_stop.clear()
+    _guest_cleanup_thread = Thread(target=_guest_cleanup_loop, name="guest-document-cleanup", daemon=True)
+    _guest_cleanup_thread.start()
 
 
 # ── Helper: initialise / reload vector store ─────────────────────────────────
@@ -190,7 +308,7 @@ def _init_store() -> tuple[bool, str]:
 def _evict_stale_sessions() -> None:
     """Remove sessions that have been idle longer than SESSION_TTL_SECONDS."""
     now     = time.monotonic()
-    stale   = [sid for sid, s in conversation_sessions.items()
+    stale   = [sid for sid, s in list(conversation_sessions.items())
                if now - s.get("last_accessed", now) > SESSION_TTL_SECONDS]
     for sid in stale:
         conversation_sessions.pop(sid, None)
@@ -215,7 +333,7 @@ def _format_sources(chunks: list) -> list:
     return sources
 
 
-# ── Helper: creating database tables ─────────────────────────────────────────────────
+# ── Helper: creating users database tables ─────────────────────────────────────────────────
 def _create_roles_table():
     with database_connection() as conn:
         cursor = conn.cursor()
@@ -263,6 +381,7 @@ def _create_roles_table():
                 can_manage_users = excluded.can_manage_users
         """, roles)
 
+# ── Helper: fetch from database ─────────────────────────────────────────────────
 def _create_users_table():
     with database_connection() as conn:
         conn.execute("""
@@ -284,10 +403,174 @@ def _create_users_table():
         """)
 
 
+def _create_tab_sessions_table():
+    with database_connection() as conn:
+        # Guests have UUIDs but no account in users, so user_id is not a foreign key.
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS tab_sessions (
+                browser_session_id TEXT NOT NULL,
+                tab_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                is_guest INTEGER NOT NULL DEFAULT 0 CHECK (is_guest IN (0, 1)),
+                login_id TEXT NOT NULL UNIQUE,
+                expires_at REAL NOT NULL,
+                PRIMARY KEY (browser_session_id, tab_id)
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS tab_sessions_expiry ON tab_sessions(expires_at)")
+        conn.execute("CREATE INDEX IF NOT EXISTS tab_sessions_user ON tab_sessions(user_id)")
+
+def _create_app_settings_table():
+    """ Table to keep track of whether guests are enabled or disabled.
+    1 = enabled, 0 = disabled"""
+
+    with database_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS app_settings (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                guests_enabled INTEGER NOT NULL DEFAULT 1
+                    CHECK (guests_enabled IN (0, 1))
+            )
+        """)
+        conn.execute("INSERT OR IGNORE INTO app_settings (id, guests_enabled) VALUES (1, 1)")
+
+
+def _request_tab_id():
+    value = request.headers.get("X-Tab-ID", "")
+    try:
+        parsed = uuid.UUID(value)
+    except (ValueError, AttributeError):
+        return None
+    return str(parsed) if str(parsed) == value.lower() else None
+
+
+def _current_user():
+    """Resolve this tab's login; cookie contents never grant an account role."""
+    if "tab_user" in g:
+        return g.tab_user
+    g.tab_user = None
+    browser_id = session.get("browser_session_id")
+    tab_id = _request_tab_id()
+    if not browser_id or not tab_id:
+        return None
+    with database_connection() as conn:
+        row = conn.execute("""
+            SELECT tab_sessions.user_id, tab_sessions.is_guest, tab_sessions.login_id,
+                   users.id AS account_id, users.verification_status, roles.name AS role
+            FROM tab_sessions
+            LEFT JOIN users ON users.id = tab_sessions.user_id
+            LEFT JOIN roles ON roles.id = users.role_id
+            WHERE browser_session_id = ? AND tab_id = ? AND expires_at > ?
+        """, (browser_id, tab_id, time.time())).fetchone()
+    if row is not None and (row["is_guest"] or row["account_id"] is not None):
+        g.tab_user = {
+            "user_id": row["user_id"],
+            "role": "Guest" if row["is_guest"] else row["role"],
+            "verification_status": "VERIFIED" if row["is_guest"] else row["verification_status"],
+            "login_id": row["login_id"],
+        }
+    return g.tab_user
+
+
+def _current_user_role():
+    user = _current_user()
+    return user["role"] if user else None
+
+
+def _current_user_id():
+    user = _current_user()
+    return user["user_id"] if user else None
+
+
+def _discard_login_memory(login_id):
+    prefix = f"tab:{login_id}:"
+    for key in list(conversation_sessions):
+        if key.startswith(prefix):
+            conversation_sessions.pop(key, None)
+
+
+def logout_all_guests(conn: sqlite3.Connection | None = None) -> int:
+    """Revoke every guest login and its memory, preserving account logins and cookies.
+
+    Pass a connection to include revocation in the caller's transaction.
+    """
+    if conn is None:
+        with database_connection() as connection:
+            return logout_all_guests(connection)
+
+    logins = conn.execute("SELECT login_id FROM tab_sessions WHERE is_guest = 1").fetchall()
+    conn.execute("DELETE FROM tab_sessions WHERE is_guest = 1")
+    for login in logins:
+        _discard_login_memory(login["login_id"])
+    return len(logins)
+
+
+def _start_tab_login(user_id, *, is_guest=False) -> bool:
+    browser_id = session["browser_session_id"]
+    tab_id = _request_tab_id()
+    now = time.time()
+    with database_connection() as conn:
+        if is_guest:
+            # Serialize this final policy check with disabling/revoking guests.
+            # A registration that started before the toggle must not add a login afterward.
+            conn.execute("BEGIN IMMEDIATE")
+            setting = conn.execute("SELECT guests_enabled FROM app_settings WHERE id = 1").fetchone()
+            if setting is None or setting["guests_enabled"] != 1:
+                return False
+        old = conn.execute(
+            "SELECT login_id FROM tab_sessions WHERE browser_session_id = ? AND tab_id = ?",
+            (browser_id, tab_id),
+        ).fetchone()
+        conn.execute("DELETE FROM tab_sessions WHERE expires_at <= ?", (now,))
+        conn.execute("""
+            INSERT INTO tab_sessions (browser_session_id, tab_id, user_id, is_guest, login_id, expires_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(browser_session_id, tab_id) DO UPDATE SET
+                user_id = excluded.user_id,
+                is_guest = excluded.is_guest,
+                login_id = excluded.login_id,
+                expires_at = excluded.expires_at
+        """, (browser_id, tab_id, user_id, int(is_guest), str(uuid.uuid4()),
+              now + app.config["AUTH_SESSION_TTL_SECONDS"]))
+    if old:
+        _discard_login_memory(old["login_id"])
+    g.pop("tab_user", None)
+    return True
+
+
+def _conversation_key(session_id):
+    return f"tab:{_current_user()['login_id']}:{session_id}"
+
+
+@app.before_request
+def require_tab_authentication():
+    if request.method == "OPTIONS":
+        return None
+    if request.endpoint in {"register_user", "login_user", "logout_user"}:
+        if not _request_tab_id():
+            return jsonify({"error": "A valid X-Tab-ID header is required."}), 400
+        if request.endpoint != "logout_user" and not session.get("browser_session_id"):
+            return jsonify({"error": "Initialize the browser session before logging in."}), 401
+    if request.endpoint in {"chat", "list_documents", "upload_document", "delete_document", "clear_conversation"}:
+        if not _current_user():
+            return jsonify({"error": "Please log in."}), 401
+
+
+@app.after_request
+def prevent_auth_response_caching(response):
+    if (request.path.startswith("/users") or request.path.startswith("/roles/")
+            or request.path.startswith("/api/documents") or request.path in {"/chat", "/api/clear"}):
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+
 def _initialize_sqlite():
     """Create account tables before requests. Repeating this keeps existing rows."""
     _create_roles_table()
     _create_users_table()
+    _create_tab_sessions_table()
+    _create_app_settings_table()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -315,10 +598,15 @@ def chat():
     Body:   { message: str, history: list, session_id?: str }
     Reply:  { reply: str, session_id: str, metadata: { sources: [] } }
     """
+    if _current_user_role() == "Guest" and not guest_is_enabled():
+        logout_user()
+        return jsonify({"error": "Admin has disabled guest features"}), 403
     try:
         data       = request.get_json(silent=True) or {}
         message    = (data.get("message") or "").strip()
         session_id = data.get("session_id") or "default"
+        conversation_key = _conversation_key(session_id)
+        guest_id = _current_user_id() if _current_user_role() == "Guest" else ""
 
         if not message:
             return jsonify({"error": "Message cannot be empty"}), 400
@@ -347,18 +635,22 @@ def chat():
         # When a document-choice button resolves a prior question, preserve the
         # original question with the answer snapshot used by feedback storage.
         # Capture it before answer_question, which clears pending_clarification.
-        session_data = conversation_sessions.get(session_id, {})
+        session_data = conversation_sessions.get(conversation_key, {})
         g.feedback_question = (session_data.get("pending_clarification") or {}).get("original_question", message)
 
         result = answer_question(
             message,
             conversation_sessions,
-            session_id,
+            conversation_key,
             collection,
             llm,
             _get_guard_llm,
-            lambda: len(_load_doc_registry()),
+            lambda: sum(
+                (info.get("guest_id") or "") == guest_id
+                for info in _load_doc_registry().values()
+            ),
             _get_keyword_index,
+            guest_id=guest_id,
         )
 
         metadata = {"sources": _format_sources(result["chunks"])}
@@ -383,19 +675,35 @@ def chat():
 
 
 @app.route("/api/documents", methods=["GET"])
+@_with_document_lock
 def list_documents():
     """Return a list of all uploaded/ingested documents."""
     registry = _load_doc_registry()
-    docs = [
+    """docs = [
         {"filename": name, "chunks": info.get("chunks", 0), "uploaded_at": info.get("uploaded_at", "")}
         for name, info in registry.items()
-    ]
+    ]"""
+    docs = []
+    if _current_user_role() == "Guest":
+        for name, info in registry.items():
+            if info.get("guest_id", None) == _current_user_id():
+                docs.append({"filename": name, "chunks": info.get("chunks", 0), "uploaded_at": info.get("uploaded_at", "")})
+    else:
+        for name, info in registry.items():
+            if info.get("guest_id", None) is None:
+                docs.append({"filename": name, "chunks": info.get("chunks", 0), "uploaded_at": info.get("uploaded_at", "")})
+
     return jsonify({"documents": docs})
 
 
 @app.route("/api/documents/upload", methods=["POST"])
+@_with_document_lock
 def upload_document():
     """Upload and ingest a PDF file."""
+    if _current_user_role() == "Guest" and not guest_is_enabled():
+        logout_user()
+        return jsonify({"error": "Admin has disabled guest features"}), 403
+
     if "file" not in request.files:
         return jsonify({"success": False, "message": "No file field in request"}), 400
 
@@ -405,7 +713,16 @@ def upload_document():
         allowed = ", ".join(sorted(ALLOWED_EXTENSIONS))
         return jsonify({"success": False, "message": f"Unsupported file type. Allowed: {allowed}"}), 400
 
-    filename = secure_filename(Path(file.filename).name)
+    # increment the filename if one already exists
+    registry = _load_doc_registry()
+    original = Path(secure_filename(Path(file.filename).name))
+    filename = original.name
+    count = 1
+
+    while filename in registry or (KNOWLEDGE_BASE_DIR / filename).exists():
+        filename = f"{original.stem}_{count}{original.suffix}"
+        count += 1
+
     filepath = KNOWLEDGE_BASE_DIR / filename
     file.save(filepath)
 
@@ -416,7 +733,9 @@ def upload_document():
             filepath.unlink(missing_ok=True)
             return jsonify({"success": False, "message": msg}), 503
 
-    ok, msg, chunk_count = _ingest_file(filepath, collection)
+    # Use the authenticated identity for both chunk metadata and the registry.
+    guest_id = _current_user_id() if _current_user_role() == "Guest" else None
+    ok, msg, chunk_count = _ingest_file(filepath, collection, guest_id=guest_id)
     if not ok:
         filepath.unlink(missing_ok=True)
         return jsonify({"success": False, "message": msg}), 500
@@ -424,7 +743,7 @@ def upload_document():
 
     # Update registry
     registry = _load_doc_registry()
-    registry[filename] = {"chunks": chunk_count, "uploaded_at": datetime.now(timezone.utc).isoformat()}
+    registry[filename] = {"chunks": chunk_count, "guest_id": guest_id, "uploaded_at": datetime.now(timezone.utc).isoformat()}
     _save_doc_registry(registry)
 
     # Clear sessions so they don't use stale context
@@ -434,14 +753,23 @@ def upload_document():
 
 
 @app.route("/api/documents/<filename>", methods=["DELETE"])
+@_with_document_lock
 def delete_document(filename: str):
     """
     Delete a document file and remove its vectors from ChromaDB.
     ChromaDB supports selective deletion by metadata — no full index rebuild needed.
     """
+    if _current_user_role() == "Guest" and not guest_is_enabled():
+        logout_user()
+        return jsonify({"error": "Admin has disabled guest features"}), 403
+
     registry = _load_doc_registry()
     if filename not in registry:
         return jsonify({"success": False, "message": "Document not found"}), 404
+
+    owner = _current_user_id() if _current_user_role() == "Guest" else ""
+    if (registry[filename].get("guest_id") or "") != owner:
+        return jsonify({"success": False, "message": "You cannot delete another owner's document."}), 403
 
     # Remove the file from disk
     (KNOWLEDGE_BASE_DIR / filename).unlink(missing_ok=True)
@@ -465,8 +793,20 @@ def clear_conversation():
     """Clear conversation history for a session."""
     data       = request.get_json(silent=True) or {}
     session_id = data.get("session_id", "default")
-    conversation_sessions.pop(session_id, None)
+    conversation_sessions.pop(_conversation_key(session_id), None)
     return jsonify({"status": "success", "message": "Conversation cleared."})
+
+
+@app.route("/users/session", methods=["POST"])
+def initialize_browser_session():
+    """Create a stable browser credential; each tab authenticates separately."""
+    with database_connection() as conn:
+        conn.execute("DELETE FROM tab_sessions WHERE expires_at <= ?", (time.time(),))
+    if not session.get("browser_session_id"):
+        # Old account cookies are deliberately not migrated into a tab login.
+        session.clear()
+        session["browser_session_id"] = secrets.token_urlsafe(32)
+    return "", 204
 
 
 @app.route("/users/register", methods=["POST"])
@@ -481,11 +821,12 @@ def register_user():
     if role not in ["Worker", "Admin", "Guest"]:
         return jsonify({"error": "Valid role not in entry"}), 400
     if role == "Guest":
-        session.clear()
-        session["user_id"] = "Guest"
-        session["role"] = "Guest"
-        session["verification_status"] = "VERIFIED"
-        return jsonify({"user_id": "Guest", "verification_status": "VERIFIED"})
+        if not guest_is_enabled():
+            return jsonify({"error": "Admin has disabled guest features."}), 403
+        user_id = str(uuid.uuid4())
+        if not _start_tab_login(user_id, is_guest=True):
+            return jsonify({"error": "Admin has disabled guest features."}), 403
+        return jsonify({"user_id": user_id, "verification_status": "VERIFIED"})
     if not isinstance(username, str) or not username.strip():
         return jsonify({"error": "Username must be a non-empty string."}), 400
     if not isinstance(password, str) or not password:
@@ -546,10 +887,7 @@ def register_user():
                 verification_status
             ))
 
-        session.clear()
-        session["user_id"] = user_id
-        session["role"] = role
-        session["verification_status"] = verification_status
+        _start_tab_login(user_id)
         return jsonify({"user_id": user_id, "verification_status": verification_status}), 201
     except sqlite3.IntegrityError as exc:
         if "users.username" in str(exc):
@@ -579,19 +917,10 @@ def login_user():
                 (given_username.strip(),)
             ).fetchone()
 
-            if user:
-                role_name = conn.execute(
-                    "SELECT name FROM roles WHERE id = ?",
-                    (user["role_id"],)
-                ).fetchone()
-
         if user is None or not password_hasher.verify(given_password, user["password_hash"]):
             return jsonify({"error": "Invalid username or password."}), 401
 
-        session.clear()
-        session["user_id"] = user["id"]
-        session["role"] = role_name["name"]
-        session["verification_status"] = user["verification_status"]
+        _start_tab_login(user["id"])
         return jsonify({"user_id": user["id"], "verification_status": user["verification_status"]}), 200
     except Exception:
         app.logger.exception("Login failed.")
@@ -600,23 +929,22 @@ def login_user():
 
 @app.route("/users/logout", methods=["POST"])
 def logout_user():
-    """Clear the current authentication session, including its cookie."""
-    session.clear()
-    return "", 204
-
-
-def _current_user_role():
-    user_id = session.get("user_id")
-    if not user_id:
-        return None
-    if user_id == "Guest":
-        return "Guest"
+    """Revoke only this tab's login, leaving the shared browser cookie intact."""
+    if not session.get("browser_session_id"):
+        return "", 204
     with database_connection() as conn:
-        user_role = conn.execute(
-            "SELECT roles.name FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = ?",
-            (user_id,)
+        row = conn.execute(
+            "SELECT login_id FROM tab_sessions WHERE browser_session_id = ? AND tab_id = ?",
+            (session["browser_session_id"], _request_tab_id()),
         ).fetchone()
-    return user_role["name"] if user_role else None
+        conn.execute(
+            "DELETE FROM tab_sessions WHERE browser_session_id = ? AND tab_id = ?",
+            (session["browser_session_id"], _request_tab_id()),
+        )
+    if row:
+        _discard_login_memory(row["login_id"])
+    g.pop("tab_user", None)
+    return "", 204
 
 
 @app.route("/roles/permissions", methods=["POST"])
@@ -704,8 +1032,11 @@ def delete_user():
         if deleted.rowcount == 0:
             return jsonify({"error": "User not found"}), 404
 
-    if user_id == session.get("user_id"):
-        session.clear()
+        logins = conn.execute("SELECT login_id FROM tab_sessions WHERE user_id = ?", (user_id,)).fetchall()
+        conn.execute("DELETE FROM tab_sessions WHERE user_id = ?", (user_id,))
+    for login in logins:
+        _discard_login_memory(login["login_id"])
+    g.pop("tab_user", None)
     return jsonify({"message": "User successfully deleted!"}), 200
 
 @app.route("/users/change-role", methods=["POST"])
@@ -737,28 +1068,54 @@ def change_role():
         )
         if updated.rowcount == 0:
             return jsonify({"error": "User not found"}), 404
-    if user_id == session.get("user_id"):
-        session["role"] = new_role
+    g.pop("tab_user", None)
     return jsonify({"message": "Role successfully changed!"}), 200
 
 @app.route("/users/verification-status", methods=["GET"])
 def get_verification_status():
-    user_id = session.get("user_id")
-    if not user_id:
+    user = _current_user()
+    if not user:
         return jsonify({"error": "Please log in."}), 401
-    if user_id == "Guest":
-        return jsonify({"verification_status": "VERIFIED"})
+    return jsonify({"verification_status": user["verification_status"]})
+
+
+def guest_is_enabled() -> bool:
+    """Return the saved policy for internal checks; missing settings deny guest access."""
+    with database_connection() as conn:
+        row = conn.execute(
+            "SELECT guests_enabled FROM app_settings WHERE id = 1"
+        ).fetchone()
+    return row is not None and row["guests_enabled"] == 1
+
+
+@app.route("/guest/status", methods=["GET"])
+def get_guest_enabled():
+    return jsonify({"guests_enabled": guest_is_enabled()}), 200
+
+
+@app.route("/guest/enable", methods=["POST"])
+def enable_guest():
+    """Receive 'enabled' or 'disabled' and persist the policy for a verified admin."""
+    user = _current_user()
+    if not user or user["role"] != "Admin" or user["verification_status"] != "VERIFIED":
+        return jsonify({"error": "Admin access required."}), 403
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Expected a JSON object."}), 400
+    enabled = data.get("enabled")
+    if not isinstance(enabled, str) or enabled not in ("enabled", "disabled"):
+        return jsonify({"error": "No valid enable/disable status received."}), 400
+    enabled = int(enabled == "enabled")
 
     with database_connection() as conn:
-        user = conn.execute(
-            "SELECT verification_status FROM users WHERE id = ?",
-            (user_id,)
-        ).fetchone()
-
-    if user is None:
-        return jsonify({"error": "User not found."}), 401
-
-    return jsonify({"verification_status": user["verification_status"]})
+        conn.execute(
+            """INSERT INTO app_settings (id, guests_enabled) VALUES (1, ?)
+               ON CONFLICT(id) DO UPDATE SET guests_enabled = excluded.guests_enabled""",
+            (enabled,),
+        )
+        if not enabled:
+            logout_all_guests(conn)
+    return jsonify({"guests_enabled": bool(enabled)}), 200
 
 
 
@@ -785,6 +1142,9 @@ if __name__ == "__main__":
     print("=" * 60)
     _initialize_sqlite()
     _init_store()   # best-effort on startup; 
+    # Debug mode serves requests in the reloader child, not its parent process.
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        _start_guest_cleanup()
     print("  Open: http://localhost:5000")
     print("=" * 60 + "\n")
     app.run(debug=True, host="0.0.0.0", port=5000)

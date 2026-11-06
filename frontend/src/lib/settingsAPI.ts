@@ -1,12 +1,15 @@
+import { tabFetch, TabSessionError } from "./tabSession";
+
 export async function get_role_permissions() {
     let response: Response;
     try {
-        response = await fetch(`/roles/permissions`, {
+        response = await tabFetch(`/roles/permissions`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "same-origin",
         });  
-    } catch {
+    } catch (error) {
+        if (error instanceof TabSessionError) throw error;
         throw new Error("Unable to reach the backend server. Please try again.")
     }
     const data = await response.json().catch(() => null);
@@ -19,12 +22,13 @@ export async function get_role_permissions() {
 export async function get_users() {
     let response: Response;
     try {
-        response = await fetch(`/users`, {
+        response = await tabFetch(`/users`, {
             method: "GET",
             headers: { "Content-Type": "application/json" },
             credentials: "same-origin",
         })
-    } catch {
+    } catch (error) {
+        if (error instanceof TabSessionError) throw error;
         throw new Error("Unable to reach the backend server. Please try again.")
     }
     const data = await response.json().catch(() => null);
@@ -40,7 +44,7 @@ export async function verify_user(
 ) {
     let response: Response;
     try {
-        response = await fetch(`/users/verify`, {
+        response = await tabFetch(`/users/verify`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "same-origin",
@@ -49,7 +53,8 @@ export async function verify_user(
                 verification_status: new_status
             })
         })
-    } catch {
+    } catch (error) {
+        if (error instanceof TabSessionError) throw error;
         throw new Error("Unable to reach the backend server. Please try again.")
     }
     const data = await response.json().catch(() => null);
@@ -62,13 +67,14 @@ export async function verify_user(
 export async function delete_user(user_id: string): Promise<void> {
     let response: Response;
     try {
-        response = await fetch("/users/delete", {
+        response = await tabFetch("/users/delete", {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
             credentials: "same-origin",
             body: JSON.stringify({ user_id }),
         });
-    } catch {
+    } catch (error) {
+        if (error instanceof TabSessionError) throw error;
         throw new Error("Unable to reach the backend server. Please try again.");
     }
     const data = await response.json().catch(() => null);
@@ -80,17 +86,65 @@ export async function delete_user(user_id: string): Promise<void> {
 export async function change_user_role(user_id: string, role: "Worker" | "Admin"): Promise<void> {
     let response: Response;
     try {
-        response = await fetch("/users/change-role", {
+        response = await tabFetch("/users/change-role", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "same-origin",
             body: JSON.stringify({ user_id, role }),
         });
-    } catch {
+    } catch (error) {
+        if (error instanceof TabSessionError) throw error;
         throw new Error("Unable to reach the backend server. Please try again.");
     }
     const data = await response.json().catch(() => null);
     if (!response.ok || data?.error) {
         throw new Error(data?.error || `Failed to change user role (HTTP ${response.status}).`);
     }
+}
+
+export type GuestStatus = { guests_enabled: boolean };
+
+export async function get_guest_status(): Promise<GuestStatus> {
+    let response: Response;
+    try {
+        response = await tabFetch("/guest/status", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+        });
+    } catch (error) {
+        if (error instanceof TabSessionError) throw error;
+        throw new Error("Unable to reach the backend server. Please try again.");
+    }
+    const data = await response.json().catch(() => null);
+    if (!response.ok || data?.error) {
+        throw new Error(data?.error || `Failed to fetch current status of guest features (HTTP ${response.status}).`);
+    }
+    if (typeof data?.guests_enabled !== "boolean") {
+        throw new Error("The server returned an invalid guest status.");
+    }
+    return data;
+}
+
+export async function enable_guest(status: "enabled" | "disabled"): Promise<GuestStatus> {
+    let response: Response;
+    try {
+        response = await tabFetch("/guest/enable", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ enabled: status })
+        });
+    } catch (error) {
+        if (error instanceof TabSessionError) throw error;
+        throw new Error("Unable to reach the backend server. Please try again.");
+    }
+    const data = await response.json().catch(() => null);
+    if (!response.ok || data?.error) {
+        throw new Error(data?.error || `Failed to change status of guest features (HTTP ${response.status}).`);
+    }
+    if (typeof data?.guests_enabled !== "boolean") {
+        throw new Error("The server returned an invalid guest status.");
+    }
+    return data;
 }

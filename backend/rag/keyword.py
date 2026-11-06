@@ -32,17 +32,24 @@ def _build_keyword_index(collection) -> dict | None:
         return None
 
     tokenized = [_tokenize(text) for text in data["documents"]]
+    vocab_by_guest: dict[str, set[str]] = {}
+    for tokens, metadata in zip(tokenized, data["metadatas"]):
+        guest_id = (metadata or {}).get("guest_id")
+        # Missing ownership is not shared: legacy guest chunks may be untagged.
+        if isinstance(guest_id, str):
+            vocab_by_guest.setdefault(guest_id, set()).update(tokens)
     return {
         "ids":       data["ids"],
         "texts":     data["documents"],
         "metadatas": data["metadatas"],
         "bm25":      BM25Okapi(tokenized),
-        "vocab":     {token for tokens in tokenized for token in tokens},
+        "vocab_by_guest": vocab_by_guest,
     }
 
 
-def _keyword_search(index: dict | None, query: str, k: int = NUM_CHUNKS, source: str = None) -> list[dict]:
-    """Up to k matching chunks, best first, optionally limited to one source file.
+def _keyword_search(index: dict | None, query: str, k: int = NUM_CHUNKS, source: str = None,
+                    guest_id: str = "") -> list[dict]:
+    """Up to k matching chunks owned by guest_id, optionally limited to one source.
 
     Each result: {"id", "text", "metadata", "score"}.
     """
@@ -57,6 +64,8 @@ def _keyword_search(index: dict | None, query: str, k: int = NUM_CHUNKS, source:
     for i in ranked:
         if scores[i] <= 0:
             break
+        if (index["metadatas"][i] or {}).get("guest_id") != guest_id:
+            continue
         if source is not None and index["metadatas"][i].get("source") != source:
             continue
         results.append({
@@ -70,9 +79,10 @@ def _keyword_search(index: dict | None, query: str, k: int = NUM_CHUNKS, source:
     return results
 
 
-def _unknown_terms(index: dict | None, query: str) -> list[str]:
-    """Non-filler query words that appear in no chunk at all (e.g. "warranty")."""
+def _unknown_terms(index: dict | None, query: str, guest_id: str = "") -> list[str]:
+    """Non-filler query words absent from this owner's chunks (e.g. "warranty")."""
     if index is None:
         return []
+    vocab = index["vocab_by_guest"].get(guest_id, set())
     return [w for w in dict.fromkeys(_tokenize(query))
-            if len(w) > 1 and w not in _STOP_WORDS and w not in index["vocab"]]
+            if len(w) > 1 and w not in _STOP_WORDS and w not in vocab]
