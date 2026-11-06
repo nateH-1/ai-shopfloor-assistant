@@ -8,4 +8,7 @@ werkzeug==3.1.3
 pwdlib[argon2]>=0.2.1,<1.0
 pytest==8.3.5
 rank-bm25==0.2.2
+# Same speech pins as requirements.txt. PyAV 19 cannot decode for faster-whisper 1.2.1.
+faster-whisper==1.2.1
+av==18.1.0
 
