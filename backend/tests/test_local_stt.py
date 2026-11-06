@@ -138,3 +138,53 @@ def test_health_does_not_load_model(system):
     assert payload["provider"] == "local"
     assert payload["loaded"] is False
     speech.model.assert_not_called()
+
+
+def _microphone_webm() -> bytes:
+    """A real WebM/Opus file, the container a browser microphone records."""
+    import av
+    import numpy as np
+
+    buf = BytesIO()
+    with av.open(buf, "w", format="webm") as container:
+        stream = container.add_stream("libopus", rate=48000)
+        stream.layout = "mono"
+        frame_size = 960  # 20 ms, the Opus frame size at 48 kHz
+        tone = (np.sin(2 * np.pi * 440 * np.arange(48000) / 48000) * 8000).astype(np.int16)
+        for start in range(0, len(tone), frame_size):
+            frame = av.AudioFrame(format="s16", layout="mono", samples=frame_size)
+            frame.sample_rate = 48000
+            frame.planes[0].update(tone[start:start + frame_size].tobytes())
+            for packet in stream.encode(frame):
+                container.mux(packet)
+        for packet in stream.encode(None):
+            container.mux(packet)
+    return buf.getvalue()
+
+
+def test_transcribe_decodes_webm_opus_recording(monkeypatch):
+    import av
+
+    # PyAV 19 removed metadata_errors, which faster-whisper 1.2.1 still passes.
+    assert int(av.__version__.split(".")[0]) < 19
+    app = Flask(__name__)
+    local_stt.register_transcription(app)
+    speech = app.extensions["local_stt"]
+    decoded = {}
+    model = Mock()
+
+    def transcribe(audio, **kwargs):
+        decoded["samples"] = len(audio)
+        return iter([SimpleNamespace(text="heat treatment")]), None
+
+    model.transcribe.side_effect = transcribe
+    monkeypatch.setattr(speech, "model", lambda: model)
+    recording = _microphone_webm()
+    assert recording[:4] == b"\x1a\x45\xdf\xa3"
+    response = app.test_client().post(
+        "/api/transcribe",
+        data={"audio": (BytesIO(recording), "recording.webm")},
+    )
+    assert response.status_code == 200, response.get_json()
+    assert response.get_json() == {"text": "heat treatment"}
+    assert decoded["samples"] >= 16000
