@@ -3,6 +3,8 @@
 
 "use client";
 
+import ThemeToggle from "./ThemeToggle";
+
 interface GenericHeaderProps {
   onLogIn: () => void;
   onSignUp: () => void;
@@ -12,11 +14,11 @@ export default function GenericHeader({ onLogIn, onSignUp }: GenericHeaderProps)
 
   return (
     <header
-      className="grid w-full grid-cols-1 items-center gap-y-3 px-5 py-3 sm:grid-cols-[1fr_auto_1fr]"
+      className="grid w-full grid-cols-1 items-center gap-y-3 px-5 py-3 md:grid-cols-[1fr_auto_1fr]"
       style={{ backgroundColor: "#3B82F6" }}
     >
       {/* Center: Custom icon and brand name */}
-      <div className="flex items-center justify-center gap-3 sm:col-start-2 sm:row-start-1">
+      <div className="flex items-center justify-center gap-3 md:col-start-2 md:row-start-1">
         <div className="flex items-center justify-center w-9 h-9 rounded-full bg-white/20">
           <img src="/icon.png" alt="Kuldeep icon" className="w-6 h-6 object-contain" />
         </div>
@@ -27,11 +29,12 @@ export default function GenericHeader({ onLogIn, onSignUp }: GenericHeaderProps)
           Kuldeep
         </span>
       </div>
-      <div className="flex items-center justify-self-end gap-3 sm:col-start-3 sm:row-start-1">
-        <button type="button" onClick={onLogIn} className="whitespace-nowrap rounded-lg bg-[#f3f4f6] px-4 py-2.5 text-sm font-medium text-black transition-colors hover:bg-[#c9c9c9] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c9c9c9]">
+      <div className="flex flex-wrap items-center justify-self-end gap-3 md:col-start-3 md:row-start-1">
+        <ThemeToggle />
+        <button type="button" onClick={onLogIn} className="whitespace-nowrap rounded-lg bg-muted px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           Log In
         </button>
-        <button type="button" onClick={onSignUp} className="whitespace-nowrap rounded-lg bg-[#f3f4f6] px-4 py-2.5 text-sm font-medium text-black transition-colors hover:bg-[#c9c9c9] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c9c9c9]">
+        <button type="button" onClick={onSignUp} className="whitespace-nowrap rounded-lg bg-muted px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           Sign Up
         </button>
       </div>

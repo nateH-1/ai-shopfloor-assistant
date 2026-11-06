@@ -21,14 +21,14 @@ export default function AccountBubble() {
   }
 
   return (
-    <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
-      <h2 className="text-lg font-semibold text-[#1a202c]">Account</h2>
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+    <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-8">
+      <h2 className="text-lg font-semibold text-foreground">Account</h2>
+      {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
       <button
         type="button"
         disabled={loggingOut}
         onClick={() => { void handleLogout(); }}
-        className="self-start rounded-lg bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+        className="self-start rounded-lg bg-red-50 dark:bg-red-950/50 px-4 py-2 text-sm font-medium text-red-700 dark:text-red-300 transition-colors hover:bg-red-100 dark:hover:bg-red-900/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loggingOut ? "Logging out..." : "Log out"}
       </button>

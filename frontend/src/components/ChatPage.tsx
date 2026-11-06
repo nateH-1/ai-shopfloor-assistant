@@ -26,7 +26,7 @@ export default function ChatPage({ messages, onSend, onClarificationSelect, onRe
   }, [messages, isLoading]);
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden" style={{ backgroundColor: "#f3f4f6" }}>
+    <div className="flex flex-col flex-1 overflow-hidden bg-background">
       {/* Scrollable message area */}
       <div className="flex-1 overflow-y-auto px-4 pt-10 pb-4">
         <div className="max-w-2xl mx-auto w-full">
@@ -38,10 +38,10 @@ export default function ChatPage({ messages, onSend, onClarificationSelect, onRe
             >
               <BotIcon className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-[#1a202c] text-xl font-semibold mb-1 tracking-tight">
+            <h1 className="text-foreground text-xl font-semibold mb-1 tracking-tight">
               Welcome to Kuldeep
             </h1>
-            <p className="text-gray-500 text-sm text-center max-w-sm leading-relaxed">
+            <p className="text-muted-foreground text-sm text-center max-w-sm leading-relaxed">
               Your AI assistant for manufacturing processes, manuals, and SOPs. Ask me anything to get started.
             </p>
           </div>
@@ -68,8 +68,7 @@ export default function ChatPage({ messages, onSend, onClarificationSelect, onRe
                   <BotIcon className="w-5 h-5 text-white" />
                 </div>
                 <div
-                  className="rounded-2xl rounded-tl-sm bg-white px-5 py-4 shadow-sm"
-                  style={{ border: "1px solid #e5e7eb" }}
+                  className="rounded-2xl rounded-tl-sm border border-border bg-card px-5 py-4 shadow-sm"
                 >
                   <TypingDots />
                 </div>
@@ -82,7 +81,7 @@ export default function ChatPage({ messages, onSend, onClarificationSelect, onRe
       </div>
 
       {/* Sticky input bar */}
-      <div className="px-4 py-4" style={{ backgroundColor: "#f3f4f6" }}>
+      <div className="bg-background px-4 py-4">
         <div className="max-w-2xl mx-auto w-full">
           <ChatInput onSend={onSend} disabled={isLoading} />
         </div>
@@ -97,7 +96,7 @@ function TypingDots() {
       {[0, 1, 2].map((i) => (
         <span
           key={i}
-          className="w-2 h-2 rounded-full bg-gray-400"
+          className="w-2 h-2 rounded-full bg-muted-foreground"
           style={{
             animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
           }}

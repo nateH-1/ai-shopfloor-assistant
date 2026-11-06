@@ -189,7 +189,7 @@ export default function DocumentBubble() {
     return (
       <section
         aria-label="Manage documents"
-        className={`mx-auto flex w-full max-w-6xl flex-col gap-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8 ${isDragOver ? "ring-2 ring-blue-400" : ""}`}
+        className={`mx-auto flex w-full max-w-6xl flex-col gap-6 rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-8 ${isDragOver ? "ring-2 ring-blue-400" : ""}`}
         onDragOver={(event) => {
           event.preventDefault();
           if (!isBusy) handleDragOver(event);
@@ -201,7 +201,7 @@ export default function DocumentBubble() {
           if (!isBusy) handleDrop(event);
         }}
       >
-        <h2 className="text-lg font-semibold text-[#1a202c]">Manage Documents</h2>
+        <h2 className="text-lg font-semibold text-foreground">Manage Documents</h2>
 
         <input
           ref={fileInputRef}
@@ -234,7 +234,7 @@ export default function DocumentBubble() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isBusy}
-              className="flex items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-3 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 px-3 py-3 text-sm font-medium text-blue-700 dark:text-blue-300 transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {uploadSource === "files" ? <SpinnerIcon className="h-4 w-4 shrink-0 animate-spin" /> : <UploadIcon className="h-4 w-4 shrink-0" />}
               {uploadSource === "files" ? "Uploading..." : "Upload File"}
@@ -243,48 +243,48 @@ export default function DocumentBubble() {
               type="button"
               onClick={() => folderInputRef.current?.click()}
               disabled={isBusy}
-              className="flex items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-3 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 px-3 py-3 text-sm font-medium text-blue-700 dark:text-blue-300 transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {uploadSource === "folder" ? <SpinnerIcon className="h-4 w-4 shrink-0 animate-spin" /> : <FolderIcon className="h-4 w-4 shrink-0" />}
               {uploadSource === "folder" ? "Uploading..." : "Upload Folder"}
             </button>
           </div>
-          <p className="text-sm leading-relaxed text-gray-500">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             {isDragOver ? "Drop files or a folder here." : "Choose files or drag them here. Folder uploads include only top-level files."}
           </p>
-          <p className="text-xs text-gray-500">Supported: PDF, TXT, MD, JSON, DOCX, CSV, TSV, HTML.</p>
+          <p className="text-xs text-muted-foreground">Supported: PDF, TXT, MD, JSON, DOCX, CSV, TSV, HTML.</p>
         </div>
 
         {folderProgress && (
           <div className="space-y-2">
-            <p role="status" className="text-sm text-blue-700">Uploading {folderProgress.current} of {folderProgress.total} files...</p>
+            <p role="status" className="text-sm text-blue-700 dark:text-blue-300">Uploading {folderProgress.current} of {folderProgress.total} files...</p>
             <progress aria-label="Upload progress" value={folderProgress.current} max={folderProgress.total} className="h-2 w-full accent-blue-500" />
           </div>
         )}
-        {error && <p role="alert" className="whitespace-pre-line rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 [overflow-wrap:anywhere]">{error}</p>}
-        {successMsg && <p role="status" className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 [overflow-wrap:anywhere]">{successMsg}</p>}
+        {error && <p role="alert" className="whitespace-pre-line rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/50 px-4 py-3 text-sm text-red-700 dark:text-red-300 [overflow-wrap:anywhere]">{error}</p>}
+        {successMsg && <p role="status" className="rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/50 px-4 py-3 text-sm text-green-700 dark:text-green-300 [overflow-wrap:anywhere]">{successMsg}</p>}
 
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-[#2d3748]">Uploaded documents{!isLoading && ` (${documents.length})`}</h3>
+          <h3 className="text-sm font-semibold text-foreground">Uploaded documents{!isLoading && ` (${documents.length})`}</h3>
           {isLoading ? (
-            <p role="status" className="flex items-center gap-2 py-4 text-sm text-gray-600"><SpinnerIcon className="h-4 w-4 animate-spin" />Loading documents...</p>
+            <p role="status" className="flex items-center gap-2 py-4 text-sm text-muted-foreground"><SpinnerIcon className="h-4 w-4 animate-spin" />Loading documents...</p>
           ) : documents.length === 0 ? (
-            !error && <p className="rounded-lg border border-dashed border-gray-200 px-4 py-8 text-center text-sm text-gray-500">No documents yet. Upload a file or folder to get started.</p>
+            !error && <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">No documents yet. Upload a file or folder to get started.</p>
           ) : (
             <ul className="space-y-4">
               {documents.map((doc) => (
-                <li key={doc.filename} className="flex items-center gap-3 rounded-lg border border-gray-200 p-4 sm:gap-6 sm:p-5">
-                  <FileIcon className="h-5 w-5 shrink-0 text-gray-400" />
+                <li key={doc.filename} className="flex items-center gap-3 rounded-lg border border-border p-4 sm:gap-6 sm:p-5">
+                  <FileIcon className="h-5 w-5 shrink-0 text-muted-foreground" />
                   <div className="min-w-0 flex-1">
-                    <p title={doc.filename} className="truncate font-medium text-[#1a202c]">{doc.filename}</p>
-                    <p className="mt-1 text-xs text-gray-500">{doc.chunks} chunks</p>
+                    <p title={doc.filename} className="truncate font-medium text-foreground">{doc.filename}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{doc.chunks} chunks</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => { void handleDelete(doc.filename); }}
                     disabled={isBusy}
                     aria-label={`Delete ${doc.filename}`}
-                    className="flex shrink-0 items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
+                    className="flex shrink-0 items-center gap-2 rounded-lg bg-red-50 dark:bg-red-950/50 px-3 py-2 text-sm font-medium text-red-700 dark:text-red-300 transition-colors hover:bg-red-100 dark:hover:bg-red-900/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
                   >
                     {deletingFile === doc.filename ? <SpinnerIcon className="h-4 w-4 animate-spin" /> : <TrashIcon className="h-4 w-4" />}
                     {deletingFile === doc.filename ? "Deleting..." : "Delete"}

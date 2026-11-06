@@ -1,7 +1,7 @@
 // Chat bubble components for AI Assistant and User messages
 // Matches Figma design:
-//   AI bubble: white card with rounded corners, robot avatar on left, dark text
-//   User bubble: light gray pill/rounded rectangle, right-aligned, no avatar
+//   AI bubble: themed card with rounded corners and robot avatar on left
+//   User bubble: muted pill/rounded rectangle, right-aligned, no avatar
 
 "use client";
 
@@ -51,19 +51,18 @@ export function AssistantBubble({
       {/* Bubble + sources */}
       <div className="flex flex-col gap-2 max-w-[75%]">
         <div
-          className="rounded-2xl rounded-tl-sm bg-white px-5 py-4 shadow-sm self-start w-fit max-w-full overflow-hidden"
-          style={{ border: "1px solid #e5e7eb" }}
+          className="rounded-2xl rounded-tl-sm border border-border bg-card px-5 py-4 shadow-sm self-start w-fit max-w-full overflow-hidden"
         >
-          <div className="prose prose-sm max-w-none text-[#2d3748] break-words
+          <div className="prose prose-sm dark:prose-invert max-w-none text-foreground break-words
             prose-p:my-1 prose-p:leading-relaxed
             prose-ul:my-1 prose-ol:my-1
             prose-li:my-0.5 prose-li:leading-relaxed
             [&_ul]:list-disc [&_ol]:list-decimal
-            [&_li::marker]:text-[#2d3748] [&_li::marker]:font-normal
-            prose-strong:font-semibold prose-strong:text-[#1a202c]
-            prose-headings:text-[#1a202c] prose-headings:font-semibold
-            prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono prose-code:before:content-none prose-code:after:content-none
-            prose-blockquote:border-l-2 prose-blockquote:border-gray-300 prose-blockquote:text-gray-600 prose-blockquote:not-italic">
+            [&_li::marker]:text-foreground [&_li::marker]:font-normal
+            prose-strong:font-semibold prose-strong:text-foreground
+            prose-headings:text-foreground prose-headings:font-semibold
+            prose-code:bg-muted prose-code:text-foreground prose-pre:bg-muted prose-pre:text-foreground prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono prose-code:before:content-none prose-code:after:content-none
+            prose-blockquote:border-l-2 prose-blockquote:border-input prose-blockquote:text-muted-foreground prose-blockquote:not-italic">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {content}
             </ReactMarkdown>
@@ -86,8 +85,8 @@ export function AssistantBubble({
                       isSelected
                         ? "border-purple-600 bg-purple-600 text-white"
                         : isDisabled
-                        ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "border-purple-300 text-purple-700 hover:bg-purple-50",
+                        ? "border-border bg-muted text-muted-foreground cursor-not-allowed"
+                        : "border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-800 dark:text-purple-300 dark:hover:bg-purple-950",
                     ].join(" ")}
                   >
                     {opt.label}
@@ -101,14 +100,14 @@ export function AssistantBubble({
         {/* Server-issued IDs exclude connection errors and clarification prompts. */}
         {/* The answer text is passed only for the browser's local read-aloud button. */}
         {feedbackId && <AnswerFeedback messageId={feedbackId} answerText={content} onRewrite={onRewrite} />}
-        {feedbackUnavailable && <p className="text-xs text-gray-500">Feedback is temporarily unavailable for this answer.</p>}
+        {feedbackUnavailable && <p className="text-xs text-muted-foreground">Feedback is temporarily unavailable for this answer.</p>}
 
         {/* Source toggle */}
         {hasSources && (
           <div>
             <button
               onClick={() => setShowSources((v) => !v)}
-              className="flex items-center gap-1.5 text-xs text-[#6b7280] hover:text-[#374151] transition-colors"
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <BookIcon className="w-3.5 h-3.5" />
               {showSources ? "Hide" : "Show"} {sources.length} source
@@ -131,12 +130,11 @@ export function AssistantBubble({
                       key={src.id}
                       onClick={() => toggleFullSources(src.id)}
                       aria-expanded={isExpanded}
-                      className="rounded-lg bg-white px-3 py-2 text-xs shadow-sm text-left"
-                      style={{ border: "1px solid #e5e7eb" }}
+                      className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-sm text-left"
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <ChevronIcon className={`w-3 h-3 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                        <span className="font-medium text-[#374151] truncate max-w-45" title={src.file}>
+                        <span className="font-medium text-foreground truncate max-w-45" title={src.file}>
                           {src.file}
                         </span>
                         <span
@@ -147,7 +145,7 @@ export function AssistantBubble({
                         </span>
                       </div>
                       <p
-                        className={`text-[#6b7280] leading-snug ${isExpanded ? "whitespace-pre-wrap break-words" : "line-clamp-2"}`}
+                        className={`text-muted-foreground leading-snug ${isExpanded ? "whitespace-pre-wrap break-words" : "line-clamp-2"}`}
                         title={snippet}
                       >
                         {snippet}
@@ -181,10 +179,9 @@ export function UserBubble({ content }: { content: string }) {
   return (
     <div className="flex justify-end w-full">
       <div
-        className="rounded-2xl rounded-tr-sm px-5 py-3 max-w-[75%]"
-        style={{ backgroundColor: "#e5e7eb" }}
+        className="rounded-2xl rounded-tr-sm bg-muted px-5 py-3 max-w-[75%]"
       >
-        <p className="text-[#374151] text-sm leading-relaxed">
+        <p className="text-foreground text-sm leading-relaxed">
           {content}
         </p>
       </div>

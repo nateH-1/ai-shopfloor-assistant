@@ -72,10 +72,10 @@ export function LogInBubble({ onSubmit }: LogInInputProps) {
       void getGuestStatus();
   }, [getGuestStatus]);
 
-  const inputClassName = "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-[#2d3748] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200";
+  const inputClassName = "w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm text-foreground outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900";
 
   return (
-    <div className="mx-auto w-full max-w-md rounded-2xl rounded-tl-sm border border-gray-200 bg-white px-5 py-6 shadow-sm sm:px-6">
+    <div className="mx-auto w-full max-w-md rounded-2xl rounded-tl-sm border border-border bg-card px-5 py-6 shadow-sm sm:px-6">
         
       {isLoading ? (
         <p>Loading, one moment...</p>
@@ -95,11 +95,11 @@ export function LogInBubble({ onSubmit }: LogInInputProps) {
           ) : (
             <div className="flex flex-col gap-4">
               <div>
-                <label htmlFor="signup-email" className="mb-1.5 block text-sm font-medium text-[#2d3748]">Email</label>
+                <label htmlFor="signup-email" className="mb-1.5 block text-sm font-medium text-foreground">Email</label>
                 <input id="signup-email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={inputClassName} />
               </div>
               <div className="relative">
-                <label htmlFor="signup-password" className="mb-1.5 block text-sm font-medium text-[#2d3748]">Password</label>
+                <label htmlFor="signup-password" className="mb-1.5 block text-sm font-medium text-foreground">Password</label>
                 <input
                   id="signup-password"
                   name="password"
@@ -115,7 +115,7 @@ export function LogInBubble({ onSubmit }: LogInInputProps) {
                   onClick={() => setShowPassword((previous) => !previous)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   aria-controls="signup-password"
-                  className="absolute right-3 translate-y-1 rounded p-1 text-gray-500 hover:text-gray-700 focus-visible:outline-2 focus-visible:outline-blue-500"
+                  className="absolute right-3 translate-y-1 rounded p-1 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-blue-500"
                 >
                   <svg
                     width="20"
@@ -153,8 +153,8 @@ export function LogInBubble({ onSubmit }: LogInInputProps) {
               
             </div>
           )}
-          {errorMessage && <p role="alert" className="text-sm text-red-600">{errorMessage}</p>}
-          {isSubmitting && <p role="status" className="text-sm text-gray-500">Please wait...</p>}
+          {errorMessage && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>}
+          {isSubmitting && <p role="status" className="text-sm text-muted-foreground">Please wait...</p>}
         </form>
       
       )}

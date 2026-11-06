@@ -3,6 +3,7 @@
 // and optional settings and chat links.
 
 import Link from "next/link";
+import ThemeToggle from "./ThemeToggle";
 
 interface HeaderProps {
   showSettings?: boolean;
@@ -12,7 +13,7 @@ interface HeaderProps {
 export default function Header({ showSettings, showChat }: HeaderProps) {
   return (
     <header
-      className="w-full flex items-center justify-between px-5 py-3"
+      className="w-full flex flex-wrap items-center justify-between gap-3 px-5 py-3"
       style={{ backgroundColor: "#3B82F6" }}
     >
       {/* Left: Custom icon in white circle + navigation */}
@@ -44,13 +45,16 @@ export default function Header({ showSettings, showChat }: HeaderProps) {
         )}
       </div>
 
-      {/* Right: Brand name */}
-      <span
-        className="text-white text-2xl tracking-widest select-none"
-        style={{ fontFamily: "var(--font-cinzel), serif", fontWeight: 500 }}
-      >
-        Kuldeep
-      </span>
+      {/* Right: Theme toggle and brand name */}
+      <div className="ml-auto flex items-center gap-3">
+        <ThemeToggle />
+        <span
+          className="text-white text-2xl tracking-widest select-none"
+          style={{ fontFamily: "var(--font-cinzel), serif", fontWeight: 500 }}
+        >
+          Kuldeep
+        </span>
+      </div>
     </header>
   );
 }

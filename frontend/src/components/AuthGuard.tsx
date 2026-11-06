@@ -41,10 +41,10 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
   if (isPublicPage) return children;
   if (error) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-[#f3f4f6] p-6">
-        <div className="w-full max-w-md space-y-4 rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm">
-          <p role="alert" className="text-sm text-red-700">{error}</p>
-          <button type="button" onClick={() => { setError(null); setAttempt((value) => value + 1); }} className="rounded-lg bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100">
+      <main className="flex min-h-dvh items-center justify-center bg-background p-6">
+        <div className="w-full max-w-md space-y-4 rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
+          <p role="alert" className="text-sm text-red-700 dark:text-red-300">{error}</p>
+          <button type="button" onClick={() => { setError(null); setAttempt((value) => value + 1); }} className="rounded-lg bg-blue-50 dark:bg-blue-950/50 px-4 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60">
             Try again
           </button>
         </div>
@@ -52,7 +52,7 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
     );
   }
   if (checkedPath !== pathname) {
-    return <p role="status" className="p-6 text-center text-sm text-gray-600">Checking your session...</p>;
+    return <p role="status" className="p-6 text-center text-sm text-muted-foreground">Checking your session...</p>;
   }
   return children;
 }

@@ -63,13 +63,13 @@ export default function Settings() {
           <main className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8 lg:px-8">
           <AccountBubble />
           {error ? (
-            <p role="alert" className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-red-700">{error}</p>
+            <p role="alert" className="w-full rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-red-700 dark:text-red-300">{error}</p>
           ) : verificationStatus === null ? (
-            <p role="status" className="text-center text-sm text-gray-600">Checking verification status...</p>
+            <p role="status" className="text-center text-sm text-muted-foreground">Checking verification status...</p>
           ) : verificationStatus !== "VERIFIED" ? (
-            <p role="status" className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-blue-800">Please wait for an admin to verify your account.</p>
+            <p role="status" className="w-full rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-blue-800 dark:text-blue-200">Please wait for an admin to verify your account.</p>
           ) : !roleInfo ? (
-            <p role="status" className="text-center text-sm text-gray-600">Loading permissions...</p>
+            <p role="status" className="text-center text-sm text-muted-foreground">Loading permissions...</p>
           ) : null}
           {roleInfo?.can_manage_users ? (
             <UserManagementBubble/>
