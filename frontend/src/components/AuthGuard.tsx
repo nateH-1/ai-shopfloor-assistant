@@ -3,10 +3,12 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AuthenticationRequiredError, get_verification_status } from "@/lib/authApi";
+import { useTheme } from "./ThemeProvider";
 
 export default function AuthGuard({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { loadAccountTheme, resetAccountTheme } = useTheme();
   const isPublicPage = pathname === "/" || pathname === "/login";
   const [checkedPath, setCheckedPath] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -16,11 +18,16 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
     let active = true;
     setCheckedPath(null);
     setError(null);
-    if (isPublicPage) return;
+    if (isPublicPage) {
+      resetAccountTheme();
+      return;
+    }
 
     async function checkSession() {
       try {
         await get_verification_status();
+        if (!active) return;
+        await loadAccountTheme();
         if (active) setCheckedPath(pathname);
       } catch (error) {
         if (!active) return;
@@ -36,7 +43,7 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
 
     void checkSession();
     return () => { active = false; };
-  }, [pathname, isPublicPage, router, attempt]);
+  }, [pathname, isPublicPage, router, attempt, loadAccountTheme, resetAccountTheme]);
 
   if (isPublicPage) return children;
   if (error) {
@@ -44,7 +51,7 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
       <main className="flex min-h-dvh items-center justify-center bg-background p-6">
         <div className="w-full max-w-md space-y-4 rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
           <p role="alert" className="text-sm text-red-700 dark:text-red-300">{error}</p>
-          <button type="button" onClick={() => { setError(null); setAttempt((value) => value + 1); }} className="rounded-lg bg-blue-50 dark:bg-blue-950/50 px-4 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60">
+          <button type="button" onClick={() => { setError(null); setAttempt((value) => value + 1); }} className="rounded-lg bg-blue-button px-4 py-2 text-sm font-medium text-blue-button-text hover:bg-blue-button-hover">
             Try again
           </button>
         </div>

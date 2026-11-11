@@ -63,7 +63,7 @@ export default function GuestManagementBubble() {
         </p>
         <button
           type="button"
-          className="flex items-center justify-center gap-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 px-3 py-3 text-sm font-medium text-blue-700 dark:text-blue-300 transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center justify-center gap-2 rounded-lg border border-blue-button-border bg-blue-button px-3 py-3 text-sm font-medium text-blue-button-text transition-colors hover:bg-blue-button-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-button-focus disabled:cursor-not-allowed disabled:opacity-50"
           disabled={isLoadingStatusChange}
           onClick={() => handleEnable(guestEnabled ? "disabled" : "enabled")}
         >

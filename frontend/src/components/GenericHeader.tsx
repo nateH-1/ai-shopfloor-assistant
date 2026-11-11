@@ -1,9 +1,7 @@
 // Header component matching Figma design
-// Blue header (#3B82F6) with centered branding and account buttons on the right.
+// Theme-colored header with centered branding and account buttons on the right.
 
 "use client";
-
-import ThemeToggle from "./ThemeToggle";
 
 interface GenericHeaderProps {
   onLogIn: () => void;
@@ -14,8 +12,7 @@ export default function GenericHeader({ onLogIn, onSignUp }: GenericHeaderProps)
 
   return (
     <header
-      className="grid w-full grid-cols-1 items-center gap-y-3 px-5 py-3 md:grid-cols-[1fr_auto_1fr]"
-      style={{ backgroundColor: "#3B82F6" }}
+      className="grid w-full grid-cols-1 items-center gap-y-3 bg-header-primary px-5 py-3 md:grid-cols-[1fr_auto_1fr]"
     >
       {/* Center: Custom icon and brand name */}
       <div className="flex items-center justify-center gap-3 md:col-start-2 md:row-start-1">
@@ -30,7 +27,6 @@ export default function GenericHeader({ onLogIn, onSignUp }: GenericHeaderProps)
         </span>
       </div>
       <div className="flex flex-wrap items-center justify-self-end gap-3 md:col-start-3 md:row-start-1">
-        <ThemeToggle />
         <button type="button" onClick={onLogIn} className="whitespace-nowrap rounded-lg bg-muted px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           Log In
         </button>

@@ -230,14 +230,6 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
         <p role="status" className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-blue-800 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300">Please wait for an admin to verify your account.</p>
       ) : (
         <>
-          {/* Attachment icon */}
-        <button
-          className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Attach file"
-          type="button"
-        >
-          <PaperclipIcon className="w-5 h-5" />
-        </button>
 
         {/* Text input / Audio visualizer */}
         <div className="flex-1" style={{ minHeight: "24px" }}>
@@ -289,12 +281,11 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
         <button
           onClick={handleSend}
           disabled={!value.trim() || disabled || isTranscribing || isRecording}
-          className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full transition-opacity"
-          style={{ backgroundColor: "#3B82F6" }}
+          className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-blue-button-solid text-blue-button-solid-text transition-opacity"
           aria-label="Send message"
           type="button"
         >
-          <SendIcon className="w-4 h-4 text-white" />
+          <SendIcon className="w-4 h-4" />
         </button>
         </>
       )}

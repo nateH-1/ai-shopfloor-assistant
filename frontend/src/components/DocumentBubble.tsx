@@ -234,7 +234,7 @@ export default function DocumentBubble() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isBusy}
-              className="flex items-center justify-center gap-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 px-3 py-3 text-sm font-medium text-blue-700 dark:text-blue-300 transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-lg border border-blue-button-border bg-blue-button px-3 py-3 text-sm font-medium text-blue-button-text transition-colors hover:bg-blue-button-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-button-focus disabled:cursor-not-allowed disabled:opacity-50"
             >
               {uploadSource === "files" ? <SpinnerIcon className="h-4 w-4 shrink-0 animate-spin" /> : <UploadIcon className="h-4 w-4 shrink-0" />}
               {uploadSource === "files" ? "Uploading..." : "Upload File"}
@@ -243,7 +243,7 @@ export default function DocumentBubble() {
               type="button"
               onClick={() => folderInputRef.current?.click()}
               disabled={isBusy}
-              className="flex items-center justify-center gap-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 px-3 py-3 text-sm font-medium text-blue-700 dark:text-blue-300 transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-lg border border-blue-button-border bg-blue-button px-3 py-3 text-sm font-medium text-blue-button-text transition-colors hover:bg-blue-button-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-button-focus disabled:cursor-not-allowed disabled:opacity-50"
             >
               {uploadSource === "folder" ? <SpinnerIcon className="h-4 w-4 shrink-0 animate-spin" /> : <FolderIcon className="h-4 w-4 shrink-0" />}
               {uploadSource === "folder" ? "Uploading..." : "Upload Folder"}
@@ -284,7 +284,7 @@ export default function DocumentBubble() {
                     onClick={() => { void handleDelete(doc.filename); }}
                     disabled={isBusy}
                     aria-label={`Delete ${doc.filename}`}
-                    className="flex shrink-0 items-center gap-2 rounded-lg bg-red-50 dark:bg-red-950/50 px-3 py-2 text-sm font-medium text-red-700 dark:text-red-300 transition-colors hover:bg-red-100 dark:hover:bg-red-900/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
+                    className="flex shrink-0 items-center gap-2 rounded-lg bg-red-button px-3 py-2 border-2 border-transparent dark:border-red-button-border text-sm font-medium text-red-button-text transition-colors hover:bg-red-button-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
                   >
                     {deletingFile === doc.filename ? <SpinnerIcon className="h-4 w-4 animate-spin" /> : <TrashIcon className="h-4 w-4" />}
                     {deletingFile === doc.filename ? "Deleting..." : "Delete"}

@@ -72,7 +72,7 @@ export function LogInBubble({ onSubmit }: LogInInputProps) {
       void getGuestStatus();
   }, [getGuestStatus]);
 
-  const inputClassName = "w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm text-foreground outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900";
+  const inputClassName = "w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm text-foreground outline-none focus:border-blue-button-focus focus:ring-2 focus:ring-blue-button-ring";
 
   return (
     <div className="mx-auto w-full max-w-md rounded-2xl rounded-tl-sm border border-border bg-card px-5 py-6 shadow-sm sm:px-6">
@@ -85,7 +85,7 @@ export function LogInBubble({ onSubmit }: LogInInputProps) {
           { isGuest && guestEnabled ? (
             <div className="flex flex-col gap-4">
               <p>If you continue as a guest, you will still be able to upload files and ask questions, but you will not be able to connect to other machines and files will be deleted after you sign out.</p>
-              <button type="submit" disabled={isSubmitting} className="mt-1 w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
+              <button type="submit" disabled={isSubmitting} className="mt-1 w-full rounded-lg bg-blue-button-solid px-4 py-2.5 text-sm font-medium text-blue-button-solid-text transition-colors hover:bg-blue-button-solid-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-button-focus">
                   Continue as a Guest
               </button>
               <button type="button" disabled={isSubmitting} onClick={() => setIsGuest((previous) => !previous)}>
@@ -115,7 +115,7 @@ export function LogInBubble({ onSubmit }: LogInInputProps) {
                   onClick={() => setShowPassword((previous) => !previous)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   aria-controls="signup-password"
-                  className="absolute right-3 translate-y-1 rounded p-1 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-blue-500"
+                  className="absolute right-3 translate-y-1 rounded p-1 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-blue-button-focus"
                 >
                   <svg
                     width="20"
@@ -142,7 +142,7 @@ export function LogInBubble({ onSubmit }: LogInInputProps) {
                   </svg>
                 </button>
               </div>
-              <button type="submit" disabled={isSubmitting} className="mt-1 w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
+              <button type="submit" disabled={isSubmitting} className="mt-1 w-full rounded-lg bg-blue-button-solid px-4 py-2.5 text-sm font-medium text-blue-button-solid-text transition-colors hover:bg-blue-button-solid-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-button-focus">
                 Log In
               </button>
               {guestEnabled ? (

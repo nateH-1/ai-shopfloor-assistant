@@ -53,9 +53,13 @@ function document({ locks = lockManager(), storage = new Map(), fetch, crypto = 
   const requests = [];
   const window = {
     location: { href: "http://localhost:3000/chat", origin: "http://localhost:3000" },
-    addEventListener(type, listener) {
+    addEventListener(type, listener, options = {}) {
       if (!listeners.has(type)) listeners.set(type, []);
-      listeners.get(type).push(listener);
+      listeners.get(type).push({
+        listener,
+        capture: typeof options === "boolean" ? options : Boolean(options.capture),
+        once: typeof options === "object" && Boolean(options.once),
+      });
     },
   };
   const context = {
@@ -71,11 +75,11 @@ function document({ locks = lockManager(), storage = new Map(), fetch, crypto = 
   };
   vm.runInNewContext(outputText, context);
   return {
-    ...context.exports, requests, storage,
+    ...context.exports, requests, storage, addEventListener: window.addEventListener,
     dispatch(type) {
       const handlers = listeners.get(type) ?? [];
-      listeners.delete(type);
-      for (const listener of handlers) listener();
+      listeners.set(type, handlers.filter(({ once }) => !once));
+      for (const { listener } of [...handlers].sort((a, b) => Number(b.capture) - Number(a.capture))) listener();
     },
   };
 }
@@ -115,6 +119,90 @@ test("new and duplicated tabs claim distinct IDs without changing the source tab
   await first.tabFetch("/users/verification-status");
   assert.equal(first.requests.at(-1).init.headers.get("X-Tab-ID"), originalId);
   for (const tab of [first, duplicate, fresh]) tab.dispatch("pagehide");
+});
+
+test("ready keepalive requests dispatch synchronously with the authenticated headers and body", async () => {
+  const tab = document();
+  await tab.tabFetch("/users/verification-status");
+  const before = tab.requests.length;
+  const headers = new Headers({ "Content-Type": "application/json", "X-Tab-ID": "override" });
+  const body = JSON.stringify({ theme: "red" });
+  const pending = tab.tabFetch("/users/theme", {
+    method: "PUT", headers, body, keepalive: true, credentials: "omit", cache: "force-cache",
+  });
+  assert.equal(tab.requests.length, before + 1, "fetch must run before the first asynchronous yield");
+  const request = tab.requests.at(-1);
+  assert.equal(request.url, "/users/theme");
+  assert.equal(request.init.method, "PUT");
+  assert.equal(request.init.body, body);
+  assert.equal(request.init.keepalive, true);
+  assert.equal(request.init.headers.get("X-Tab-ID"), tab.storage.get(storageKey));
+  assert.equal(request.init.headers.get("Content-Type"), "application/json");
+  assert.equal(headers.get("X-Tab-ID"), "override", "caller headers must not be mutated");
+  assert.equal(request.init.credentials, "same-origin");
+  assert.equal(request.init.cache, "no-store");
+  await pending;
+  await assert.rejects(tab.tabFetch("https://elsewhere.example/users/theme", { keepalive: true }), /same-origin/);
+  assert.equal(tab.requests.length, before + 1);
+  tab.dispatch("pagehide");
+});
+
+test("pagehide capture can send a ready save before the tab claim is released", async () => {
+  const tab = document();
+  await tab.tabFetch("/users/verification-status");
+  const before = tab.requests.length;
+  let save;
+  tab.addEventListener("pagehide", () => {
+    save = tab.tabFetch("/users/theme", { method: "PUT", body: '{"theme":"red"}', keepalive: true });
+    assert.equal(tab.requests.length, before + 1);
+  }, { capture: true, once: true });
+  tab.dispatch("pagehide");
+  await save;
+  assert.equal(tab.requests.at(-1).init.headers.get("X-Tab-ID"), tab.storage.get(storageKey));
+});
+
+test("released keepalive readiness cannot send using an ID now owned by another tab", async () => {
+  const locks = lockManager();
+  const first = document({ locks });
+  await first.tabFetch("/users/verification-status");
+  const originalId = first.storage.get(storageKey);
+  first.dispatch("pagehide");
+  await tick();
+  const copy = document({ locks, storage: new Map(first.storage) });
+  await copy.tabFetch("/users/login");
+  assert.equal(copy.storage.get(storageKey), originalId);
+  const before = first.requests.length;
+  const save = first.tabFetch("/users/theme", { method: "PUT", keepalive: true });
+  assert.equal(first.requests.length, before, "a released claim must not use the synchronous path");
+  await save;
+  const newId = first.storage.get(storageKey);
+  assert.notEqual(newId, originalId);
+  assert.equal(first.requests.at(-1).init.headers.get("X-Tab-ID"), newId);
+  first.dispatch("pagehide");
+  copy.dispatch("pagehide");
+});
+
+test("refreshing the browser session disables keepalive readiness until bootstrap completes", async () => {
+  let bootstraps = 0;
+  let finishBootstrap;
+  const tab = document({ fetch: async (url) => {
+    if (url === "/users/session" && ++bootstraps === 2) {
+      await new Promise(resolve => { finishBootstrap = resolve; });
+    }
+    return { ok: true, status: 204 };
+  } });
+  await tab.tabFetch("/users/verification-status");
+  const before = tab.requests.length;
+  const login = tab.tabFetch("/users/login", { method: "POST" }, { refreshBrowserSession: true });
+  const save = tab.tabFetch("/users/theme", { method: "PUT", keepalive: true });
+  assert.equal(tab.requests.length, before);
+  await tick();
+  assert.equal(tab.requests.filter(({ url }) => url === "/users/theme").length, 0);
+  finishBootstrap();
+  await Promise.all([login, save]);
+  assert.equal(tab.requests.filter(({ url }) => url === "/users/session").length, 2);
+  assert.equal(tab.requests.filter(({ url }) => url === "/users/theme").length, 1);
+  tab.dispatch("pagehide");
 });
 
 test("reload keeps the tab ID once the old document releases its claim", async () => {

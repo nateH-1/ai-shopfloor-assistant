@@ -101,7 +101,7 @@ export default function UserManagementBubble() {
               onChange={() => setOnVerified(option == "Verified Users" ? true : false)}
               className="peer sr-only"
             />
-            <span className="block rounded-lg border-2 border-transparent px-3 py-2.5 text-center text-sm font-medium text-foreground transition-colors hover:bg-blue-50 dark:hover:bg-blue-950/50 peer-checked:border-blue-500 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-950/50 peer-checked:text-blue-700 dark:peer-checked:text-blue-300 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue-500">
+            <span className="block rounded-lg border-2 border-transparent px-3 py-2.5 text-center text-sm font-medium text-foreground transition-colors hover:bg-blue-button peer-checked:border-blue-button-focus peer-checked:bg-blue-button peer-checked:text-blue-button-text peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue-button-focus">
               {option}
             </span>
           </label>
@@ -131,7 +131,7 @@ export default function UserManagementBubble() {
                     void handleRoleChange(user.id, role);
                   }
                 }}
-                className="min-w-0 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 disabled:cursor-wait disabled:opacity-50"
+                className="min-w-0 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground focus:border-blue-button-focus focus:outline-none focus:ring-2 focus:ring-blue-button-ring disabled:cursor-wait disabled:opacity-50"
               >
                 {user.name !== "Worker" && user.name !== "Admin" && (
                   <option value={user.name} disabled>{user.name}</option>
@@ -144,7 +144,7 @@ export default function UserManagementBubble() {
                 disabled={saving}
                 onClick={() => { void handleDelete(user.id); }}
                 aria-label={`Delete ${user.username}`}
-                className="justify-self-end rounded-lg bg-red-50 dark:bg-red-950/50 px-4 py-2 text-sm font-medium text-red-700 dark:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                className="justify-self-end rounded-lg bg-red-button px-4 py-2 border-2 border-transparent dark:border-red-button-border text-sm font-medium text-red-button-text hover:bg-red-button-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Delete
               </button>
@@ -158,7 +158,7 @@ export default function UserManagementBubble() {
               <p title={user.full_name} className="min-w-0 truncate font-medium text-foreground">{user.full_name}</p>
               <p title={user.username} className="min-w-0 truncate text-sm text-muted-foreground">{user.username}</p>
               <p title={user.name} className="min-w-0 truncate text-sm text-muted-foreground">{user.name}</p>
-              <button className="rounded-lg bg-blue-50 dark:bg-blue-950/50 px-2 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/60" onClick={async () => {
+              <button className="rounded-lg bg-blue-button px-2 py-2 text-sm font-medium text-blue-button-text transition-colors hover:bg-blue-button-hover" onClick={async () => {
                 try {
                   const updatedUsers = await verify_user(user.id, "VERIFIED");
                   setUsers(updatedUsers);

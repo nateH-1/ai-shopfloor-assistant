@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import Header from "@/components/Header"
 import UserManagementBubble from "@/components/UserManagementBubble";
 import DocumentBubble from "@/components/DocumentBubble";
-import AccountBubble from "@/components/AccountBubble";
+import GeneralBubble from "@/components/GeneralBubble";
 import GuestManagementBubble from "@/components/GuestManagementBubble";
 import { get_role_permissions } from "@/lib/settingsAPI";
 import { get_verification_status } from "@/lib/authApi";
+import { useTheme } from "@/components/ThemeProvider";
 
 
 export default function Settings() {
@@ -25,6 +26,22 @@ export default function Settings() {
     const [roleInfo, setRoleInfo] = useState<role_info | null>(null);
     const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const { saveTheme } = useTheme();
+
+    useEffect(() => {
+        const save = () => { void saveTheme().catch(() => {}); };
+        const onVisibilityChange = () => {
+            if (document.visibilityState === "hidden") save();
+        };
+        // Dispatch before tabSession releases this document's login claim.
+        window.addEventListener("pagehide", save, { capture: true });
+        document.addEventListener("visibilitychange", onVisibilityChange);
+        return () => {
+            window.removeEventListener("pagehide", save, { capture: true });
+            document.removeEventListener("visibilitychange", onVisibilityChange);
+            save();
+        };
+    }, [saveTheme]);
 
     useEffect(() => {
         let active = true;
@@ -61,7 +78,7 @@ export default function Settings() {
         <div className="flex flex-col h-screen overflow-hidden">
           <Header showChat />
           <main className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8 lg:px-8">
-          <AccountBubble />
+          <GeneralBubble />
           {error ? (
             <p role="alert" className="w-full rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-red-700 dark:text-red-300">{error}</p>
           ) : verificationStatus === null ? (

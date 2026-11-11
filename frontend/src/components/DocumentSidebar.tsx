@@ -286,7 +286,7 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
           <button
             onClick={() => folderInputRef.current?.click()}
             disabled={isBusy}
-            className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-blue-300 px-3 py-2.5 text-sm text-blue-600 hover:bg-blue-50 disabled:opacity-50 transition-colors dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-950"
+            className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-blue-button-outline-border px-3 py-2.5 text-sm text-blue-button-outline-text hover:bg-blue-button-outline-hover disabled:opacity-50 transition-colors"
           >
             {uploadSource === "folder" && folderProgress !== null ? (
               <>

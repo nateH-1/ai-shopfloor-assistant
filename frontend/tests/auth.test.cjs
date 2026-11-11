@@ -79,6 +79,7 @@ test("protected content stays hidden before session verification; auth pages sta
       require: (name) => {
         if (name === "next/navigation") return { usePathname: () => pathname, useRouter: () => ({ replace() {} }) };
         if (name === "@/lib/authApi") return {};
+        if (name === "./ThemeProvider") return { useTheme: () => ({ loadAccountTheme() {}, resetAccountTheme() {} }) };
         return require(name);
       },
     });
