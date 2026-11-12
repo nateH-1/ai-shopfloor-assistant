@@ -15,6 +15,7 @@ Four Ragas metrics are measured:
 Usage
 -----
   # Run from the project root with the Flask backend already running:
+  # Set REGRESSION_USERNAME and REGRESSION_PASSWORD to an existing test account.
   python tests/regression_test.py
 
   # Informational run — report scores but do NOT fail on threshold violations:
@@ -54,6 +55,7 @@ import json
 import os
 import sys
 import time
+import uuid
 from datetime import datetime
 from typing import Optional
 
@@ -62,8 +64,12 @@ import requests
 # ── Backend endpoints ─────────────────────────────────────────────────────────
 
 CHAT_URL  = "http://localhost:5000/chat"
+SESSION_URL = "http://localhost:5000/users/session"
+LOGIN_URL = "http://localhost:5000/users/login"
 CLEAR_URL = "http://localhost:5000/api/clear"
 RESULTS_DIR = os.path.join(os.path.dirname(__file__))
+API_SESSION = requests.Session()
+TAB_ID = str(uuid.uuid4())
 
 # ── Score thresholds (override via CLI args) ──────────────────────────────────
 
@@ -437,6 +443,356 @@ REGRESSION_TESTS: list[dict] = [
         # No ground_truth: scores faithfulness + answer_relevancy only.
         # Tests that the system does NOT hallucinate an answer absent from the docs.
     },
+    {
+        'id': 'REG-25',
+        'category': 'welding',
+        'question': 'Why should excessive convexity be avoided in fillet welds?',
+        'ground_truth': 'Excessive convexity is an undesirable fillet-weld profile; the text advises avoiding it just as excessive reinforcement should be avoided in groove welds.',
+        # Source: Welding_Principles_Practices_Bohnart.pdf, PDF page 133
+    },
+    {
+        'id': 'REG-26',
+        'category': 'welding',
+        'question': 'What are the four basic welding positions?',
+        'ground_truth': 'Flat, horizontal, vertical, and overhead.',
+        # Source: Welding_Principles_Practices_Bohnart.pdf, PDF page 137
+    },
+    {
+        'id': 'REG-27',
+        'category': 'welding',
+        'question': 'Why should a welder control maximum weave width?',
+        'ground_truth': 'Controlling weave width helps prevent slag inclusions and incomplete-fusion discontinuities.',
+        # Source: Welding_Principles_Practices_Bohnart.pdf, PDF page 137
+    },
+    {
+        'id': 'REG-28',
+        'category': 'welding',
+        'question': 'What is undercut at the toe of a fillet weld?',
+        'ground_truth': 'Undercut is a groove or melting away of base metal adjacent to the weld toe, leaving a reduction in the original base-metal surface.',
+        # Source: Welding_Principles_Practices_Bohnart.pdf, PDF page 144
+    },
+    {
+        'id': 'REG-29',
+        'category': 'welding',
+        'question': 'What welding conditions can contribute to an undesirable weld bead profile?',
+        'ground_truth': 'The chapter discusses welding current and travel rate as variables affecting weld-bead profile and weld discontinuities.',
+        # Source: Welding_Principles_Practices_Bohnart.pdf, PDF page 144
+    },
+    {
+        'id': 'REG-30',
+        'category': 'welding',
+        'question': 'Which trapped materials can cause weld discontinuities?',
+        'ground_truth': 'Entrapped slag produces slag inclusions; entrapped gas produces porosity.',
+        # Source: Welding_Principles_Practices_Bohnart.pdf, PDF page 144
+    },
+    {
+        'id': 'REG-31',
+        'category': 'welding',
+        'question': 'Where can cracks occur in or around a welded joint?',
+        'ground_truth': 'The illustrated crack locations include toe cracks, root cracks, crater cracks, and underbead or heat-affected-zone cracks.',
+        # Source: Welding_Principles_Practices_Bohnart.pdf, PDF page 145
+    },
+    {
+        'id': 'REG-32',
+        'category': 'welding',
+        'question': 'What does HAZ stand for in welding discontinuity diagrams?',
+        'ground_truth': 'HAZ means heat-affected zone, the base-metal region affected by welding heat.',
+        # Source: Welding_Principles_Practices_Bohnart.pdf, PDF page 145
+    },
+    {
+        'id': 'REG-33',
+        'category': 'welding',
+        'question': 'Why should welders know how to identify discontinuities?',
+        'ground_truth': 'Welders may need to recognize discontinuities or defects in qualification or knowledge testing and to evaluate work against welding requirements.',
+        # Source: Welding_Principles_Practices_Bohnart.pdf, PDF page 149
+    },
+    {
+        'id': 'REG-34',
+        'category': 'welding',
+        'question': 'Why is a welding procedure important when inspecting weld quality?',
+        'ground_truth': 'The welding procedure establishes requirements for the work; applicable codes may require that a procedure be available and followed.',
+        # Source: Welding_Principles_Practices_Bohnart.pdf, PDF page 149
+    },
+    {
+        'id': 'REG-35',
+        'category': 'welding',
+        'question': 'What advantages does the text associate with concentrated-arc GMAW welding?',
+        'ground_truth': 'The discussion associates GMAW with deep penetration, a narrow bead, a relatively small heat-affected zone, faster welding, less warpage and distortion, and reduced postweld cleaning.',
+        # Source: Welding_Principles_Practices_Bohnart.pdf, PDF page 23
+    },
+    {
+        'id': 'REG-36',
+        'category': 'welding',
+        'question': 'Which consumables and process variables must a welder select appropriately?',
+        'ground_truth': 'The welder must select suitable electrode size and type and the correct shielding gas, and control electrode or torch angle, distance, and travel.',
+        # Source: Welding_Principles_Practices_Bohnart.pdf, PDF page 26
+    },
+    {
+        'id': 'REG-37',
+        'category': 'welding',
+        'question': 'How can a covered welding electrode affect deposited weld-metal properties?',
+        'ground_truth': 'Electrode classification and covering influence the physical and chemical properties of deposited weld metal; some coverings also contain metal powder.',
+        # Source: Welding_Principles_Practices_Bohnart.pdf, PDF page 295
+    },
+    {
+        'id': 'REG-38',
+        'category': 'welding',
+        'question': 'What two fusion-related problems can result from poorly controlled weaving?',
+        'ground_truth': 'Slag inclusions and incomplete fusion are two discontinuities that controlling maximum weave width can help prevent.',
+        # Source: Welding_Principles_Practices_Bohnart.pdf, PDF page 137
+    },
+    {
+        'id': 'REG-39',
+        'category': 'welding',
+        'question': 'How do porosity and slag inclusions differ?',
+        'ground_truth': 'Porosity involves gas entrapped in deposited weld metal, while slag inclusions involve trapped nonmetallic slag.',
+        # Source: Welding_Principles_Practices_Bohnart.pdf, PDF page 144
+    },
+    {
+        'id': 'REG-40',
+        'category': 'welding',
+        'question': 'How does GTAW shield its weld pool from atmospheric contamination?',
+        'ground_truth': 'Shielding gas flows from the GTAW torch nozzle to protect the molten weld metal from atmospheric contamination.',
+        # Source: Welding_Principles_Applications_Jeffus.pdf, PDF page 42
+    },
+    {
+        'id': 'REG-41',
+        'category': 'welding',
+        'question': 'How is filler metal introduced in manual GTAW?',
+        'ground_truth': 'A separate filler rod can be manually dipped into the molten weld pool.',
+        # Source: Welding_Principles_Applications_Jeffus.pdf, PDF page 42
+    },
+    {
+        'id': 'REG-42',
+        'category': 'welding',
+        'question': 'What optional controls can be used with a GTAW machine?',
+        'ground_truth': 'A foot-operated or thumb-operated remote control may be added to control the welding operation.',
+        # Source: Welding_Principles_Applications_Jeffus.pdf, PDF page 42
+    },
+    {
+        'id': 'REG-43',
+        'category': 'welding',
+        'question': 'What defects may result from poor arc stability in SMAW?',
+        'ground_truth': 'Poor arc stability can lead to spatter, porosity, and slag inclusions.',
+        # Source: Welding_Principles_Applications_Jeffus.pdf, PDF page 116
+    },
+    {
+        'id': 'REG-44',
+        'category': 'welding',
+        'question': 'What happens to bead width and penetration when SMAW amperage increases?',
+        'ground_truth': 'Higher amperage generally produces a wider, flatter weld bead and deeper penetration.',
+        # Source: Welding_Principles_Applications_Jeffus.pdf, PDF page 116
+    },
+    {
+        'id': 'REG-45',
+        'category': 'welding',
+        'question': 'Why should an SMAW welder maintain a short arc?',
+        'ground_truth': 'A short arc can help obtain good fusion with fewer slag inclusions, provided current remains in the recommended electrode range.',
+        # Source: Welding_Principles_Applications_Jeffus.pdf, PDF page 118
+    },
+    {
+        'id': 'REG-46',
+        'category': 'welding',
+        'question': 'Why should amperage be kept within the electrode recommended range?',
+        'ground_truth': 'The text advises using settings within the specified amperage range for the particular electrode while establishing an appropriate arc length.',
+        # Source: Welding_Principles_Applications_Jeffus.pdf, PDF page 118
+    },
+    {
+        'id': 'REG-47',
+        'category': 'welding',
+        'question': 'Why are the sides of thermally cut welding test specimens ground?',
+        'ground_truth': 'Grinding removes the heat-affected zone produced by thermal cutting.',
+        # Source: Welding_Principles_Applications_Jeffus.pdf, PDF page 183
+    },
+    {
+        'id': 'REG-48',
+        'category': 'welding',
+        'question': 'What direction should grinding or machining marks run on a welding test specimen?',
+        'ground_truth': 'Grinding or machining marks should run lengthwise along the specimen.',
+        # Source: Welding_Principles_Applications_Jeffus.pdf, PDF page 183
+    },
+    {
+        'id': 'REG-49',
+        'category': 'welding',
+        'question': 'What is the maximum corner radius specified in the discussed welding test specimen preparation?',
+        'ground_truth': 'Corners are rounded to a maximum radius of 1/8 inch (3 mm).',
+        # Source: Welding_Principles_Applications_Jeffus.pdf, PDF page 183
+    },
+    {
+        'id': 'REG-50',
+        'category': 'welding',
+        'question': 'What is the difference between porosity and inclusions as weld discontinuities?',
+        'ground_truth': 'Porosity refers to voids from trapped gas; inclusions are foreign solid material trapped in the weld.',
+        # Source: Welding_Principles_Applications_Jeffus.pdf, PDF page 14
+    },
+    {
+        'id': 'REG-51',
+        'category': 'welding',
+        'question': 'How do inadequate joint penetration and incomplete fusion differ?',
+        'ground_truth': 'Inadequate joint penetration means the weld does not extend through the required joint depth; incomplete fusion means weld metal has not fused properly with the base metal or a previous weld pass.',
+        # Source: Welding_Principles_Applications_Jeffus.pdf, PDF page 14
+    },
+    {
+        'id': 'REG-52',
+        'category': 'welding',
+        'question': 'Which weld discontinuities are listed alongside undercut in the quality-control chapter?',
+        'ground_truth': 'The quality-control chapter lists overlap, undercut, crater cracks, underfill, porosity, and inclusions among its discontinuity topics.',
+        # Source: Welding_Principles_Applications_Jeffus.pdf, PDF page 14
+    },
+    {
+        'id': 'REG-53',
+        'category': 'welding',
+        'question': 'What does the Jeffus textbook call the region of base metal thermally affected by welding?',
+        'ground_truth': 'The heat-affected zone (HAZ), discussed under thermal effects caused by arc welding.',
+        # Source: Welding_Principles_Applications_Jeffus.pdf, PDF page 15
+    },
+    {
+        'id': 'REG-54',
+        'category': 'welding',
+        'question': 'Which gases are discussed as affecting welding metallurgy?',
+        'ground_truth': 'The metallurgy chapter lists nitrogen, oxygen, carbon dioxide, and hydrogen among gases in welding.',
+        # Source: Welding_Principles_Applications_Jeffus.pdf, PDF page 15
+    },
+    {
+        'id': 'REG-55',
+        'category': 'manufacturing',
+        'question': 'How does the weldability of mild steel compare with medium-carbon steel in the manufacturing text?',
+        'ground_truth': 'The text describes mild steel with carbon limited to about 0.25% as having very good weldability; medium-carbon steel has less weldability but greater strength and wear resistance.',
+        # Source: manufacturing_processes.pdf, PDF page 27
+    },
+    {
+        'id': 'REG-56',
+        'category': 'manufacturing',
+        'question': 'Which cast iron is widely used for inexpensive foundry castings?',
+        'ground_truth': 'Grey cast iron is described as inexpensive and widely used for foundry castings.',
+        # Source: manufacturing_processes.pdf, PDF page 29
+    },
+    {
+        'id': 'REG-57',
+        'category': 'manufacturing',
+        'question': 'What changes can alloying produce in cast-iron mechanical properties?',
+        'ground_truth': 'Alloying can increase strength and yield point and reduce brittleness, improving the usefulness of castings.',
+        # Source: manufacturing_processes.pdf, PDF page 30
+    },
+    {
+        'id': 'REG-58',
+        'category': 'manufacturing',
+        'question': 'How do cold-rolled bright bars differ in appearance from hot-rolled black bars?',
+        'ground_truth': 'Cold-worked bright bars have a bright finish, whereas hot-rolled black bars appear grayish-black because of surface oxidation.',
+        # Source: manufacturing_processes.pdf, PDF page 46
+    },
+    {
+        'id': 'REG-59',
+        'category': 'manufacturing',
+        'question': 'How can cold working affect metal strength?',
+        'ground_truth': 'Cold working causes work hardening, which increases strength.',
+        # Source: manufacturing_processes.pdf, PDF page 46
+    },
+    {
+        'id': 'REG-60',
+        'category': 'manufacturing',
+        'question': 'Name three bulk metal-forming processes mentioned in Manufacturing Processes.',
+        'ground_truth': 'Forging, rolling, and extrusion are named as metal-forming processes.',
+        # Source: manufacturing_processes.pdf, PDF page 47
+    },
+    {
+        'id': 'REG-61',
+        'category': 'manufacturing',
+        'question': 'What is extrusion in metal manufacturing?',
+        'ground_truth': 'Extrusion forces metal to flow plastically from a confined chamber through an opening in a die, producing the required cross-sectional shape.',
+        # Source: manufacturing_processes.pdf, PDF page 72
+    },
+    {
+        'id': 'REG-62',
+        'category': 'cnc',
+        'question': 'What is chip load in CNC machining?',
+        'ground_truth': 'Chip load is the thickness of material removed by each cutting tooth, also called feed per tooth.',
+        # Source: autodesk_cncbook.pdf, PDF page 32
+    },
+    {
+        'id': 'REG-63',
+        'category': 'cnc',
+        'question': 'How does chip thickness change during climb milling?',
+        'ground_truth': 'In climb milling, chip thickness starts at a maximum and decreases toward zero.',
+        # Source: autodesk_cncbook.pdf, PDF page 32
+    },
+    {
+        'id': 'REG-64',
+        'category': 'cnc',
+        'question': 'How does chip thickness change during conventional milling?',
+        'ground_truth': 'In conventional milling, chip thickness starts near zero and increases toward its maximum.',
+        # Source: autodesk_cncbook.pdf, PDF page 32
+    },
+    {
+        'id': 'REG-65',
+        'category': 'cnc',
+        'question': 'Why is the tool length offset important in CNC machining?',
+        'ground_truth': 'A tool length offset accounts for the tool length so the control can position the tool tip correctly relative to the work coordinate system.',
+        # Source: autodesk_cncbook.pdf, PDF page 50
+    },
+    {
+        'id': 'REG-66',
+        'category': 'cnc',
+        'question': 'Why might speeds and feeds need reduction for a long, thin cutting tool?',
+        'ground_truth': 'Long, slender tools are less rigid, so lower cutting speeds or feeds may be needed to avoid deflection and vibration.',
+        # Source: autodesk_cncbook.pdf, PDF page 33
+    },
+    {
+        'id': 'REG-67',
+        'category': 'machining',
+        'question': 'May a student operate in the Florida Tech machine shop without a supervisor?',
+        'ground_truth': 'No. The shop rules require an approved supervisor to be present.',
+        # Source: basic_machine_tool_operations_aug_2017.pdf, PDF page 3
+    },
+    {
+        'id': 'REG-68',
+        'category': 'machining',
+        'question': 'What does the Florida Tech shop require for eye protection?',
+        'ground_truth': 'Safety glasses must be worn at all times; tinted glasses or sunglasses are not permitted as substitutes.',
+        # Source: basic_machine_tool_operations_aug_2017.pdf, PDF page 3
+    },
+    {
+        'id': 'REG-69',
+        'category': 'machining',
+        'question': 'Who must inspect a machine setup before operation?',
+        'ground_truth': 'The supervisor must check machine setups before machine operation begins.',
+        # Source: basic_machine_tool_operations_aug_2017.pdf, PDF page 3
+    },
+    {
+        'id': 'REG-70',
+        'category': 'lean-manufacturing',
+        'question': 'How does the Boeing lean study define the central objective of lean manufacturing?',
+        'ground_truth': 'Lean manufacturing systematically eliminates waste while emphasizing production cost, product quality and delivery, and worker involvement.',
+        # Source: boeing_lean_manufacturing_studies.pdf, PDF page 4
+    },
+    {
+        'id': 'REG-71',
+        'category': 'lean-manufacturing',
+        'question': 'What transportation and handling improvements were reported for the Boeing floor-beam shipping value chain?',
+        'ground_truth': 'The report describes elimination of eight days of travel and three days of receiving and inspection, with approximately 50% less transportation per ship set.',
+        # Source: boeing_lean_manufacturing_studies.pdf, PDF page 15
+    },
+    {
+        'id': 'REG-72',
+        'category': 'lean-manufacturing',
+        'question': 'What is an AIW in the Boeing Auburn lean-improvement discussion?',
+        'ground_truth': 'An AIW is an accelerated improvement workshop, used for focused waste-elimination improvements; the report notes multiple workshops scheduled monthly.',
+        # Source: boeing_lean_manufacturing_studies.pdf, PDF page 23
+    },
+    {
+        'id': 'REG-73',
+        'category': 'maintenance',
+        'question': 'How does the C4ISR maintenance manual describe preventive maintenance for generators?',
+        'ground_truth': 'Preventive maintenance involves periodic checking and testing of equipment, with tasks and frequency specified in maintenance tables.',
+        # Source: c4isr_maintenance_practices.pdf, PDF page 147
+    },
+    {
+        'id': 'REG-74',
+        'category': 'maintenance',
+        'question': 'What kinds of control instruments should be checked for calibration during maintenance?',
+        'ground_truth': 'Transmitters, sensing elements, temperature and pressure switches, time-delay relays, indicators, and recorders are among the items listed.',
+        # Source: c4isr_maintenance_practices.pdf, PDF page 95
+    },
 ]
 
 # ── Behavioral test cases ─────────────────────────────────────────────────────
@@ -508,20 +864,46 @@ BEHAVIORAL_TESTS: list[dict] = [
 
 def _send(question: str, session_id: str = "regression_session") -> dict:
     """POST a question to /chat and return the parsed JSON response."""
-    resp = requests.post(
+    resp = API_SESSION.post(
         CHAT_URL,
         json={"message": question, "session_id": session_id},
+        headers={"X-Tab-ID": TAB_ID},
         timeout=120,
     )
     resp.raise_for_status()
     return resp.json()
 
+def _login():
+    """Initialize an API browser session and log in the regression tab."""
+    username = os.getenv("REGRESSION_USERNAME")
+    password = os.getenv("REGRESSION_PASSWORD")
+    if not username or not password:
+        raise RuntimeError(
+            "Set REGRESSION_USERNAME and REGRESSION_PASSWORD to the test account credentials."
+        )
+
+    headers = {"X-Tab-ID": TAB_ID}
+    bootstrap = API_SESSION.post(SESSION_URL, headers=headers, timeout=10)
+    bootstrap.raise_for_status()
+
+    resp = API_SESSION.post(
+        LOGIN_URL,
+        json={"username": username, "password": password},
+        headers=headers,
+        timeout=10,
+    )
+    resp.raise_for_status()
+    return resp.json().get("user_id")
+
 
 def _clear_session(session_id: str = "regression_session") -> None:
-    try:
-        requests.post(CLEAR_URL, json={"session_id": session_id}, timeout=10)
-    except requests.RequestException:
-        pass  # best-effort
+    resp = API_SESSION.post(
+        CLEAR_URL,
+        json={"session_id": session_id},
+        headers={"X-Tab-ID": TAB_ID},
+        timeout=10,
+    )
+    resp.raise_for_status()
 
 
 def _check_backend() -> tuple[bool, str]:
@@ -814,6 +1196,14 @@ def run_regression(thresholds: dict[str, float], no_fail: bool = False) -> int:
         return 1
 
     print(f"[OK] Backend reachable.\n")
+
+    try:
+        _login()
+    except (requests.RequestException, RuntimeError) as exc:
+        print(f"[FATAL] Could not authenticate the regression test account: {exc}")
+        return 1
+
+    print("[OK] Regression test account authenticated.\n")
 
     # 2 — Collect RAG outputs
     print("── Collecting answers from chatbot ──────────────────────────\n")
