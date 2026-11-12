@@ -85,17 +85,17 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
       void getGuestStatus();
   }, [getGuestStatus]);
 
-  const inputClassName = "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-[#2d3748] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200";
+  const inputClassName = "w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm text-foreground outline-none focus:border-blue-button-focus focus:ring-2 focus:ring-blue-button-ring";
 
   return (
-    <div className="mx-auto w-full max-w-md rounded-2xl rounded-tl-sm border border-gray-200 bg-white px-5 py-6 shadow-sm sm:px-6">
+    <div className="mx-auto w-full max-w-md rounded-2xl rounded-tl-sm border border-border bg-card px-5 py-6 shadow-sm sm:px-6">
       { isLoading ? (
         <p>Loading, one moment...</p>
       ) : (
         <form onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate className="flex flex-col gap-4">
         {/* Role Selection */}
         <fieldset>
-          <legend className="mb-3 text-lg font-semibold text-[#1a202c]">Sign up as:</legend>
+          <legend className="mb-3 text-lg font-semibold text-foreground">Sign up as:</legend>
           <div className="grid grid-cols-3 gap-2">
             {signInOptions.map((option) => (
               <label key={option} className="cursor-pointer">
@@ -107,7 +107,7 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
                   onChange={() => setRole(option)}
                   className="peer sr-only"
                 />
-                <span className="block rounded-lg border-2 border-transparent px-3 py-2.5 text-center text-sm font-medium text-[#2d3748] transition-colors hover:bg-blue-50 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue-500">
+                <span className="block rounded-lg border-2 border-transparent px-3 py-2.5 text-center text-sm font-medium text-foreground transition-colors hover:bg-blue-button peer-checked:border-blue-button-focus peer-checked:bg-blue-button peer-checked:text-blue-button-text peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue-button-focus">
                   {option}
                 </span>
               </label>
@@ -118,7 +118,7 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
         {role == "Guest" && guestEnabled? (
           <div className="flex flex-col gap-4">
             <p>If you continue as a guest, you will still be able to upload files and ask questions, but you will not be able to connect to other machines and files will be deleted after you sign out.</p>
-            <button type="submit" disabled={isSubmitting} className="mt-1 w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
+            <button type="submit" disabled={isSubmitting} className="mt-1 w-full rounded-lg bg-blue-button-solid px-4 py-2.5 text-sm font-medium text-blue-button-solid-text transition-colors hover:bg-blue-button-solid-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-button-focus">
                 Continue as a Guest
             </button>
           </div>
@@ -126,15 +126,15 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
         ) : (
           <div className="flex flex-col gap-4">
             <div>
-              <label htmlFor="signup-email" className="mb-1.5 block text-sm font-medium text-[#2d3748]">Email</label>
+              <label htmlFor="signup-email" className="mb-1.5 block text-sm font-medium text-foreground">Email</label>
               <input id="signup-email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={inputClassName} />
             </div>
             <div>
-              <label htmlFor="signup-name" className="mb-1.5 block text-sm font-medium text-[#2d3748]">Full Name</label>
+              <label htmlFor="signup-name" className="mb-1.5 block text-sm font-medium text-foreground">Full Name</label>
               <input id="signup-name" name="full_name" type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)} className={inputClassName} />
             </div>
             <div className="relative">
-              <label htmlFor="signup-password" className="mb-1.5 block text-sm font-medium text-[#2d3748]">Password</label>
+              <label htmlFor="signup-password" className="mb-1.5 block text-sm font-medium text-foreground">Password</label>
               <input
                 id="signup-password"
                 name="password"
@@ -150,7 +150,7 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
                 onClick={() => setShowPassword((previous) => !previous)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 aria-controls="signup-password"
-                className="absolute right-3 translate-y-1 rounded p-1 text-gray-500 hover:text-gray-700 focus-visible:outline-2 focus-visible:outline-blue-500"
+                className="absolute right-3 translate-y-1 rounded p-1 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-blue-button-focus"
               >
                 <svg
                   width="20"
@@ -178,16 +178,16 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
               </button>
             </div>
             {/*<div>
-              <label htmlFor="signup-organization" className="mb-1.5 block text-sm font-medium text-[#2d3748]">{role == "Worker" ? "Organization Code" : "Organization Name"}</label>
+              <label htmlFor="signup-organization" className="mb-1.5 block text-sm font-medium text-foreground">{role == "Worker" ? "Organization Code" : "Organization Name"}</label>
               <input id="signup-organization" name="organization" type="text" autoComplete="organization" required value={organization} onChange={(e) => setOrganization(e.target.value)} className={inputClassName} />
             </div>*/}
-            <button type="submit" disabled={isSubmitting} className="mt-1 w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
+            <button type="submit" disabled={isSubmitting} className="mt-1 w-full rounded-lg bg-blue-button-solid px-4 py-2.5 text-sm font-medium text-blue-button-solid-text transition-colors hover:bg-blue-button-solid-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-button-focus">
               Sign Up as {role == "Worker" ? "a Worker" : "an Admin"}
             </button>
           </div>
         )}
-        {errorMessage && <p role="alert" className="text-sm text-red-600">{errorMessage}</p>}
-        {isSubmitting && <p role="status" className="text-sm text-gray-500">Please wait...</p>}
+        {errorMessage && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>}
+        {isSubmitting && <p role="status" className="text-sm text-muted-foreground">Please wait...</p>}
       </form>
       )}
       

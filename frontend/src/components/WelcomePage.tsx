@@ -11,19 +11,19 @@ interface WelcomePageProps {
 
 export default function WelcomePage({ onSend }: WelcomePageProps) {
   return (
-    <div className="flex flex-col flex-1 items-center justify-between" style={{ backgroundColor: "#f3f4f6" }}>
+    <div className="flex flex-col flex-1 items-center justify-between bg-background">
       {/* Hero section */}
       <div className="flex flex-col items-center pt-16 pb-8 px-4">
         {/* Custom icon avatar */}
         <img src="/icon.png" alt="Kuldeep icon" className="w-16 h-16 object-contain mb-5" />
 
         {/* Heading */}
-        <h1 className="text-[#1a202c] text-2xl font-semibold mb-2 tracking-tight">
+        <h1 className="text-foreground text-2xl font-semibold mb-2 tracking-tight">
           Welcome to Kuldeep
         </h1>
 
         {/* Subtitle */}
-        <p className="text-gray-500 text-sm text-center max-w-sm leading-relaxed">
+        <p className="text-muted-foreground text-sm text-center max-w-sm leading-relaxed">
           Your AI assistant for manufacturing processes, manuals, and SOPs. Ask me anything to get started.
         </p>
       </div>

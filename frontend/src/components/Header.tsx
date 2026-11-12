@@ -1,5 +1,5 @@
 // Header component matching Figma design
-// Blue header (#3B82F6) with robot icon on left, "Kuldeep" brand text on right,
+// Theme-colored header with robot icon on left, "Kuldeep" brand text on right,
 // and optional settings and chat links.
 
 import Link from "next/link";
@@ -12,8 +12,7 @@ interface HeaderProps {
 export default function Header({ showSettings, showChat }: HeaderProps) {
   return (
     <header
-      className="w-full flex items-center justify-between px-5 py-3"
-      style={{ backgroundColor: "#3B82F6" }}
+      className="w-full flex flex-wrap items-center justify-between gap-3 bg-header-primary px-5 py-3"
     >
       {/* Left: Custom icon in white circle + navigation */}
       <div className="flex items-center gap-3">
@@ -45,12 +44,14 @@ export default function Header({ showSettings, showChat }: HeaderProps) {
       </div>
 
       {/* Right: Brand name */}
-      <span
-        className="text-white text-2xl tracking-widest select-none"
-        style={{ fontFamily: "var(--font-cinzel), serif", fontWeight: 500 }}
-      >
-        Kuldeep
-      </span>
+      <div className="ml-auto flex items-center gap-3">
+        <span
+          className="text-white text-2xl tracking-widest select-none"
+          style={{ fontFamily: "var(--font-cinzel), serif", fontWeight: 500 }}
+        >
+          Kuldeep
+        </span>
+      </div>
     </header>
   );
 }

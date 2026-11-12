@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
       { source: "/users/register", destination: `${backend}/users/register` },
       { source: "/users/login", destination: `${backend}/users/login` },
       { source: "/users/logout", destination: `${backend}/users/logout` },
+      { source: "/users/theme", destination: `${backend}/users/theme` },
       { source: "/roles/permissions", destination: `${backend}/roles/permissions` },
       { source: "/users", destination: `${backend}/users` },
       { source: "/users/verify", destination: `${backend}/users/verify` },

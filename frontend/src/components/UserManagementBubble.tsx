@@ -87,8 +87,8 @@ export default function UserManagementBubble() {
     }, []);
 
     return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
-      <h2 className="text-lg font-semibold text-[#1a202c]">Manage Users</h2>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-8">
+      <h2 className="text-lg font-semibold text-foreground">Manage Users</h2>
       <div className="grid grid-cols-2 gap-3 sm:gap-4">
         {(["Pending Users", "Verified Users"] as const).map((option) => (
           <label key={option} className="cursor-pointer">
@@ -101,26 +101,26 @@ export default function UserManagementBubble() {
               onChange={() => setOnVerified(option == "Verified Users" ? true : false)}
               className="peer sr-only"
             />
-            <span className="block rounded-lg border-2 border-transparent px-3 py-2.5 text-center text-sm font-medium text-[#2d3748] transition-colors hover:bg-blue-50 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue-500">
+            <span className="block rounded-lg border-2 border-transparent px-3 py-2.5 text-center text-sm font-medium text-foreground transition-colors hover:bg-blue-button peer-checked:border-blue-button-focus peer-checked:bg-blue-button peer-checked:text-blue-button-text peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue-button-focus">
               {option}
             </span>
           </label>
         ))}
       </div>
 
-      {actionError && <p role="alert" className="text-sm text-red-600">{actionError}</p>}
-      {saving && <p role="status" className="text-sm text-gray-600">Saving changes...</p>}
+      {actionError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{actionError}</p>}
+      {saving && <p role="status" className="text-sm text-muted-foreground">Saving changes...</p>}
 
       {loadingUsers ? (
-        <p className="mb-1.5 block text-sm font-medium text-[#2d3748]">Loading users...</p>
+        <p className="mb-1.5 block text-sm font-medium text-foreground">Loading users...</p>
       ) : error ? (
-        <p role="alert" className="text-sm text-red-600">{error}</p>
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>
       ) : users?.verified_users.length && onVerified ? (
         <ul className="space-y-4">
           {users.verified_users.map((user) => (
-            <li key={user.username} className="grid grid-cols-2 items-center gap-3 rounded-lg border border-gray-200 p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_7rem_5rem] sm:gap-6 sm:p-5">
-              <p title={user.full_name} className="min-w-0 truncate font-medium text-[#1a202c]">{user.full_name}</p>
-              <p title={user.username} className="min-w-0 truncate text-sm text-gray-600">{user.username}</p>
+            <li key={user.username} className="grid grid-cols-2 items-center gap-3 rounded-lg border border-border p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_7rem_5rem] sm:gap-6 sm:p-5">
+              <p title={user.full_name} className="min-w-0 truncate font-medium text-foreground">{user.full_name}</p>
+              <p title={user.username} className="min-w-0 truncate text-sm text-muted-foreground">{user.username}</p>
               <select
                 aria-label={`Role for ${user.username}`}
                 value={user.name}
@@ -131,7 +131,7 @@ export default function UserManagementBubble() {
                     void handleRoleChange(user.id, role);
                   }
                 }}
-                className="min-w-0 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-wait disabled:opacity-50"
+                className="min-w-0 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground focus:border-blue-button-focus focus:outline-none focus:ring-2 focus:ring-blue-button-ring disabled:cursor-wait disabled:opacity-50"
               >
                 {user.name !== "Worker" && user.name !== "Admin" && (
                   <option value={user.name} disabled>{user.name}</option>
@@ -144,7 +144,7 @@ export default function UserManagementBubble() {
                 disabled={saving}
                 onClick={() => { void handleDelete(user.id); }}
                 aria-label={`Delete ${user.username}`}
-                className="justify-self-end rounded-lg bg-red-50 px-4 py-2 text-sm font-medium text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="justify-self-end rounded-lg bg-red-button px-4 py-2 border-2 border-transparent dark:border-red-button-border text-sm font-medium text-red-button-text hover:bg-red-button-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Delete
               </button>
@@ -154,11 +154,11 @@ export default function UserManagementBubble() {
       ) : users?.pending_users.length && !onVerified ? (
        <ul className="space-y-4">
           {users.pending_users.map((user) => (
-            <li key={user.username} className="grid grid-cols-5 items-center gap-3 rounded-lg border border-gray-200 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1fr)_5rem_5rem] lg:gap-6">
-              <p title={user.full_name} className="min-w-0 truncate font-medium text-[#1a202c]">{user.full_name}</p>
-              <p title={user.username} className="min-w-0 truncate text-sm text-gray-600">{user.username}</p>
-              <p title={user.name} className="min-w-0 truncate text-sm text-gray-600">{user.name}</p>
-              <button className="rounded-lg bg-blue-50 px-2 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100" onClick={async () => {
+            <li key={user.username} className="grid grid-cols-5 items-center gap-3 rounded-lg border border-border p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1fr)_5rem_5rem] lg:gap-6">
+              <p title={user.full_name} className="min-w-0 truncate font-medium text-foreground">{user.full_name}</p>
+              <p title={user.username} className="min-w-0 truncate text-sm text-muted-foreground">{user.username}</p>
+              <p title={user.name} className="min-w-0 truncate text-sm text-muted-foreground">{user.name}</p>
+              <button className="rounded-lg bg-blue-button px-2 py-2 text-sm font-medium text-blue-button-text transition-colors hover:bg-blue-button-hover" onClick={async () => {
                 try {
                   const updatedUsers = await verify_user(user.id, "VERIFIED");
                   setUsers(updatedUsers);
@@ -168,7 +168,7 @@ export default function UserManagementBubble() {
               }}>
                 Verify
               </button>
-              <button className="rounded-lg bg-red-50 px-2 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-100" onClick={async () => {
+              <button className="rounded-lg bg-red-50 dark:bg-red-950/50 px-2 py-2 text-sm font-medium text-red-700 dark:text-red-300 transition-colors hover:bg-red-100 dark:hover:bg-red-900/60" onClick={async () => {
                 try {
                   const updatedUsers = await verify_user(user.id, "REJECTED");
                   setUsers(updatedUsers);
@@ -182,9 +182,9 @@ export default function UserManagementBubble() {
           ))}
         </ul>
       ) : onVerified ? (
-        <p className="text-sm text-gray-600">No verified users found.</p>
+        <p className="text-sm text-muted-foreground">No verified users found.</p>
       ) : (
-        <p className="text-sm text-gray-600">No pending users.</p>
+        <p className="text-sm text-muted-foreground">No pending users.</p>
       )}
     </div>
     );

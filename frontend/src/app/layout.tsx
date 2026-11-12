@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter, Cinzel } from "next/font/google";
 import "./globals.css";
 import AuthGuard from "@/components/AuthGuard";
+import ThemeProvider from "@/components/ThemeProvider";
+import { themeInitializationScript } from "@/lib/theme";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -27,12 +29,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitializationScript }} />
+      </head>
       <body
         className={`${inter.variable} ${cinzel.variable} antialiased`}
         style={{ fontFamily: "var(--font-inter), sans-serif" }}
       >
-        <AuthGuard>{children}</AuthGuard>
+        <ThemeProvider>
+          <AuthGuard>{children}</AuthGuard>
+        </ThemeProvider>
       </body>
     </html>
   );

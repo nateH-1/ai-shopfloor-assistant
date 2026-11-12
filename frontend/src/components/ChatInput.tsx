@@ -219,26 +219,17 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
 
   return (
     <div
-      className="flex items-center gap-3 bg-white rounded-2xl px-4 py-3"
+      className="flex items-center gap-3 border border-border bg-card rounded-2xl px-4 py-3"
       style={{
         boxShadow: "0 4px 24px 0 rgba(0,0,0,0.10)",
-        border: "1px solid #e5e7eb",
       }}
     >
       { error ? (
-        <p role="alert" className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-red-700">{error}</p>
+        <p role="alert" className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">{error}</p>
       ) : verificationStatus != "VERIFIED" ? (
-        <p role="status" className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-blue-800">Please wait for an admin to verify your account.</p>
+        <p role="status" className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-blue-800 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300">Please wait for an admin to verify your account.</p>
       ) : (
         <>
-          {/* Attachment icon */}
-        <button
-          className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
-          aria-label="Attach file"
-          type="button"
-        >
-          <PaperclipIcon className="w-5 h-5" />
-        </button>
 
         {/* Text input / Audio visualizer */}
         <div className="flex-1" style={{ minHeight: "24px" }}>
@@ -251,7 +242,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
             onInput={handleInput}
             placeholder={isTranscribing ? "Transcribing audio..." : "Ask Kuldeep about manuals, SOPs, or processes..."}
             disabled={disabled || isTranscribing}
-            className="w-full resize-none bg-transparent text-[#374151] placeholder-gray-400 text-sm leading-relaxed focus:outline-none"
+            className="w-full resize-none bg-transparent text-foreground placeholder:text-muted-foreground text-sm leading-relaxed focus:outline-none"
             style={{ minHeight: "24px", maxHeight: "160px", display: isRecording ? "none" : undefined }}
           />
           {/* Canvas is always mounted so canvasRef is always set; shown only while recording */}
@@ -269,10 +260,10 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
         <button
           className={`relative shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
             isTranscribing
-              ? "bg-amber-50 text-amber-600 border border-amber-200"
+              ? "bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-900"
               : isRecording
-                ? "bg-red-50 text-red-600 border border-red-200 shadow-[0_0_0_6px_rgba(239,68,68,0.10)]"
-                : "bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100 hover:text-gray-700"
+                ? "bg-red-50 text-red-600 border border-red-200 shadow-[0_0_0_6px_rgba(239,68,68,0.10)] dark:bg-red-950 dark:text-red-300 dark:border-red-900"
+                : "bg-card text-muted-foreground border border-border hover:bg-muted hover:text-foreground"
           }`}
           aria-label={isRecording ? "Stop voice recording" : "Start voice recording"}
           title={isTranscribing ? "Transcribing" : isRecording ? "Recording" : "Voice input"}
@@ -290,12 +281,11 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
         <button
           onClick={handleSend}
           disabled={!value.trim() || disabled || isTranscribing || isRecording}
-          className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full transition-opacity"
-          style={{ backgroundColor: "#3B82F6" }}
+          className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-blue-button-solid text-blue-button-solid-text transition-opacity"
           aria-label="Send message"
           type="button"
         >
-          <SendIcon className="w-4 h-4 text-white" />
+          <SendIcon className="w-4 h-4" />
         </button>
         </>
       )}

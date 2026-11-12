@@ -213,7 +213,7 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
 
       {/* Sidebar panel */}
       <aside
-        className={`fixed top-0 left-0 h-full w-72 bg-white shadow-xl z-50 flex flex-col overflow-hidden transition-transform duration-300 ${
+        className={`fixed top-0 left-0 h-full w-72 bg-card shadow-xl z-50 flex flex-col overflow-hidden transition-transform duration-300 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } ${isDragOver ? "ring-2 ring-inset ring-purple-400" : ""}`}
         onDragOver={handleDragOver}
@@ -236,7 +236,7 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
         </div>
 
         {/* Upload area */}
-        <div className="px-4 py-3 border-b border-gray-100 flex flex-col gap-2">
+        <div className="px-4 py-3 border-b border-border flex flex-col gap-2">
           {/* Hidden multi-file input */}
           <input
             ref={fileInputRef}
@@ -266,7 +266,7 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isBusy}
-            className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-purple-300 px-3 py-2.5 text-sm text-purple-600 hover:bg-purple-50 disabled:opacity-50 transition-colors"
+            className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-purple-300 px-3 py-2.5 text-sm text-purple-600 hover:bg-purple-50 disabled:opacity-50 transition-colors dark:border-purple-800 dark:text-purple-300 dark:hover:bg-purple-950"
           >
             {uploadSource === "files" ? (
               <>
@@ -286,7 +286,7 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
           <button
             onClick={() => folderInputRef.current?.click()}
             disabled={isBusy}
-            className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-blue-300 px-3 py-2.5 text-sm text-blue-600 hover:bg-blue-50 disabled:opacity-50 transition-colors"
+            className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-blue-button-outline-border px-3 py-2.5 text-sm text-blue-button-outline-text hover:bg-blue-button-outline-hover disabled:opacity-50 transition-colors"
           >
             {uploadSource === "folder" && folderProgress !== null ? (
               <>
@@ -311,10 +311,10 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
         {(error || successMsg) && (
           <div className="px-4 py-2">
             {error && (
-              <p className="text-xs text-red-600 bg-red-50 rounded px-2 py-1 wrap-break-word whitespace-pre-line">{error}</p>
+              <p className="text-xs text-red-600 bg-red-50 rounded px-2 py-1 wrap-break-word whitespace-pre-line dark:text-red-300 dark:bg-red-950">{error}</p>
             )}
             {successMsg && (
-              <p className="text-xs text-green-700 bg-green-50 rounded px-2 py-1 wrap-break-word">{successMsg}</p>
+              <p className="text-xs text-green-700 bg-green-50 rounded px-2 py-1 wrap-break-word dark:text-green-300 dark:bg-green-950">{successMsg}</p>
             )}
           </div>
         )}
@@ -326,7 +326,7 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
               <SpinnerIcon className="w-5 h-5 animate-spin text-purple-500" />
             </div>
           ) : documents.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-8">
+            <p className="text-xs text-muted-foreground text-center py-8">
               No documents yet. Upload a file to get started.
             </p>
           ) : (
@@ -334,18 +334,17 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
               {documents.map((doc) => (
                 <li
                   key={doc.filename}
-                  className="flex items-start gap-2 rounded-lg bg-gray-50 px-3 py-2"
-                  style={{ border: "1px solid #e5e7eb" }}
+                  className="flex items-start gap-2 rounded-lg border border-border bg-muted px-3 py-2"
                 >
-                  <FileIcon className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                  <FileIcon className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-gray-700 truncate" title={doc.filename}>{doc.filename}</p>
-                    <p className="text-[10px] text-gray-400">{doc.chunks} chunks</p>
+                    <p className="text-xs font-medium text-foreground truncate" title={doc.filename}>{doc.filename}</p>
+                    <p className="text-[10px] text-muted-foreground">{doc.chunks} chunks</p>
                   </div>
                   <button
                     onClick={() => handleDelete(doc.filename)}
                     disabled={deletingFile === doc.filename}
-                    className="shrink-0 text-gray-300 hover:text-red-400 disabled:opacity-40 transition-colors"
+                    className="shrink-0 text-muted-foreground hover:text-red-400 disabled:opacity-40 transition-colors"
                     aria-label={`Delete ${doc.filename}`}
                   >
                     {deletingFile === doc.filename ? (

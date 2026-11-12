@@ -2,13 +2,16 @@
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
-@custom-variant dark (&:is(.dark *));
+/* Both dark palettes need the contrast adjustments in dark utilities. */
+@custom-variant dark (&:where(.dark, .dark *, .red, .red *));
+@custom-variant red (&:where(.red, .red *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --color-header-primary: var(--header-primary);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -38,6 +41,22 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-red-button: var(--red-button);
+  --color-red-button-text: var(--red-button-text);
+  --color-red-button-hover: var(--red-button-hover);
+  --color-red-button-border: var(--red-button-border);
+  --color-blue-button: var(--blue-button);
+  --color-blue-button-text: var(--blue-button-text);
+  --color-blue-button-hover: var(--blue-button-hover);
+  --color-blue-button-border: var(--blue-button-border);
+  --color-blue-button-focus: var(--blue-button-focus);
+  --color-blue-button-ring: var(--blue-button-ring);
+  --color-blue-button-solid: var(--blue-button-solid);
+  --color-blue-button-solid-text: var(--blue-button-solid-text);
+  --color-blue-button-solid-hover: var(--blue-button-solid-hover);
+  --color-blue-button-outline-border: var(--blue-button-outline-border);
+  --color-blue-button-outline-text: var(--blue-button-outline-text);
+  --color-blue-button-outline-hover: var(--blue-button-outline-hover);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -45,11 +64,13 @@
 }
 
 :root {
+  color-scheme: light;
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
+  --background: #f3f4f6;
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
+  --header-primary: #3B82F6;
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
   --primary: oklch(0.205 0 0);
@@ -77,12 +98,29 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --red-button: oklch(90.23% 0.05074 18.024);
+  --red-button-text: oklch(50.329% 0.20654 29.223);
+  --red-button-hover: oklch(73.487% 0.16024 21.745);
+  --red-button-border: oklch(50.329% 0.20654 29.223);
+  --blue-button: oklch(97% 0.014 254.604);
+  --blue-button-text: oklch(48.8% 0.243 264.376);
+  --blue-button-hover: oklch(93.2% 0.032 255.585);
+  --blue-button-border: oklch(88.2% 0.059 254.128);
+  --blue-button-focus: oklch(62.3% 0.214 259.815);
+  --blue-button-ring: oklch(88.2% 0.059 254.128);
+  --blue-button-solid: oklch(62.3% 0.214 259.815);
+  --blue-button-solid-text: #fff;
+  --blue-button-solid-hover: oklch(54.6% 0.245 262.881);
+  --blue-button-outline-border: oklch(80.9% 0.105 251.813);
+  --blue-button-outline-text: oklch(54.6% 0.245 262.881);
+  --blue-button-outline-hover: oklch(97% 0.014 254.604);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  color-scheme: dark;
+  --background: #19191f;
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
+  --card: oklch(25.538% 0.01887 280.481);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
@@ -111,6 +149,71 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --red-button: oklch(33.724% 0.02651 278.925);
+  --red-button-text: oklch(66.066% 0.22581 25.939);
+  --red-button-hover: oklch(36.77% 0.11058 24.352);
+  --red-button-border: oklch(57.736% 0.19401 25.701);
+  --blue-button: oklch(28.2% 0.091 267.935 / 50%);
+  --blue-button-text: oklch(80.9% 0.105 251.813);
+  --blue-button-hover: oklch(37.9% 0.146 265.522 / 60%);
+  --blue-button-border: oklch(42.4% 0.199 265.638);
+  --blue-button-ring: oklch(37.9% 0.146 265.522);
+  --blue-button-outline-border: oklch(42.4% 0.199 265.638);
+  --blue-button-outline-text: oklch(80.9% 0.105 251.813);
+  --blue-button-outline-hover: oklch(28.2% 0.091 267.935);
+}
+
+.red {
+  color-scheme: dark;
+  --radius: 0.625rem;
+  --background: #680000;
+  --foreground: oklch(99.557% 0.0021 14.222);
+  --card: oklch(36.389% 0.14933 29.223);
+  --card-foreground: oklch(0.145 0 0);
+  --header-primary: oklch(62.793% 0.25768 29.223);
+  --popover: oklch(41.854% 0.17176 29.223);
+  --popover-foreground: oklch(100% 0.00011 271.152);
+  --primary: oklch(62.793% 0.25768 29.223);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(25.69% 0.10542 29.223);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(62.793% 0.25768 29.223);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  --red-button: oklch(33.724% 0.02651 278.925);
+  --red-button-text: oklch(66.066% 0.22581 25.939);
+  --red-button-hover: oklch(36.77% 0.11058 24.352);
+  --red-button-border: oklch(57.736% 0.19401 25.701);
+  --blue-button: oklch(33.724% 0.02651 278.925);
+  --blue-button-text: oklch(66.066% 0.22581 25.939);
+  --blue-button-hover: oklch(36.77% 0.11058 24.352);
+  --blue-button-border: oklch(57.736% 0.19401 25.701);
+  --blue-button-focus: oklch(57.736% 0.19401 25.701);
+  --blue-button-ring: oklch(70.455% 0.1399 21.219);
+  --blue-button-solid: oklch(57.736% 0.19401 25.701);
+  --blue-button-solid-text: #fff;
+  --blue-button-solid-hover: oklch(33.724% 0.02651 278.925);
+  --blue-button-outline-border: oklch(57.736% 0.19401 25.701);
+  --blue-button-outline-text: oklch(100% 0.00011 271.152);
+  --blue-button-outline-hover: oklch(57.736% 0.19401 25.701);
 }
 
 @layer base {

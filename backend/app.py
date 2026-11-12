@@ -384,6 +384,8 @@ def _create_roles_table():
 # ── Helper: fetch from database ─────────────────────────────────────────────────
 def _create_users_table():
     with database_connection() as conn:
+        # Serialize startup migrations when multiple server processes start together.
+        conn.execute("BEGIN IMMEDIATE")
         conn.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id TEXT PRIMARY KEY NOT NULL,
@@ -394,6 +396,7 @@ def _create_users_table():
                 verification_status TEXT NOT NULL DEFAULT 'PENDING'
                     CHECK (verification_status IN ('VERIFIED', 'PENDING', 'REJECTED')),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                theme_preference TEXT CHECK (theme_preference IN ('light', 'dark', 'red')),
 
                 FOREIGN KEY (role_id)
                     REFERENCES roles(id)
@@ -401,6 +404,12 @@ def _create_users_table():
                     ON UPDATE CASCADE
             )
         """)
+        columns = {row["name"] for row in conn.execute("PRAGMA table_info(users)")}
+        if "theme_preference" not in columns:
+            conn.execute("""
+                ALTER TABLE users ADD COLUMN theme_preference TEXT
+                    CHECK (theme_preference IN ('light', 'dark', 'red'))
+            """)
 
 
 def _create_tab_sessions_table():
@@ -1077,6 +1086,58 @@ def get_verification_status():
     if not user:
         return jsonify({"error": "Please log in."}), 401
     return jsonify({"verification_status": user["verification_status"]})
+
+
+@app.route("/users/theme", methods=["GET", "PUT"])
+def user_theme_preference():
+    """Read or save the current account's theme, including unverified accounts."""
+    user = _current_user()
+    if not user:
+        return jsonify({"error": "Please log in."}), 401
+
+    if request.method in {"GET", "HEAD"}:
+        if user["role"] == "Guest":
+            return jsonify({"theme": None, "user_id": None, "login_id": user["login_id"]})
+        with database_connection() as conn:
+            row = conn.execute(
+                "SELECT theme_preference FROM users WHERE id = ?", (user["user_id"],)
+            ).fetchone()
+        if row is None:
+            return jsonify({"error": "Please log in."}), 401
+        return jsonify({
+            "theme": row["theme_preference"],
+            "user_id": user["user_id"],
+            "login_id": user["login_id"],
+        })
+
+    if user["role"] == "Guest":
+        return jsonify({"error": "Guest themes are only saved in this browser."}), 403
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Expected a JSON object."}), 400
+    theme = data.get("theme")
+    if not isinstance(theme, str) or theme not in ("light", "dark", "red"):
+        return jsonify({"error": "Theme must be light, dark, or red."}), 400
+    if not isinstance(data.get("user_id"), str) or not isinstance(data.get("login_id"), str):
+        return jsonify({"error": "The account and sign-in identifiers are required."}), 400
+    if data["user_id"] != user["user_id"] or data["login_id"] != user["login_id"]:
+        return jsonify({"error": "Your sign-in changed. Reload before saving your theme."}), 409
+
+    with database_connection() as conn:
+        # Recheck the login in the UPDATE itself so logout/account switches cannot
+        # turn a delayed settings save into a write for a different login.
+        updated = conn.execute("""
+            UPDATE users SET theme_preference = ?
+            WHERE id = ? AND EXISTS (
+                SELECT 1 FROM tab_sessions
+                WHERE browser_session_id = ? AND tab_id = ? AND user_id = users.id
+                    AND login_id = ? AND is_guest = 0 AND expires_at > ?
+            )
+        """, (theme, user["user_id"], session["browser_session_id"], _request_tab_id(),
+              user["login_id"], time.time()))
+        if updated.rowcount != 1:
+            return jsonify({"error": "Your sign-in changed. Reload before saving your theme."}), 409
+    return jsonify({"theme": theme, "user_id": user["user_id"], "login_id": user["login_id"]})
 
 
 def guest_is_enabled() -> bool:

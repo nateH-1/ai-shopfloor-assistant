@@ -6,6 +6,11 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type TabSessionState = {
   tabId?: Promise<string>;
   browserReady?: Promise<void>;
+  readyTab?: {
+    id: string;
+    claim: Promise<string>;
+    browserSession: Promise<void>;
+  };
 };
 
 export class TabSessionError extends Error {
@@ -52,6 +57,7 @@ async function claimTabId(state: TabSessionState): Promise<string> {
           window.addEventListener("pagehide", () => {
             state.tabId = undefined;
             state.browserReady = undefined;
+            state.readyTab = undefined;
             release();
           }, { once: true });
           resolve(true);
@@ -101,7 +107,17 @@ async function ensureBrowserSession(state: TabSessionState, tabId: string, claim
     });
     state.browserReady = ready;
   }
-  await state.browserReady;
+  const browserSession = state.browserReady;
+  await browserSession;
+  if (state.tabId === claim && state.browserReady === browserSession) {
+    state.readyTab = { id: tabId, claim, browserSession };
+  }
+}
+
+function sendTabRequest(input: string, init: RequestInit, tabId: string): Promise<Response> {
+  const headers = new Headers(init.headers);
+  headers.set("X-Tab-ID", tabId);
+  return fetch(input, { ...init, headers, credentials: "same-origin", cache: "no-store" });
 }
 
 /** Send a same-origin API request using this tab's independent login. */
@@ -114,18 +130,25 @@ export async function tabFetch(
   if (new URL(input, window.location.href).origin !== window.location.origin) {
     throw new TabSessionError("Tab sign-in requests must use this app's same-origin API routes.");
   }
+  // Sign-in must recover after a cleared cookie or restarted backend even if
+  // client-side navigation kept this document's bootstrap promise alive.
+  if (refreshBrowserSession) {
+    state.browserReady = undefined;
+    state.readyTab = undefined;
+  }
+  const ready = state.readyTab;
+  if (init.keepalive && ready && state.tabId === ready.claim && state.browserReady === ready.browserSession) {
+    // Dispatch before yielding so a pagehide capture listener can save while
+    // the tab still owns its claim, before the release listener runs.
+    return sendTabRequest(input, init, ready.id);
+  }
   // pagehide clears the claim so a back/forward-restored document reclaims its
   // ID here (or gets a new ID if another live tab now owns the copied value).
   const claim = getTabId(state);
   const tabId = await claim;
   requireActiveClaim(state, claim);
-  // Sign-in must recover after a cleared cookie or restarted backend even if
-  // client-side navigation kept this document's bootstrap promise alive.
-  if (refreshBrowserSession) state.browserReady = undefined;
   await ensureBrowserSession(state, tabId, claim);
   // Never replay a waiting mutation under a newly claimed or copied tab ID.
   requireActiveClaim(state, claim);
-  const headers = new Headers(init.headers);
-  headers.set("X-Tab-ID", tabId);
-  return fetch(input, { ...init, headers, credentials: "same-origin", cache: "no-store" });
+  return sendTabRequest(input, init, tabId);
 }
