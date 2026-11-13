@@ -32,6 +32,7 @@ from rag.ingestion import _load_docs
 
 load_dotenv()
 
+EMBEDDING_MODEL = "bge-m3"
 
 def load_registry() -> dict:
     if DOCUMENTS_JSON.exists():
@@ -53,7 +54,7 @@ def ingest_files(file_paths: list[Path]) -> None:
     print(f"{'='*60}\n")
 
     splitter   = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
-    embeddings = OllamaEmbeddings(model="bge-m3")
+    embeddings = OllamaEmbeddings(model=EMBEDDING_MODEL)
     registry   = load_registry()
     all_chunks = []
 
