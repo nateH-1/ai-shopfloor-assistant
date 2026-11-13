@@ -16,7 +16,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
-from langchain_openai import OpenAIEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -44,23 +44,32 @@ def save_registry(registry: dict) -> None:
 
 
 def ingest_files(file_paths: list[Path]) -> None:
-    if not os.getenv("OPENAI_API_KEY"):
+    """if not os.getenv("OPENAI_API_KEY"):
         print("❌  OPENAI_API_KEY not set. Add it to your .env file.")
-        sys.exit(1)
+        sys.exit(1)"""
 
     print(f"\n{'='*60}")
     print("  Collective RAG — Batch Ingestion")
     print(f"{'='*60}\n")
 
     splitter   = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
-    embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
+    embeddings = OllamaEmbeddings(model="bge-m3")
     registry   = load_registry()
     all_chunks = []
 
     # Open the store now (if it exists) so we can delete stale vectors per file
     # before re-ingesting — prevents duplicate chunks on repeated runs.
-    existing_store = (
+    """existing_store = (
         Chroma(persist_directory=CHROMA_DB_DIR, embedding_function=embeddings)
+        if os.path.exists(CHROMA_DB_DIR)
+        else None
+    )"""
+    existing_store = (
+        Chroma(
+            collection_name = "documents",
+            persist_directory = CHROMA_DB_DIR,
+            embedding_function = embeddings
+        )
         if os.path.exists(CHROMA_DB_DIR)
         else None
     )
@@ -94,7 +103,7 @@ def ingest_files(file_paths: list[Path]) -> None:
     if existing_store is not None:
         existing_store.add_documents(all_chunks)
     else:
-        Chroma.from_documents(all_chunks, embedding=embeddings, persist_directory=CHROMA_DB_DIR)
+        Chroma.from_documents(all_chunks, embedding=embeddings, collection_name="documents", persist_directory=CHROMA_DB_DIR)
 
     save_registry(registry)
     print(f"\n✅  Done! {len(all_chunks)} chunks stored in {CHROMA_DB_DIR}/")

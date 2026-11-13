@@ -3,7 +3,7 @@ import os
 import urllib.request
 
 import chromadb
-from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
+from chromadb.utils.embedding_functions import OllamaEmbeddingFunction
 from langchain_ollama import ChatOllama
 
 from rag.config import (
@@ -17,7 +17,7 @@ from rag.config import (
 
 def _create_collection(api_key: str) -> chromadb.Collection:
     """Open (or create) the persistent Chroma collection holding document chunks."""
-    ef = OpenAIEmbeddingFunction(api_key=api_key, model_name="text-embedding-ada-002")
+    ef = OllamaEmbeddingFunction(url = _ollama_settings()[1], model_name="bge-m3")
     client = chromadb.PersistentClient(path=CHROMA_DB_DIR)
     return client.get_or_create_collection(name="documents", embedding_function=ef)
 
