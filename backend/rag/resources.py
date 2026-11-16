@@ -15,7 +15,7 @@ from rag.config import (
 )
 
 
-def _create_collection(api_key: str) -> chromadb.Collection:
+def _create_collection() -> chromadb.Collection:
     """Open (or create) the persistent Chroma collection holding document chunks."""
     ef = OllamaEmbeddingFunction(url = _ollama_settings()[1], model_name="bge-m3")
     client = chromadb.PersistentClient(path=CHROMA_DB_DIR)

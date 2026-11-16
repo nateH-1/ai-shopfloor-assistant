@@ -3,7 +3,7 @@ test_hybrid.py
 ==============
 Tests for _hybrid_search in rag/retrieval.py: vector search first, BM25 keyword
 results merged in (by rank) only for code-like questions or weak vector matches.
-Chroma and the keyword search are faked; no OpenAI calls.
+Chroma and the keyword search are faked; no Ollama calls.
 Framework: pytest + unittest.mock
 Run: cd backend && pytest tests/test_hybrid.py -v
 """

@@ -7,7 +7,6 @@ Run: cd backend && pytest tests/test_chat_endpoint.py -v
 """
 
 import io
-import os
 import pytest
 import time
 from uuid import uuid4
@@ -116,25 +115,34 @@ class TestEmptyMessageValidation:
         assert res.status_code == 400
 
 
-# ── Group 2: Vector Store & API Key (Rule 2 — fires before off-topic) ─────────
+# ── Group 2: Vector Store Initialization (Rule 2 — fires before off-topic) ───
 
-class TestVectorStoreAndApiKey:
+class TestVectorStoreInitialization:
 
-    def test_no_api_key_returns_503(self, client):
-        with patch("app._init_store", return_value=(False, "OPENAI_API_KEY not set in environment.")):
+    def test_store_initialization_failure_returns_503(self, client):
+        with patch("app._init_store", return_value=(False, "Failed to load vector store: disk locked")):
             res = client.post("/chat", json={"message": "hello"})
         assert res.status_code == 503
+        assert res.get_json()["metadata"]["sources"] == []
 
-    def test_no_documents_returns_503(self, client):
-        with patch("app._init_store", return_value=(False, "No documents ingested yet. Please upload a PDF first.")):
-            res = client.post("/chat", json={"message": "hello"})
-        assert res.status_code == 503
+    def test_empty_collection_returns_upload_prompt(self, client):
+        app_module.collection = _ready_collection(count=0)
+        res = client.post("/chat", json={"message": "hello"})
+        assert res.status_code == 200
+        assert "No documents have been uploaded yet" in res.get_json()["reply"]
+        assert res.get_json()["metadata"]["sources"] == []
 
-    def test_empty_api_key_string_treated_as_missing(self, client):
-        """OPENAI_API_KEY='' must be treated as not set → 503."""
-        with patch("app._init_store", return_value=(False, "OPENAI_API_KEY not set in environment.")):
+    def test_chat_initializes_ollama_without_api_key(self, client, monkeypatch):
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        with patch("app._create_collection", return_value=_ready_collection()) as create_collection, \
+             patch("app._create_llm", return_value=MagicMock()) as create_llm, \
+             patch("rag.pipeline._is_off_topic", return_value=False), \
+             patch("rag.pipeline._chat_with_memory", return_value=_mock_chat_response()):
             res = client.post("/chat", json={"message": "hello"})
-        assert res.status_code == 503
+        assert res.status_code == 200
+        assert res.get_json()["reply"] == "Mocked answer."
+        create_collection.assert_called_once_with()
+        create_llm.assert_called_once_with()
 
     def test_off_topic_without_vectorstore_returns_503_not_canned_reply(self, client):
         """
@@ -142,7 +150,7 @@ class TestVectorStoreAndApiKey:
         A personal question with no vector store must return 503, not the
         canned off-topic reply.
         """
-        with patch("app._init_store", return_value=(False, "No documents ingested yet. Please upload a PDF first.")), \
+        with patch("app._init_store", return_value=(False, "Failed to load vector store: disk locked")), \
              patch("rag.pipeline._is_off_topic", return_value=True):
             res = client.post("/chat", json={"message": "What is my name?"})
         assert res.status_code == 503
@@ -353,12 +361,15 @@ class TestHealthEndpoint:
         with patch("app._ollama_status", return_value=None):
             yield
 
-    def test_not_ready_when_ollama_reports_a_problem(self, client):
-        app_module.collection = MagicMock(**{"count.return_value": 5})
-        with patch("app._ollama_status", return_value="Ollama is not reachable"), \
-             patch("app.os.getenv", side_effect=lambda k, *a: "sk-test" if k == "OPENAI_API_KEY" else os.environ.get(k)):
+    @pytest.mark.parametrize("error", [
+        "Ollama is not reachable",
+        "Ollama model 'qwen2.5:7b' is not installed",
+    ])
+    def test_not_ready_when_ollama_reports_a_problem(self, client, error):
+        app_module.collection = _ready_collection()
+        with patch("app._ollama_status", return_value=error):
             data = client.get("/api/health").get_json()
-        assert data["llm_error"] == "Ollama is not reachable"
+        assert data["llm_error"] == error
         assert data["ready"] is False
 
     def test_returns_200(self, client):
@@ -367,18 +378,23 @@ class TestHealthEndpoint:
 
     def test_response_has_required_keys(self, client):
         data = client.get("/api/health").get_json()
-        for key in ("status", "has_documents", "has_api_key", "ready", "active_sessions"):
+        for key in ("status", "has_documents", "llm_error", "ready", "active_sessions"):
             assert key in data
+        assert "has_api_key" not in data
 
-    def test_has_api_key_false_when_key_missing(self, client):
-        with patch("app.os.getenv", side_effect=lambda k, *a: "" if k == "OPENAI_API_KEY" else os.environ.get(k)):
-            data = client.get("/api/health").get_json()
-        assert data["has_api_key"] is False
+    def test_ready_with_documents_and_ollama_without_api_key(self, client, monkeypatch):
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        app_module.collection = _ready_collection()
+        data = client.get("/api/health").get_json()
+        assert data["has_documents"] is True
+        assert data["llm_error"] is None
+        assert data["ready"] is True
 
-    def test_has_api_key_true_when_key_present(self, client):
-        with patch("app.os.getenv", side_effect=lambda k, *a: "sk-test" if k == "OPENAI_API_KEY" else os.environ.get(k)):
-            data = client.get("/api/health").get_json()
-        assert data["has_api_key"] is True
+    def test_ready_false_when_collection_is_empty(self, client):
+        app_module.collection = _ready_collection(count=0)
+        data = client.get("/api/health").get_json()
+        assert data["has_documents"] is False
+        assert data["ready"] is False
 
     def test_active_sessions_count_matches_state(self, client):
         app_module.conversation_sessions["s1"] = {}
@@ -388,6 +404,7 @@ class TestHealthEndpoint:
 
     def test_ready_false_when_no_collection(self, client):
         data = client.get("/api/health").get_json()
+        assert data["has_documents"] is False
         assert data["ready"] is False
 
 
