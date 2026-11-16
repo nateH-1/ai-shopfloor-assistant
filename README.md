@@ -142,6 +142,11 @@ Kills all processes spawned by `start-dev.ps1` and frees ports 5000 and 3000.
 
 ## Manual Startup (without the scripts)
 
+### To Start virtual envrionment
+```powershell
+.\venv\Scripts\Activate.ps1
+```
+
 ### Backend
 
 ```powershell
