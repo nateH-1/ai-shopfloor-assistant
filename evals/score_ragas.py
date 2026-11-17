@@ -42,7 +42,8 @@ def main():
         rows = [{"question": r["question"], "answer": r["answer"], "contexts": r["contexts"],
                  "ground_truth": r["ground_truth"]}
                 for r in d["rows"]
-                if r["answerable"] and r.get("llm_called") and r["contexts"]]
+                if r["answerable"] and r.get("llm_called") and r["contexts"]
+                and not r.get("error") and r["answer"].strip()]
         print(f"\nscoring {model}: {len(rows)} answered questions ...", flush=True)
         scores = score_outputs(rows, include_retrieval_metrics=args.retrieval)
         summary[model] = {"n": len(rows), "source": path.name, **scores}

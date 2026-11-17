@@ -5,7 +5,9 @@
     "split: 'tune' questions may be used to set thresholds; 'heldout' questions must stay untouched until the final measurement.",
     "answerable=false means the documents do not contain the answer (checked by searching the text); the expected behavior is a refusal.",
     "All 15 documents now covered at least once (manufacturing_processes, basic_machine_tool_operations, server error-code guide, both syllabi, SOP, Boeing lean, FDA Food Code, lean_manufacturing, autodesk_cncbook, gmp_audit_standard, maintenance and operation, c4isr, modern_manufacturing, processes_definitions_handbook). Still missing: follow-up (multi-turn) questions, more multi-passage and multi-document questions, and the welding books.",
-    "2026-11-04: EV-24 label corrected (pages 14 and 41). Added EV-43..EV-55: 10 unanswerable (mostly 'hard' cases where related words exist but the answer does not) and 3 off-topic. Each unanswerable question was checked against the indexed PDF text. Still NOT human-verified."
+    "2026-11-04: EV-24 label corrected (pages 14 and 41). Added EV-43..EV-55: 10 unanswerable (mostly 'hard' cases where related words exist but the answer does not) and 3 off-topic. Each unanswerable question was checked against the indexed PDF text. Still NOT human-verified.",
+    "2026-11-13: added EV-56..EV-63 (7 answerable + 1 unanswerable) from Welding_Principles_Applications_Jeffus.pdf, which was added to testing-documentation/ and the eval index. Pages found by text search of the PDF; NOT human-verified. Set is now 63 questions.",
+    "2026-11-13: added 'Welding principles and practices.pdf' to the corpus and EV-64..EV-71 (7 answerable incl. 3 multi_document, 1 unanswerable). Pages found by text search; NOT human-verified. Set is now 71 questions. Still no follow-up (multi-turn) questions."
   ],
   "questions": [
     {
@@ -664,6 +666,213 @@
       "source_file": null,
       "pdf_pages": [],
       "note": "Expected: refused by the off-topic guard."
+    },
+    {
+      "id": "EV-56",
+      "category": "exact_figure",
+      "split": "tune",
+      "answerable": true,
+      "question": "At about what temperature can a first-degree burn happen?",
+      "ground_truth": "First-degree burns can occur at temperatures of approximately 130 F (55 C).",
+      "source_file": "Welding_Principles_Applications_Jeffus.pdf",
+      "pdf_pages": [
+        60
+      ],
+      "note": "Drafted by Claude from the PDF text; NOT human-verified."
+    },
+    {
+      "id": "EV-57",
+      "category": "procedure",
+      "split": "tune",
+      "answerable": true,
+      "question": "How should I treat a first-degree burn?",
+      "ground_truth": "Put the burned area under cold (not iced) water or cold compresses until the pain decreases, then cover it with sterile bandages or a clean cloth. Do not apply butter, grease, or other home remedies.",
+      "source_file": "Welding_Principles_Applications_Jeffus.pdf",
+      "pdf_pages": [
+        60
+      ],
+      "note": "Drafted by Claude from the PDF text; NOT human-verified."
+    },
+    {
+      "id": "EV-58",
+      "category": "exact_figure",
+      "split": "tune",
+      "answerable": true,
+      "question": "Above what pressure is free acetylene unstable and shock sensitive?",
+      "ground_truth": "Free acetylene above 15 psig is unstable and shock sensitive and can explode if the cylinder is dropped, struck, or roughly handled.",
+      "source_file": "Welding_Principles_Applications_Jeffus.pdf",
+      "pdf_pages": [
+        220
+      ],
+      "note": "Drafted by Claude from the PDF text; NOT human-verified."
+    },
+    {
+      "id": "EV-59",
+      "category": "exact_figure",
+      "split": "heldout",
+      "answerable": true,
+      "question": "Why is acetone used inside acetylene cylinders and how much acetylene can it absorb?",
+      "ground_truth": "Acetone is a liquid solvent that absorbs the acetylene gas and makes it more stable; it absorbs approximately 24 times its own weight in acetylene.",
+      "source_file": "Welding_Principles_Applications_Jeffus.pdf",
+      "pdf_pages": [
+        220
+      ],
+      "note": "Drafted by Claude from the PDF text; NOT human-verified."
+    },
+    {
+      "id": "EV-60",
+      "category": "paraphrase",
+      "split": "tune",
+      "answerable": true,
+      "question": "Why do E7018 electrodes need to be kept dry?",
+      "ground_truth": "Low-hydrogen electrodes such as E7018 and E11018 are highly susceptible to moisture; even slightly damp rods produce porosity in the weld, so they are stored in a heated rod locker or a moisture-tight container.",
+      "source_file": "Welding_Principles_Applications_Jeffus.pdf",
+      "pdf_pages": [
+        158
+      ],
+      "note": "Drafted by Claude from the PDF text; NOT human-verified."
+    },
+    {
+      "id": "EV-61",
+      "category": "exact_identifier",
+      "split": "tune",
+      "answerable": true,
+      "question": "What current and polarity can I use with an E7018 electrode?",
+      "ground_truth": "E7018 (low hydrogen potassium, iron powder) can be used with AC or DC, reverse polarity.",
+      "source_file": "Welding_Principles_Applications_Jeffus.pdf",
+      "pdf_pages": [
+        782
+      ],
+      "note": "Drafted by Claude from the PDF text; NOT human-verified."
+    },
+    {
+      "id": "EV-62",
+      "category": "exact_figure",
+      "split": "heldout",
+      "answerable": true,
+      "question": "How much thorium oxide is added to thoriated tungsten electrodes and what does it do?",
+      "ground_truth": "Thorium oxide is added in percentages of up to 0.6%; it improves the tungsten's current-carrying capacity. Adding 1% to 2% does not improve it further but helps electron emission.",
+      "source_file": "Welding_Principles_Applications_Jeffus.pdf",
+      "pdf_pages": [
+        466
+      ],
+      "note": "Drafted by Claude from the PDF text; NOT human-verified."
+    },
+    {
+      "id": "EV-63",
+      "category": "unanswerable",
+      "split": "tune",
+      "answerable": false,
+      "question": "What preheat temperature is recommended when welding titanium alloys?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Checked 2026-11-13: no page of the Jeffus PDF mentions titanium together with preheat. Expected: insufficient-evidence reply. NOT human-verified. Re-checked after adding 'Welding principles and practices.pdf': it mentions titanium only as a stainless-steel alloying element (p336), not preheat for titanium alloys."
+    },
+    {
+      "id": "EV-64",
+      "category": "exact_figure",
+      "split": "tune",
+      "answerable": true,
+      "question": "How much moisture can the covering of a low-hydrogen electrode contain when it is manufactured?",
+      "ground_truth": "The covering of low-hydrogen electrodes is reduced to less than 0.2 percent moisture at manufacture, and the electrodes are packaged in moisture-proof containers.",
+      "source_file": "Welding principles and practices.pdf",
+      "pdf_pages": [
+        343
+      ],
+      "note": "Drafted by Claude from the PDF text; NOT human-verified."
+    },
+    {
+      "id": "EV-65",
+      "category": "exact_figure",
+      "split": "heldout",
+      "answerable": true,
+      "question": "How much moisture can low-hydrogen electrodes pick up if left out for 24 hours at 80 percent humidity?",
+      "ground_truth": "Within 2 hours at 80 percent humidity they may contain up to 13 times the allowable moisture content; within 24 hours up to 26 times the 0.2 percent allowed.",
+      "source_file": "Welding principles and practices.pdf",
+      "pdf_pages": [
+        343
+      ],
+      "note": "Drafted by Claude from the PDF text; NOT human-verified."
+    },
+    {
+      "id": "EV-66",
+      "category": "plain",
+      "split": "tune",
+      "answerable": true,
+      "question": "Should E6010 electrodes be stored in a dry rod oven?",
+      "ground_truth": "No. E6010 is a cellulose electrode that needs a certain amount of moisture in its coating and should not be stored in dry rod ovens; improper storage adversely affects its operating characteristics.",
+      "source_file": "Welding principles and practices.pdf",
+      "pdf_pages": [
+        333
+      ],
+      "note": "Drafted by Claude from the PDF text; NOT human-verified."
+    },
+    {
+      "id": "EV-67",
+      "category": "paraphrase",
+      "split": "tune",
+      "answerable": true,
+      "question": "Can thoriated tungsten electrodes be used for AC welding?",
+      "ground_truth": "They are generally not recommended for a.c. welding because they do not maintain the spherical balled electrode tip. They are available for DCEN welding and work well with enhanced square wave power sources.",
+      "source_file": "Welding principles and practices.pdf",
+      "pdf_pages": [
+        593
+      ],
+      "note": "Drafted by Claude from the PDF text; NOT human-verified."
+    },
+    {
+      "id": "EV-68",
+      "category": "multi_document",
+      "split": "tune",
+      "answerable": true,
+      "question": "How should low-hydrogen electrodes such as E7018 be stored, and why?",
+      "ground_truth": "Low-hydrogen electrodes are highly susceptible to moisture and damp rods cause weld porosity, so they are kept in a heated rod locker or moisture-tight container. The other book adds that oven storage at holding temperatures is mandatory for low-hydrogen electrodes, since the covering is under 0.2 percent moisture at manufacture and absorbs much more within hours of exposure.",
+      "source_file": "Welding_Principles_Applications_Jeffus.pdf ; Welding principles and practices.pdf",
+      "pdf_pages": [
+        158,
+        343
+      ],
+      "note": "Two documents complement each other (EV-60 covers the Jeffus half alone). Pages are matched by number in either file (coarse), so a chunk from the other book with the same page number would also count."
+    },
+    {
+      "id": "EV-69",
+      "category": "multi_document",
+      "split": "heldout",
+      "answerable": true,
+      "question": "Why is acetylene dissolved in acetone in its cylinders, and what pressure limit applies?",
+      "ground_truth": "Free acetylene above about 15 psi is unstable and shock sensitive, so cylinders are packed with a porous material saturated with acetone, which absorbs many times its own volume (about 24 times its weight) of acetylene and makes it safe.",
+      "source_file": "Welding_Principles_Applications_Jeffus.pdf ; Welding principles and practices.pdf",
+      "pdf_pages": [
+        220,
+        158
+      ],
+      "note": "Both books state the 15 psi limit and the acetone solvent. Pages are matched by number in either file (coarse), so a chunk from the other book with the same page number would also count."
+    },
+    {
+      "id": "EV-70",
+      "category": "multi_document",
+      "split": "tune",
+      "answerable": true,
+      "question": "What is a first-degree burn?",
+      "ground_truth": "The surface of the skin is reddish, tender and painful with no broken skin (about 130 F / 55 C); the outermost layer of skin stays intact, like a sunburn.",
+      "source_file": "Welding_Principles_Applications_Jeffus.pdf ; Welding principles and practices.pdf",
+      "pdf_pages": [
+        60,
+        1058
+      ],
+      "note": "Two documents agree. Pages are matched by number in either file (coarse), so a chunk from the other book with the same page number would also count."
+    },
+    {
+      "id": "EV-71",
+      "category": "unanswerable",
+      "split": "heldout",
+      "answerable": false,
+      "question": "What is the maximum output amperage of the Hobart Handler 140 welder?",
+      "ground_truth": "",
+      "source_file": null,
+      "pdf_pages": [],
+      "note": "Checked 2026-11-13: 'Hobart Handler' appears in neither welding book. Expected: insufficient-evidence reply. NOT human-verified."
     }
   ]
 }
