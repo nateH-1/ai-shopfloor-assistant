@@ -87,7 +87,7 @@ class TestClassifier:
 class TestFailOpen:
 
     def test_client_creation_error_allows_message(self):
-        getter = MagicMock(side_effect=RuntimeError("OPENAI_API_KEY missing"))
+        getter = MagicMock(side_effect=RuntimeError("Invalid Ollama configuration"))
         assert _is_off_topic("How are you?", getter) is False
 
     def test_model_call_error_allows_message(self):

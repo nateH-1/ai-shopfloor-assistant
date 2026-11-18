@@ -12,8 +12,9 @@ A Retrieval-Augmented Generation (RAG) chatbot with document upload, multi-docum
 `main`, and manual workflow runs. It provides two checks:
 
 - **Backend tests**: Python 3.12 runs the mocked Flask unit tests using
-  `backend/requirements-test.txt`. Application package versions are constrained
-  by `backend/requirements.txt`. No OpenAI key, running backend, or vector
+  `backend/requirements-test.txt`. Test dependency versions are kept aligned
+  with `backend/requirements.txt`. Ollama chat and embedding clients are mocked;
+  no API key, running backend, Ollama server, downloaded models, or vector
   database is required. These tests do not validate the full RAG dependency
   installation or live model quality; the evaluation scripts remain separate.
 - **Frontend build**: Node.js 22 installs the lockfile with `npm ci`, checks
@@ -24,8 +25,14 @@ To run the same checks locally, from `backend/` in a Python virtual environment:
 
 ```shell
 python -m pip install -r requirements-test.txt
-python -m pytest test_chat_endpoint.py -v
+python -m pytest tests -v
 ```
+
+Backend tests create a separate temporary directory for each run under
+`backend/.pytest-tmp/` and remove it when the run finishes. This avoids Windows
+permission errors caused by another account owning `%TEMP%/pytest-of-<username>`.
+The same setup works when running `python -m pytest backend/tests -v` from the
+project root. An explicit `--basetemp` option overrides this default.
 
 From `frontend/`:
 

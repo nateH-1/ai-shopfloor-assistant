@@ -2,7 +2,7 @@
 test_keyword.py
 ===============
 Tests for BM25 keyword search in rag/keyword.py and the index cache in app.py.
-Uses the real rank-bm25 library on a small fake collection; no Chroma or OpenAI.
+Uses the real rank-bm25 library on a small fake collection; no Chroma or Ollama.
 Framework: pytest + unittest.mock
 Run: cd backend && pytest tests/test_keyword.py -v
 """
