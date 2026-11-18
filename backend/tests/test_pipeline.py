@@ -4,7 +4,7 @@ test_pipeline.py
 Tests for answer_question in rag/pipeline.py — the coordinator that runs one
 chat turn (guard → condense → scope → clarification or answer path).
 The guard, scope detection and answer paths are replaced with fakes so each
-test checks only the routing decision. No Flask, Chroma or OpenAI involved.
+test checks only the routing decision. No Flask, Chroma or Ollama involved.
 Framework: pytest + unittest.mock
 Run: cd backend && pytest tests/test_pipeline.py -v
 """

@@ -1,4 +1,4 @@
-# Unit tests mock LangChain, OpenAI and ChromaDB in conftest.py.
+# Unit tests mock LangChain, Ollama and ChromaDB in conftest.py.
 # Keep these versions aligned with requirements.txt. Do not use that file as
 # constraints: it contains extras (pwdlib[argon2]), which pip forbids there.
 flask==3.1.0

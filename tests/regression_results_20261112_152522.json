@@ -1,0 +1,831 @@
+{
+  "timestamp": "20261112_152522",
+  "ragas_scores": {
+    "faithfulness": 0.7627435366565802,
+    "answer_relevancy": 0.9070010797871957,
+    "context_precision": 0.7173913042981885,
+    "context_recall": 0.5170807453416149
+  },
+  "test_results": [
+    {
+      "id": "REG-01",
+      "category": "food-safety",
+      "question": "According to the FDA Food Code 2019, what hand drying provisions are required for food employees?",
+      "ground_truth": "The FDA Food Code requires provisions for hand drying so that employees will not dry their hands on their clothing or other unclean materials. Wet hands transfer bacteria more readily than dry hands, and the method of drying is a critical factor in reducing cross-contamination. Air knife technology has been found to be equivalent to existing heated-air hand drying devices, but may not accommodate drying of forearms or prosthetic devices, requiring an alternate drying means in those cases.",
+      "answer": "According to the FDA Food Code 2019, the following hand drying provisions are required for food employees:\n\n- Individual, disposable towels\n- A continuous towel system that supplies the user with a clean towel\n- A heated-air hand drying device\n- A hand drying device that employs an air-knife system that delivers high velocity, pressurized air at ambient temperatures",
+      "contexts": [
+        "With regard to the addition of air knife technology for hand drying, data reviewed by   FDA scientists at the FDA’s National Center for Food Safety Technology (Moffitt Center)   demonstrates that the use of this technology in hand dryers has been found to be  equivalent to the hand drying treatment in existing heated-air devices.   While the Food Code does not specifically address the configuration or ergonomic   design of hand drying devices, technologies employing air knife systems do not appear   to accommodate the drying of one’s arms and may not be large enough to  accommodate surrogate prosthetic devices for hands and arms to fit within the hand- dryer.  In the case where food employees are expected to wash their forearms or are  fitted with a surrogate prosthetic device, the food establishment would need to provide  an alternate means for drying of the arms and certain prosthetic devices.   6-301.14 Handwashing Signage.",
+        "6-301.12 Hand Drying Provision.  Each HANDWASHING SINK or group of adjacent HANDWASHING SINKS shall be provided with:  (A) Individual, disposable towels; Pf (B) A continuous towel system that supplies the user with a clean towel; Pf or ( C) A heated-air hand drying device; Pf or ( D) A hand drying device that employs an air-knife system that delivers high velocity, pressurized air at ambient temperatures. Pf  6-301.13 Handwashing Aids and Devices, Use Restrictions.  A sink used for FOOD preparation or UTENSIL washing, or a service  sink or curbed cleaning facility used for the disposal of mop water  or similar wastes, may not be provided with the handwashing aids  and devices required for a HANDWASHING SINK as specified under  §§ 6-301.11 and 6-301.12 and ¶ 5-501.16(C). 6-301.14 Handwashing Signage.  A sign or poster that notifies FOOD EMPLOYEES to wash their hands  shall be provided at all HANDWASHING SINKS used by FOOD EM PLOYEES and shall be clearly visible to FOOD EMPLOYEES."
+      ],
+      "sources": [
+        {
+          "file": "fda_food_code_2019.pdf",
+          "full_snippet": "With regard to the addition of air knife technology for hand drying, data reviewed by   FDA scientists at the FDA’s National Center for Food Safety Technology (Moffitt Center)   demonstrates that the use of this technology in hand dryers has been found to be  equivalent to the hand drying treatment in existing heated-air devices.   While the Food Code does not specifically address the configuration or ergonomic   design of hand drying devices, technologies employing air knife systems do not appear   to accommodate the drying of one’s arms and may not be large enough to  accommodate surrogate prosthetic devices for hands and arms to fit within the hand- dryer.  In the case where food employees are expected to wash their forearms or are  fitted with a surrogate prosthetic device, the food establishment would need to provide  an alternate means for drying of the arms and certain prosthetic devices.   6-301.14 Handwashing Signage.",
+          "id": 1,
+          "page": 590,
+          "snippet": "With regard to the addition of air knife technology for hand drying, data reviewed by   FDA scientists at the FDA’s National Center for Food Safety Te..."
+        },
+        {
+          "file": "fda_food_code_2019.pdf",
+          "full_snippet": "6-301.12 Hand Drying Provision.  Each HANDWASHING SINK or group of adjacent HANDWASHING SINKS shall be provided with:  (A) Individual, disposable towels; Pf (B) A continuous towel system that supplies the user with a clean towel; Pf or ( C) A heated-air hand drying device; Pf or ( D) A hand drying device that employs an air-knife system that delivers high velocity, pressurized air at ambient temperatures. Pf  6-301.13 Handwashing Aids and Devices, Use Restrictions.  A sink used for FOOD preparation or UTENSIL washing, or a service  sink or curbed cleaning facility used for the disposal of mop water  or similar wastes, may not be provided with the handwashing aids  and devices required for a HANDWASHING SINK as specified under  §§ 6-301.11 and 6-301.12 and ¶ 5-501.16(C). 6-301.14 Handwashing Signage.  A sign or poster that notifies FOOD EMPLOYEES to wash their hands  shall be provided at all HANDWASHING SINKS used by FOOD EM PLOYEES and shall be clearly visible to FOOD EMPLOYEES.",
+          "id": 2,
+          "page": 215,
+          "snippet": "6-301.12 Hand Drying Provision.  Each HANDWASHING SINK or group of adjacent HANDWASHING SINKS shall be provided with:  (A) Individual, disposable towe..."
+        }
+      ],
+      "response_time_s": 69.93,
+      "error": null
+    },
+    {
+      "id": "REG-02",
+      "category": "food-safety",
+      "question": "According to the FDA Food Code 2019, what handwashing signage is required at food establishments?",
+      "ground_truth": "The FDA Food Code requires a sign or poster to be posted at handwashing sinks to remind food employees to wash their hands.",
+      "answer": "According to the FDA Food Code 2019, the following handwashing signage is required at food establishments:\n\n- A sign or poster that notifies food employees to wash their hands shall be provided at all handwashing sinks used by food employees and shall be clearly visible to food employees.",
+      "contexts": [
+        "A sign or poster that notifies FOOD EMPLOYEES to wash their hands  shall be provided at all HANDWASHING SINKS used by FOOD EM PLOYEES and shall be clearly visible to FOOD EMPLOYEES.  6-301.20 Disposable Towels, Waste Receptacle.  A HANDWASHING SINK or group of adjacent HANDWASHING SINKS that  is provided with disposable towels shall be provided with a waste  receptacle as specified under ¶ 5-501.16(C).  Toilets and Urinals  6-302.10 Minimum Number.  Toilets and urinals shall be provided as specified under § 5-203.12.  185",
+        "GUIDE 3-B   Instructions for Marking the Food Establishment Inspection Report – page 9  5-204.11 Handwashing Sinks-Location and Placement (Pf)   5-205.11 Using a Handwashing Sink-Operation and Maintenance (Pf)   6-301.11 Handwashing Cleanser, Availability (Pf)   6-301.12 Hand Drying Provision (Pf)   6-301.13 Handwashing Aids and Devices, Use Restrictions (C)   6-301.14 Handwashing Signage (C)   Approved Source  11.  Food obtained from approved source  IN/OUT\t This item should be marked IN or OUT of compliance based on direct observations of food  products, food labels and packaging, water analyses, and discussion with the PIC or other  food employees.  This item should be marked IN compliance when the regulatory authority is  able to determine approved food sources.  A review of supplier names, shipment invoices,  buyer specification plans, molluscan shellfish tags, proof of regulatory permit/licensure of a",
+        "(E) FOOD EMPLOYEES not serving a HIGHLY SUSCEPTIBLE POPULATION  may contact exposed, READY-TO-EAT FOOD with their bare hands if:  (1) The PERMIT HOLDER obtains prior APPROVAL from the  REGULATORY AUTHORITY;   (2) Written procedures are maintained in the FOOD   ESTABLISHMENT and made available to the REGULATORY   AUTHORITY upon request that include:   (a) For each bare hand contact procedure, a listing of the  specific READY-TO-EAT FOODS that are touched by bare  hands,  (b) Diagrams and other information showing that  handwashing facilities, installed, located, equipped, and  maintained as specified under §§ 5-203.11, 5-204.11,  5-205.11, 6-301.11, 6-301.12, and 6-301.14, are in an  easily accessible location and in close proximity to the  work station where the bare hand contact procedure is  conducted;  (3) A written EMPLOYEE health policy that details how the FOOD  ESTABLISHMENT complies with §§ 2-201.11, 2-201.12, and  2-201.13 including:"
+      ],
+      "sources": [
+        {
+          "file": "fda_food_code_2019.pdf",
+          "full_snippet": "A sign or poster that notifies FOOD EMPLOYEES to wash their hands  shall be provided at all HANDWASHING SINKS used by FOOD EM PLOYEES and shall be clearly visible to FOOD EMPLOYEES.  6-301.20 Disposable Towels, Waste Receptacle.  A HANDWASHING SINK or group of adjacent HANDWASHING SINKS that  is provided with disposable towels shall be provided with a waste  receptacle as specified under ¶ 5-501.16(C).  Toilets and Urinals  6-302.10 Minimum Number.  Toilets and urinals shall be provided as specified under § 5-203.12.  185",
+          "id": 1,
+          "page": 215,
+          "snippet": "A sign or poster that notifies FOOD EMPLOYEES to wash their hands  shall be provided at all HANDWASHING SINKS used by FOOD EM PLOYEES and shall be cle..."
+        },
+        {
+          "file": "fda_food_code_2019.pdf",
+          "full_snippet": "GUIDE 3-B   Instructions for Marking the Food Establishment Inspection Report – page 9  5-204.11 Handwashing Sinks-Location and Placement (Pf)   5-205.11 Using a Handwashing Sink-Operation and Maintenance (Pf)   6-301.11 Handwashing Cleanser, Availability (Pf)   6-301.12 Hand Drying Provision (Pf)   6-301.13 Handwashing Aids and Devices, Use Restrictions (C)   6-301.14 Handwashing Signage (C)   Approved Source  11.  Food obtained from approved source  IN/OUT\t This item should be marked IN or OUT of compliance based on direct observations of food  products, food labels and packaging, water analyses, and discussion with the PIC or other  food employees.  This item should be marked IN compliance when the regulatory authority is  able to determine approved food sources.  A review of supplier names, shipment invoices,  buyer specification plans, molluscan shellfish tags, proof of regulatory permit/licensure of a",
+          "id": 2,
+          "page": 728,
+          "snippet": "GUIDE 3-B   Instructions for Marking the Food Establishment Inspection Report – page 9  5-204.11 Handwashing Sinks-Location and Placement (Pf)   5-205..."
+        },
+        {
+          "file": "fda_food_code_2019.pdf",
+          "full_snippet": "(E) FOOD EMPLOYEES not serving a HIGHLY SUSCEPTIBLE POPULATION  may contact exposed, READY-TO-EAT FOOD with their bare hands if:  (1) The PERMIT HOLDER obtains prior APPROVAL from the  REGULATORY AUTHORITY;   (2) Written procedures are maintained in the FOOD   ESTABLISHMENT and made available to the REGULATORY   AUTHORITY upon request that include:   (a) For each bare hand contact procedure, a listing of the  specific READY-TO-EAT FOODS that are touched by bare  hands,  (b) Diagrams and other information showing that  handwashing facilities, installed, located, equipped, and  maintained as specified under §§ 5-203.11, 5-204.11,  5-205.11, 6-301.11, 6-301.12, and 6-301.14, are in an  easily accessible location and in close proximity to the  work station where the bare hand contact procedure is  conducted;  (3) A written EMPLOYEE health policy that details how the FOOD  ESTABLISHMENT complies with §§ 2-201.11, 2-201.12, and  2-201.13 including:",
+          "id": 3,
+          "page": 100,
+          "snippet": "(E) FOOD EMPLOYEES not serving a HIGHLY SUSCEPTIBLE POPULATION  may contact exposed, READY-TO-EAT FOOD with their bare hands if:  (1) The PERMIT HOLDE..."
+        }
+      ],
+      "response_time_s": 8.86,
+      "error": null
+    },
+    {
+      "id": "REG-03",
+      "category": "manufacturing",
+      "question": "In the Manufacturing Processes document, what are the three distinct zones of a fatigue fracture?",
+      "ground_truth": "The three distinct zones of a fatigue fracture are the point of crack initiation, the area of crack propagation during service, and the remaining area of cross-section showing signs of sudden breakage.",
+      "answer": "The three distinct zones of a fatigue fracture are:\n- The point of crack initiation\n- The area of crack propagation during service\n- The remaining area of cross-section showing signs of sudden breakage",
+      "contexts": [
+        "either the  alternating or varying stress, it gets fatigued and fails even though the magnitude of such stresses may be far lower as compared to its strength. Fortunately, there is a level of alternating and varying stress, which the material is able to withstand without failure even if it is subjected to infinite number of cycles. This is called the ENDURANCE LIMIT. A designer ensures that a component subject to fatigue in service is so designed that its actual stress level remains below the endurance limit. The visual examination of a fatigue fracture shows three distinct zones. These are: (i) The point of crack initiation, it is the point from where the crack may have originated e.g. a notch like a key way or some materials defect like an impurity, or even a surface blemish. (ii) The area of crack propagation during service. This area is usually characterised by circular ring-like scratch marks with point of crack initiation as the centre."
+      ],
+      "sources": [
+        {
+          "file": "manufacturing_processes.pdf",
+          "full_snippet": "either the  alternating or varying stress, it gets fatigued and fails even though the magnitude of such stresses may be far lower as compared to its strength. Fortunately, there is a level of alternating and varying stress, which the material is able to withstand without failure even if it is subjected to infinite number of cycles. This is called the ENDURANCE LIMIT. A designer ensures that a component subject to fatigue in service is so designed that its actual stress level remains below the endurance limit. The visual examination of a fatigue fracture shows three distinct zones. These are: (i) The point of crack initiation, it is the point from where the crack may have originated e.g. a notch like a key way or some materials defect like an impurity, or even a surface blemish. (ii) The area of crack propagation during service. This area is usually characterised by circular ring-like scratch marks with point of crack initiation as the centre.",
+          "id": 1,
+          "page": 24,
+          "snippet": "either the  alternating or varying stress, it gets fatigued and fails even though the magnitude of such stresses may be far lower as compared to its s..."
+        }
+      ],
+      "response_time_s": 8.51,
+      "error": null
+    },
+    {
+      "id": "REG-04",
+      "category": "manufacturing",
+      "question": "According to the Manufacturing Processes document, what is creep failure?",
+      "ground_truth": "Creep failure occurs when materials deform plastically at a very slow rate under steady loads, especially at high temperatures, leading to ultimate failure over time. This type of failure is common in components like stays in boilers and turbine blades.",
+      "answer": "Creep failure is the failure of a material under steady loads within its strength, especially when subjected to high temperature conditions for a very long time. Common examples include stays in boilers and steam turbines. This failure occurs even though the material is under steady loads for a long period, leading to significant deformation over time, which can result in ultimate failure of the component.",
+      "contexts": [
+        "10 Manufacturing Processes turbine blades, furnace parts etc. Such failures are termed creep-failures due to the fact the material continues to deform plastically under such conditions although at a very very slow rate. But over long periods of time, the effect of creep can become appreciable resulting in ultimate failure of the component. QUESTIONS 1. Draw a stress-strain curve for a ductile material. In what respects, a similar curve for a brittle material will be different? 2. What do you understand by the following terms ? (i) Limit of proportionality ( ii) Yield-point (iii) Ultimate tensile strength. 3. Explain the meaning of the following terms: (i) Stiffness, ( ii) Toughness, and ( iii) Hardness. 4. Differentiate between failure of material due to fatigue and creep. 5. What do you understand by percentage elongation? What does a high percentage elongation value signify? 6. Name three common ‘‘hardness’’ tests. Describe anyone of them.",
+        "(ii) The area of crack propagation during service. This area is usually characterised by circular ring-like scratch marks with point of crack initiation as the centre. (iii) Remaining area of cross-section showing signs of sudden breakage. As a result of crack propagation with time, a stage comes, when the remaining cross-sectional area becomes too small to sustain the stress and fractures suddenly. CREEP FAILURE Failure of material can take place even under steady loads within the strength of the material. This happens if the subjected components remain under steady loads for a very longtime especially when they are subjected to high temperature conditions. Some common examples are stays in boilers, steam"
+      ],
+      "sources": [
+        {
+          "file": "manufacturing_processes.pdf",
+          "full_snippet": "10 Manufacturing Processes turbine blades, furnace parts etc. Such failures are termed creep-failures due to the fact the material continues to deform plastically under such conditions although at a very very slow rate. But over long periods of time, the effect of creep can become appreciable resulting in ultimate failure of the component. QUESTIONS 1. Draw a stress-strain curve for a ductile material. In what respects, a similar curve for a brittle material will be different? 2. What do you understand by the following terms ? (i) Limit of proportionality ( ii) Yield-point (iii) Ultimate tensile strength. 3. Explain the meaning of the following terms: (i) Stiffness, ( ii) Toughness, and ( iii) Hardness. 4. Differentiate between failure of material due to fatigue and creep. 5. What do you understand by percentage elongation? What does a high percentage elongation value signify? 6. Name three common ‘‘hardness’’ tests. Describe anyone of them.",
+          "id": 1,
+          "page": 25,
+          "snippet": "10 Manufacturing Processes turbine blades, furnace parts etc. Such failures are termed creep-failures due to the fact the material continues to deform..."
+        },
+        {
+          "file": "manufacturing_processes.pdf",
+          "full_snippet": "(ii) The area of crack propagation during service. This area is usually characterised by circular ring-like scratch marks with point of crack initiation as the centre. (iii) Remaining area of cross-section showing signs of sudden breakage. As a result of crack propagation with time, a stage comes, when the remaining cross-sectional area becomes too small to sustain the stress and fractures suddenly. CREEP FAILURE Failure of material can take place even under steady loads within the strength of the material. This happens if the subjected components remain under steady loads for a very longtime especially when they are subjected to high temperature conditions. Some common examples are stays in boilers, steam",
+          "id": 2,
+          "page": 24,
+          "snippet": "(ii) The area of crack propagation during service. This area is usually characterised by circular ring-like scratch marks with point of crack initiati..."
+        }
+      ],
+      "response_time_s": 8.98,
+      "error": null
+    },
+    {
+      "id": "REG-05",
+      "category": "manufacturing",
+      "question": "According to the Manufacturing Processes document, what are some benefits of using alloy steel?",
+      "ground_truth": "Alloying in steels can lead to hardening by heat treatment, corrosion resistance, red hardness in cutting tools, increased strength and toughness, resistance to grain growth, and oxidation at high temperatures. The main alloying elements used in alloy steels are chromium, nickel, tungsten, molybdenum, vanadium, cobalt, manganese, and silicon. Alloy steels are available in various types, categorized into stainless steels, tool steel, and special steels. Nickel, chromium, and silicon are specific alloying elements used in nickel steels, chromium steels, and silicon steels respectively. Alloying elements can significantly improve the properties of cast iron and plain carbon steels. Alloy cast irons have higher strength, heat-resistance, and wear-resistance compared to plain cast iron.",
+      "answer": "Some benefits of using alloy steel include:\n- Greater strength and toughness\n- Better corrosion resistance\n- Ability to be hardened by heat treatment processes to greater depth with less distortion and less chance of cracking\n- Improved mechanical properties\n- Reduced need for reinforcement and fewer structural members, leading to cost savings and weight reduction",
+      "contexts": [
+        "alloy steels make up a group of steels with chemical com- positions specially developed to give higher physical prop- erty values and materially greater corrosion resistance  than are obtainable from the carbon steel group. These  steels contain, in addition to carbon and manganese, other  alloying elements that are added to obtain greater strength,  toughness, and hardening qualities. High strength, low alloy steel is generally used when  savings in weight are important. Its greater strength and  corrosion resistance require less reinforcement and, there- fore, fewer structural members than fabrications made  with carbon steel. Its better durability is also an advantage  in these applications. Among the steels in this classifica - tion are oil-hardening steel, air-hardening steel, and high  speed steel. High strength, low alloy steel is readily adaptable to  fabrication by shearing, plasma cutting, laser cutting,   water jet cutting, punching, forming, riveting, welding",
+        "In fact, in the case of steels, the effect of alloying is much more marked. The main object of alloying in steels are: (i) Alloy steels can be hardened by heat treatment processes to greater depth and with less distortion and less chance of cracking. (ii) Alloying develops corrosion resisting property as in stainless steels. (iii) Alloying develops the property of red hardness as in cutting tool. (iv) Alloying develops the strength and toughness of steels as in high strength low alloy (HSLA) steels. (v) Some alloy steel show a marked resistance to grain growth and oxidation at high temperatures etc. Main alloying elements used are chromium, nickel, tungsten, molybdenum, vanadium, cobalt, manganese and silicon. Alloy steels are available in a great variety, each one has been developed for a specific purpose. We shall study them by grouping them in (i) stainless steels, ( ii) tool steel and (iii) special steels."
+      ],
+      "sources": [
+        {
+          "file": "Welding_Principles_Practices_Bohnart_P1.pdf",
+          "full_snippet": "alloy steels make up a group of steels with chemical com- positions specially developed to give higher physical prop- erty values and materially greater corrosion resistance  than are obtainable from the carbon steel group. These  steels contain, in addition to carbon and manganese, other  alloying elements that are added to obtain greater strength,  toughness, and hardening qualities. High strength, low alloy steel is generally used when  savings in weight are important. Its greater strength and  corrosion resistance require less reinforcement and, there- fore, fewer structural members than fabrications made  with carbon steel. Its better durability is also an advantage  in these applications. Among the steels in this classifica - tion are oil-hardening steel, air-hardening steel, and high  speed steel. High strength, low alloy steel is readily adaptable to  fabrication by shearing, plasma cutting, laser cutting,   water jet cutting, punching, forming, riveting, welding",
+          "id": 1,
+          "page": 100,
+          "snippet": "alloy steels make up a group of steels with chemical com- positions specially developed to give higher physical prop- erty values and materially great..."
+        },
+        {
+          "file": "manufacturing_processes.pdf",
+          "full_snippet": "In fact, in the case of steels, the effect of alloying is much more marked. The main object of alloying in steels are: (i) Alloy steels can be hardened by heat treatment processes to greater depth and with less distortion and less chance of cracking. (ii) Alloying develops corrosion resisting property as in stainless steels. (iii) Alloying develops the property of red hardness as in cutting tool. (iv) Alloying develops the strength and toughness of steels as in high strength low alloy (HSLA) steels. (v) Some alloy steel show a marked resistance to grain growth and oxidation at high temperatures etc. Main alloying elements used are chromium, nickel, tungsten, molybdenum, vanadium, cobalt, manganese and silicon. Alloy steels are available in a great variety, each one has been developed for a specific purpose. We shall study them by grouping them in (i) stainless steels, ( ii) tool steel and (iii) special steels.",
+          "id": 2,
+          "page": 30,
+          "snippet": "In fact, in the case of steels, the effect of alloying is much more marked. The main object of alloying in steels are: (i) Alloy steels can be hardene..."
+        }
+      ],
+      "response_time_s": 8.56,
+      "error": null
+    },
+    {
+      "id": "REG-06",
+      "category": "manufacturing",
+      "question": "According to the Manufacturing Processes document, what are the steps for heat treatment?",
+      "ground_truth": "Heat treatment of carbon steels involves three basic steps: heating the metal to a specific temperature, soaking it at that temperature for uniformity, and cooling it at a controlled rate in water, oil, or air. Carbon steels undergo four basic heat-treatment processes: annealing, normalizing, hardening, and tempering. Annealing softens the material and removes internal stresses based on the carbon content of the steel. Normalizing involves heating, soaking, and cooling the steel in still air to eliminate internal stresses and refine the grain structure. Hardening includes heating, soaking, and quenching the steel in water or oil to increase hardness, followed by tempering to reduce brittleness. Case hardening is used for low carbon steels by packing the workpiece in charcoal to introduce carbon into the surface.",
+      "answer": "Based on the provided context, the following are mentioned:\n\nHeat treatment consists of three basic steps:\n1. Heat the metal/alloy to a predetermined temperature.\n2. Soaking or holding the metal/alloy at that temperature for some time.\n3. Cooling the metal/alloy at a predetermined rate in a suitable medium like water, oil, or air.\n\nThe rate of cooling is the most important factor.",
+      "contexts": [
+        "Ferrous Materials 17 HEAT TREATMENT OF CARBON STEELS Object of heat treatment. Metals and alloys are heat treated to improve their mechanical properties, to relieve internal stresses or to improve their machinability. The properties of carbon steels can also be altered significantly by subjecting them to heat treatment processes. Heat treatment consists of three basic steps: (i) Heat the metal/alloy to a predetermined temperature. This temperature will, ideally, depend upon the actual composition of carbon steel ( i.e. carbon percentage), (ii) Soaking or holding the metal/alloy at that temperature for some time, so that the temperature across the entire cross-section becomes uniform, and (iii) Cooling the metal/alloy at a predetermined rate in a suitable medium like water, oil or air. The rate of cooling is the most important factor. Kinds of Heat Treatments Given to Carbon Steels Carbon steels are subjected to the following four basic heat-treatment processes: (i) Annealing,"
+      ],
+      "sources": [
+        {
+          "file": "manufacturing_processes.pdf",
+          "full_snippet": "Ferrous Materials 17 HEAT TREATMENT OF CARBON STEELS Object of heat treatment. Metals and alloys are heat treated to improve their mechanical properties, to relieve internal stresses or to improve their machinability. The properties of carbon steels can also be altered significantly by subjecting them to heat treatment processes. Heat treatment consists of three basic steps: (i) Heat the metal/alloy to a predetermined temperature. This temperature will, ideally, depend upon the actual composition of carbon steel ( i.e. carbon percentage), (ii) Soaking or holding the metal/alloy at that temperature for some time, so that the temperature across the entire cross-section becomes uniform, and (iii) Cooling the metal/alloy at a predetermined rate in a suitable medium like water, oil or air. The rate of cooling is the most important factor. Kinds of Heat Treatments Given to Carbon Steels Carbon steels are subjected to the following four basic heat-treatment processes: (i) Annealing,",
+          "id": 1,
+          "page": 32,
+          "snippet": "Ferrous Materials 17 HEAT TREATMENT OF CARBON STEELS Object of heat treatment. Metals and alloys are heat treated to improve their mechanical properti..."
+        }
+      ],
+      "response_time_s": 9.22,
+      "error": null
+    },
+    {
+      "id": "REG-07",
+      "category": "machining",
+      "question": "According to the Basic Machine Tool Operations Aug 2017 document, what are the Machine Shop Rules?",
+      "ground_truth": "Students are not permitted to work without a Supervisor in the Machine Shop. Students must scan their I.D. card upon entering and display their printed label in a visible location. When working in the shop, two people must be present at all times. Buddy's are not to touch machinery controls. Safety glasses must be worn at all times; tinted or sunglasses are not permitted. No sandals or open-toe shoes are allowed; work boots or street shoes only. Do not wear loose clothing or jewelry; tie back long hair. Safety Data Sheets must be supplied on materials not listed in shop SDS book before work can begin. Dispose of waste according to the SDS sheets and posted signs. No part washing in the sinks; sinks are for hand washing only. Do not lay rags on lathe, mill or moving machinery. Do not enter the shop under the influence of drugs or alcohol. All metal scraps and cuttings are to be disposed of in the proper recycling drum. Only certified students are allowed to operate the equipment of which they are certified to use. Students should never talk on a cell phone while operating equipment. The Supervisor must check all machine setups before machine operation begins. No arguing or horseplay in the shop. No eating or drinking in the shop. Tools are not to be removed from building 538. Put tools back to where they belong. Clean off machines and/or tools after use.",
+      "answer": "Machine Shop Rules:\n- Students are not permitted to work without a Supervisor in the Machine Shop. An approved Florida Tech paid employee must be present at all times.\n- Immediately upon entering the shop, all students must scan their I.D. card and place their printed I.D. label on themselves in a visible location. If a label does not print, please see shop staff.\n- When working in the shop, two people must be present at all times.\n- \"Buddy’s\" are not to touch machinery controls.\n- Safety glasses must be worn at all times. Tinted or sunglasses are not to be used in the shop.\n- No sandals or open-toe shoes. Work boots or street shoes only.\n- Do not wear loose clothing or jewelry. Tie back long hair.\n- Safety Data Sheets must be supplied on materials not listed in shop SDS book before work can begin.\n- Dispose of waste according to the SDS sheets and posted signs.\n- No part washing in the sinks. Sinks are for hand washing only.",
+      "contexts": [
+        "MACHINE SHOP RULES 1. Students are not permitted to work without a Supervisor in the Machine Shop.  An approved Florida Tech paid employee must be present at all times. 2. Immediately upon entering the shop, all students must scan their I.D. card and place their printed I.D. label on themselves in a visible location.  If a label does not print, please see shop staff. 3. When working in the shop,  two people must be present at all times. 4. “Buddy’s” are not to touch machinery controls. 5. Safety glasses must be worn at all times.  Tinted or Sunglasses are not to be used in the shop. 6. No sandals or open-toe shoes.  Work boots or street shoes ONLY. 7. Do not wear loo se clothing or jewelry. Tie back long hair. 8. Safety Data Sheets must be supplied on materials not listed in shop SDS book before work can begin. 9. Dispose of waste according to the SDS sheets and posted signs. 10. No part washing in the sinks.  Sinks are for hand washing only."
+      ],
+      "sources": [
+        {
+          "file": "basic_machine_tool_operations_aug_2017.pdf",
+          "full_snippet": "MACHINE SHOP RULES 1. Students are not permitted to work without a Supervisor in the Machine Shop.  An approved Florida Tech paid employee must be present at all times. 2. Immediately upon entering the shop, all students must scan their I.D. card and place their printed I.D. label on themselves in a visible location.  If a label does not print, please see shop staff. 3. When working in the shop,  two people must be present at all times. 4. “Buddy’s” are not to touch machinery controls. 5. Safety glasses must be worn at all times.  Tinted or Sunglasses are not to be used in the shop. 6. No sandals or open-toe shoes.  Work boots or street shoes ONLY. 7. Do not wear loo se clothing or jewelry. Tie back long hair. 8. Safety Data Sheets must be supplied on materials not listed in shop SDS book before work can begin. 9. Dispose of waste according to the SDS sheets and posted signs. 10. No part washing in the sinks.  Sinks are for hand washing only.",
+          "id": 1,
+          "page": 3,
+          "snippet": "MACHINE SHOP RULES 1. Students are not permitted to work without a Supervisor in the Machine Shop.  An approved Florida Tech paid employee must be pre..."
+        }
+      ],
+      "response_time_s": 10.14,
+      "error": null
+    },
+    {
+      "id": "REG-08",
+      "category": "machining",
+      "question": "According to the Basic Machine Tool Operations Aug 2017 document, how do I clean a lathe?",
+      "ground_truth": "A lathe should be cleaned after each work period. Remove chips with a paint brush, not your hand, and wipe all painted surfaces with a soft cloth. Move the tailstock to the extreme right and wipe remaining oil, chips and dirt from machined surfaces; do not use compressed air as flying chips are dangerous. The lead screw can be cleaned by running the lathe at slow speed and feeding a piece of cord along the threads, but never wrap the cord around your hand.",
+      "answer": "According to the Basic Machine Tool Operations Aug 2017 document, to clean a lathe, follow these steps:\n\n1. Turn off power to the machine before cleaning.\n2. Remove cutting tools and take out drill bits, mills, and other lathe tools.\n3. Put away all hand tools and other items around the shop.\n4. Clean chips from the tool and the chip pans. Recycle clean chips where possible.\n5. Put a light coat of way oil on the machine ways, as instructed by staff.\n6. Sweep the floor in the area where you have been working.\n7. Do not use compressed air unless directed by the shop supervisor. Do not blow air into the bearing surfaces, and do not scatter chips all over the shop. Sometimes a shop vacuum works better than the air gun.\n8. Report missing, broken, or damaged tools to shop staff.\n9. Spend your last five minutes on general cleaning around the shop.",
+      "contexts": [
+        "operating it.  If you cannot find what is causing the trouble, get your instructor.  Under no  condition should the machine be operated until the trouble has been found and corrected.  36. Remove all burrs and sharp edges from the piece before removing it from the lathe.  37. Plan your work thoroughly before starting.  Have all of the tools that will be needed at hand  before commencing work  38. Be careful when you clean the machine.  As stated before, chips and shaving are sharp and  will cause serious cuts if you attempt to remove them with your hands.  Use a cleaning brush,  NOT A DUST BRUSH, for the job.  NEVER USE THE AIR HOSE.  The flying chips  may injure someone.      PREPARING THE LATHE FOR OPERATION    1. Clean and lubricate the lathe.  Use the lubricants specified by the manufacturer.  2. Turn the spindle by hand to make sure it is not locked in back gear.  Set the drive  mechanism to the desired speed and feed.  3. Place all guards in position.",
+        "Guidelines for Cleaning           1. Turn off power to the machine before cleaning. This will avoid accidentally starting the machine  and injuring yourself.    2. Remove cutting tools. Take out drill bits, mills and remove lathe tools to reduce the chances of  getting cut.    3. Put away all hand tools and other items around the shop.  Keep work area orderly.    4. Clean chips from the tool & the chip pans. Recycle clean chips where possible.    5. Put a light coat of way oil on the machine ways. Ask staff to show you where this oil is kept.    6. Sweep the floor in the area where you have been working.    7. Do not use compressed air unless directed by shop supervisor. Do not blow air into the bearing  surfaces, and do not scatter chips all over the shop. Sometimes a shop vacuum works better than  the air gun.    8. Report missing, broken or damaged tools to shop staff.    9. Spend your last five minutes on general cleaning around the shop. We’re all in this together.      9"
+      ],
+      "sources": [
+        {
+          "file": "basic_machine_tool_operations_aug_2017.pdf",
+          "full_snippet": "operating it.  If you cannot find what is causing the trouble, get your instructor.  Under no  condition should the machine be operated until the trouble has been found and corrected.  36. Remove all burrs and sharp edges from the piece before removing it from the lathe.  37. Plan your work thoroughly before starting.  Have all of the tools that will be needed at hand  before commencing work  38. Be careful when you clean the machine.  As stated before, chips and shaving are sharp and  will cause serious cuts if you attempt to remove them with your hands.  Use a cleaning brush,  NOT A DUST BRUSH, for the job.  NEVER USE THE AIR HOSE.  The flying chips  may injure someone.      PREPARING THE LATHE FOR OPERATION    1. Clean and lubricate the lathe.  Use the lubricants specified by the manufacturer.  2. Turn the spindle by hand to make sure it is not locked in back gear.  Set the drive  mechanism to the desired speed and feed.  3. Place all guards in position.",
+          "id": 1,
+          "page": 62,
+          "snippet": "operating it.  If you cannot find what is causing the trouble, get your instructor.  Under no  condition should the machine be operated until the trou..."
+        },
+        {
+          "file": "basic_machine_tool_operations_aug_2017.pdf",
+          "full_snippet": "Guidelines for Cleaning           1. Turn off power to the machine before cleaning. This will avoid accidentally starting the machine  and injuring yourself.    2. Remove cutting tools. Take out drill bits, mills and remove lathe tools to reduce the chances of  getting cut.    3. Put away all hand tools and other items around the shop.  Keep work area orderly.    4. Clean chips from the tool & the chip pans. Recycle clean chips where possible.    5. Put a light coat of way oil on the machine ways. Ask staff to show you where this oil is kept.    6. Sweep the floor in the area where you have been working.    7. Do not use compressed air unless directed by shop supervisor. Do not blow air into the bearing  surfaces, and do not scatter chips all over the shop. Sometimes a shop vacuum works better than  the air gun.    8. Report missing, broken or damaged tools to shop staff.    9. Spend your last five minutes on general cleaning around the shop. We’re all in this together.      9",
+          "id": 2,
+          "page": 9,
+          "snippet": "Guidelines for Cleaning           1. Turn off power to the machine before cleaning. This will avoid accidentally starting the machine  and injuring yo..."
+        }
+      ],
+      "response_time_s": 10.0,
+      "error": null
+    },
+    {
+      "id": "REG-09",
+      "category": "machining",
+      "question": "In the Basic Machine Tool Operations Aug 2017 document, what is Skip Lot sampling?",
+      "ground_truth": "Skip Lot sampling means that only a fraction of the submitted lots are inspected. This mode of sampling is of the cost-saving variety in terms of time and effort, but should only be used when it has been demonstrated that the quality of the submitted product is very good.",
+      "answer": "The uploaded documents do not contain information about this.",
+      "contexts": [],
+      "sources": [],
+      "response_time_s": 7.61,
+      "error": null
+    },
+    {
+      "id": "REG-10",
+      "category": "machining",
+      "question": "In the Basic Machine Tool Operations Aug 2017 document, what does laying out mean and what tools are used? Explain in a simple way.",
+      "ground_truth": "Laying out is the term used to describe the locating and marking out of lines, circles, arcs and points for drilling holes. These lines and reference points on the metal show the machinist where to machine. The tools used for this work are known as layout tools.",
+      "answer": "Laying out is the process of marking out lines, circles, arcs, and points on metal to indicate where drilling holes should occur. This helps the machinist know where to machine the metal accurately. The tools used for this work are known as layout tools, which include many common hand tools.",
+      "contexts": [
+        "LAYOUT WORK     LAYING OUT is the term used to describe  the locating and marking out of lines, circles,  arcs and points for drilling holes.  These lines  and reference points on the metal show the  machinist where to machine.   The tools used for this work are known as  LAYOUT TOOLS.  Many common hand tools  fall into this category.  The accuracy of the job  will depend upon the proper and careful use of  these tools.      Making Lines on Metal   The shiny finish of metal makes it difficult  to distinguish the layout lines from the metal.   LAYOUT DYE, Fig. 6-1, is probably the easiest  to use of the many coating devised to make the  lines stand out better.  This blue colored fluid,  when applied to the metal, offers an excellent  contrast between the metal and the layout lines.   All grease and oil must be removed before  applying the dye, otherwise it will not adhere  properly.  47"
+      ],
+      "sources": [
+        {
+          "file": "basic_machine_tool_operations_aug_2017.pdf",
+          "full_snippet": "LAYOUT WORK     LAYING OUT is the term used to describe  the locating and marking out of lines, circles,  arcs and points for drilling holes.  These lines  and reference points on the metal show the  machinist where to machine.   The tools used for this work are known as  LAYOUT TOOLS.  Many common hand tools  fall into this category.  The accuracy of the job  will depend upon the proper and careful use of  these tools.      Making Lines on Metal   The shiny finish of metal makes it difficult  to distinguish the layout lines from the metal.   LAYOUT DYE, Fig. 6-1, is probably the easiest  to use of the many coating devised to make the  lines stand out better.  This blue colored fluid,  when applied to the metal, offers an excellent  contrast between the metal and the layout lines.   All grease and oil must be removed before  applying the dye, otherwise it will not adhere  properly.  47",
+          "id": 1,
+          "page": 47,
+          "snippet": "LAYOUT WORK     LAYING OUT is the term used to describe  the locating and marking out of lines, circles,  arcs and points for drilling holes.  These l..."
+        }
+      ],
+      "response_time_s": 8.42,
+      "error": null
+    },
+    {
+      "id": "REG-11",
+      "category": "lean-manufacturing",
+      "question": "In the Boeing Lean Manufacturing Studies, what is Value Stream?",
+      "ground_truth": "The Value Stream is the set of specific actions required to bring a specific product through three critical management tasks of any business: problem solving, information management, and physical transformation.",
+      "answer": "Value Stream in the context of Boeing Lean Manufacturing refers to the universe of actions associated with producing raw materials into a finished product. It involves identifying and evaluating the specific activities required to design, order, and provide a specific product, from concept to launch, order to delivery, and raw materials into the hands of the customer.",
+      "contexts": [
+        "\u001a Identify the value stream: Identify the universe of actions associated with producing raw materials  into a finished product.  \u001a Make value flow : Ensure that products and processe s flow continuously by removing the  unnecessary steps in the manufacturing process.  \u001a Pull value through from the customer: Work begins only when a customer has requested (“pulls”)  the product. This approach prevents th e production of unwanted or unneeded products.  \u001a Remove waste: Eliminate all  “non-value added” aspects of the production process.  \u001a Pursue perfection: Improve products and processes continuously.  Boeing incorporates these principles into all of the Lean efforts taking place throughout the  Company.  Boeing believes these principles have resulted in substantial changes in the manufacturing environment  and produced significant results.  To implement Lean Manufacturing in different work areas throughout the Company, Boeing has employed",
+        "Machine Fabrication factory, regular bulk ordering of supplies has been eliminated.  Although it is cheaper  to buy raw materials in large quan tities, the costs associat ed with having the larger quantities on hand  increased the overall cost of the finished product.  2. A value chain  represents “the specific activities required to design, order, and provide a specific  product, from concept to launch, order to delivery, and raw materials into the hands of the customer.”13  Evaluation of the value chain means performing sy stematic assessments of  production process steps.  Focusing on a production process’ value stream can help identify steps which create no value as perceived  by the customer and can be eliminated, or steps which create no value and need to therefore be “re­ constructed” to reduce unnecessary waste.14  12Porter and van der Linde, page 105.  13Womack and Jones, Lean Thinking, page 311.  14Womack and Jones, Lean Thinking, page 38.  6"
+      ],
+      "sources": [
+        {
+          "file": "boeing_lean_manufacturing_studies.pdf",
+          "full_snippet": "\u001a Identify the value stream: Identify the universe of actions associated with producing raw materials  into a finished product.  \u001a Make value flow : Ensure that products and processe s flow continuously by removing the  unnecessary steps in the manufacturing process.  \u001a Pull value through from the customer: Work begins only when a customer has requested (“pulls”)  the product. This approach prevents th e production of unwanted or unneeded products.  \u001a Remove waste: Eliminate all  “non-value added” aspects of the production process.  \u001a Pursue perfection: Improve products and processes continuously.  Boeing incorporates these principles into all of the Lean efforts taking place throughout the  Company.  Boeing believes these principles have resulted in substantial changes in the manufacturing environment  and produced significant results.  To implement Lean Manufacturing in different work areas throughout the Company, Boeing has employed",
+          "id": 1,
+          "page": 17,
+          "snippet": "\u001a Identify the value stream: Identify the universe of actions associated with producing raw materials  into a finished product.  \u001a Make value flow : E..."
+        },
+        {
+          "file": "boeing_lean_manufacturing_studies.pdf",
+          "full_snippet": "Machine Fabrication factory, regular bulk ordering of supplies has been eliminated.  Although it is cheaper  to buy raw materials in large quan tities, the costs associat ed with having the larger quantities on hand  increased the overall cost of the finished product.  2. A value chain  represents “the specific activities required to design, order, and provide a specific  product, from concept to launch, order to delivery, and raw materials into the hands of the customer.”13  Evaluation of the value chain means performing sy stematic assessments of  production process steps.  Focusing on a production process’ value stream can help identify steps which create no value as perceived  by the customer and can be eliminated, or steps which create no value and need to therefore be “re­ constructed” to reduce unnecessary waste.14  12Porter and van der Linde, page 105.  13Womack and Jones, Lean Thinking, page 311.  14Womack and Jones, Lean Thinking, page 38.  6",
+          "id": 2,
+          "page": 14,
+          "snippet": "Machine Fabrication factory, regular bulk ordering of supplies has been eliminated.  Although it is cheaper  to buy raw materials in large quan tities..."
+        }
+      ],
+      "response_time_s": 8.56,
+      "error": null
+    },
+    {
+      "id": "REG-12",
+      "category": "lean-manufacturing",
+      "question": "In the Boeing Lean Manufacturing Studies, what resource productivity gains did Boeing achieve from the new shipping process?",
+      "ground_truth": "Multiple transfers, rail travel, and truck travel to the rail heads have been completely eliminated. Trucks no longer run empty from Kansas City to Tulsa because shipping by rail has been removed from the process. Eight days of travel and three days of receiving and inspection have been eliminated. Approximately $7,900 has been saved per shipset, or $396,000 in annual transportation costs. Floor grid inventory has been reduced by 25 percent. Each ship set uses 50 percent less transportation. Overall handling of materials has been reduced, yielding a reduction in forklift use. In response to Boeing's new shipping process, the floor grid component suppliers have adjusted their manufacturing schedules so that they do not produce and accumulate excess inventory at their production sites.",
+      "answer": "Boeing achieved significant resource productivity gains from the new shipping process, specifically reducing transportation by 50 percent for each shipset at the Everett factory. Additionally, the new process led to a decrease in product travel by one to three miles, a reduction in people travel by approximately 34,000 feet, and a decrease in energy use and maintenance costs due to reduced truck and forklift use.",
+      "contexts": [
+        "procedures). At Everett, the re-thinking of the 777 floor grid component delivery process has reduced  transportation by 50 percent for each shipset.  Within its factories, Boeing, utilizing cellular manufacturing strategies, has also substantially decreased  internal product travel. For example, product trav el has decreased anywhere  from one to three miles,  depending upon the product; overall pe ople travel has been reduced by approximately 34,000 feet; and  energy use and maintenance costs have been reduced due to the decrease in truck and forklift use. Much  of this movement previously took place using electric or natural gas-powered fork lifts and/or overheard  cranes.  Boeing’s Lean initiatives have likewise substantially reduced the amount of rework and associated energy  requirements conducted in its manufacturing and assembly operations.  Prior to implementing Lean, the  18Hawken et al., page 143.  12"
+      ],
+      "sources": [
+        {
+          "file": "boeing_lean_manufacturing_studies.pdf",
+          "full_snippet": "procedures). At Everett, the re-thinking of the 777 floor grid component delivery process has reduced  transportation by 50 percent for each shipset.  Within its factories, Boeing, utilizing cellular manufacturing strategies, has also substantially decreased  internal product travel. For example, product trav el has decreased anywhere  from one to three miles,  depending upon the product; overall pe ople travel has been reduced by approximately 34,000 feet; and  energy use and maintenance costs have been reduced due to the decrease in truck and forklift use. Much  of this movement previously took place using electric or natural gas-powered fork lifts and/or overheard  cranes.  Boeing’s Lean initiatives have likewise substantially reduced the amount of rework and associated energy  requirements conducted in its manufacturing and assembly operations.  Prior to implementing Lean, the  18Hawken et al., page 143.  12",
+          "id": 1,
+          "page": 20,
+          "snippet": "procedures). At Everett, the re-thinking of the 777 floor grid component delivery process has reduced  transportation by 50 percent for each shipset. ..."
+        }
+      ],
+      "response_time_s": 8.88,
+      "error": null
+    },
+    {
+      "id": "REG-13",
+      "category": "manufacturing",
+      "question": "According to Modern Manufacturing, what does monuments mean and give me two examples?",
+      "ground_truth": "Monuments are production processes or process steps that have large equipment and/or other physical or environmental regulatory constraints, are very difficult or costly to move, and can disrupt the flow sought through Lean. Examples include painting processes with large fixed paint booths or dipping tanks, and metal finishing processes with large tanks and/or fixed equipment.",
+      "answer": "Based on the provided context, the following are mentioned:\n\n- Monuments are not directly defined in the context. However, examples of items that could be considered monuments, such as buildings and structures, are mentioned. For instance, columns in buildings and light posts are listed as items that are made using manufacturing processes.",
+      "contexts": [
+        "tures such as handrails, columns in buildings, light posts,  and bicycle and motorcycle frames, as well as many other  items we come in contact with each day. Copyright 2021 Cengage Learning. All Rights Reserved. May not be copied, scanned, or duplicated, in whole or in part. Due to electronic rights, some third party content may be suppressed from the eBook and/or eChapter(s). Editorial review has deemed that any suppressed content does not materially affect the overall learning experience. Cengage Learning reserves the right to remove additional content at any time if subsequent rights restrictions require it. Copyright 2021 Cengage Learning. All Rights Reserved. May not be copied, scanned, or duplicated, in whole or in part.  WCN 02-200-203"
+      ],
+      "sources": [
+        {
+          "file": "Welding_Principles_Applications_Jeffus_P1.pdf",
+          "full_snippet": "tures such as handrails, columns in buildings, light posts,  and bicycle and motorcycle frames, as well as many other  items we come in contact with each day. Copyright 2021 Cengage Learning. All Rights Reserved. May not be copied, scanned, or duplicated, in whole or in part. Due to electronic rights, some third party content may be suppressed from the eBook and/or eChapter(s). Editorial review has deemed that any suppressed content does not materially affect the overall learning experience. Cengage Learning reserves the right to remove additional content at any time if subsequent rights restrictions require it. Copyright 2021 Cengage Learning. All Rights Reserved. May not be copied, scanned, or duplicated, in whole or in part.  WCN 02-200-203",
+          "id": 1,
+          "page": 148,
+          "snippet": "tures such as handrails, columns in buildings, light posts,  and bicycle and motorcycle frames, as well as many other  items we come in contact with e..."
+        }
+      ],
+      "response_time_s": 8.63,
+      "error": null
+    },
+    {
+      "id": "REG-15",
+      "category": "calibration",
+      "question": "According to the SOP Maintenance and Calibration of Equipment, what is the difference between preventive maintenance and corrective maintenance?",
+      "ground_truth": "Preventive maintenance consists of maintenance activities carried out periodically according to criteria defined by the official equipment maintainer. Corrective maintenance consists of maintenance activities performed on equipment when an incident is detected in its normal operation.",
+      "answer": "Preventive maintenance and corrective maintenance are defined as follows:\n\n- **Preventive maintenance** is maintenance activities carried out periodically according to criteria defined by the official equipment maintainer. It is a systematic care and servicing of equipment and facilities to prolong their useful life.\n- **Corrective maintenance** is maintenance activities performed on equipment when an incident is detected in its normal operation. It involves addressing issues as they arise rather than maintaining a regular schedule.",
+      "contexts": [
+        "(2)  Site access      (3)  Calibrated test equipment for each test required      (4)  Necessary lighting, electrical power, and service air to perform the work      (5)  Cleaning aids consisting of clean, white, lint-free cloths; solvents; vacuum cleaner; and dry  compressed air      (6)  Personnel safety equipment required for the specific maintenance activities being performed     b. Maintenance program.  A total maintenance program for C4ISR sites must contain elements of  both preventive and predictive maintenance.  Preventive maintenance is the systematic care and servicing  of equipment and facilities to prolong their useful life.  Predictive maintenance consists of the  performance of periodic equipment inspections to identify and monitor symptoms (such as increasing  wear, abnormal vibrations, or increasing power usage) which indicate that mechanical failure of a piece of  equipment may be approaching.  The goal of predictive maintenance is to develop an awareness of",
+        "Maintenance activities performed on equipment when an incident is detected  in its normal operation. Calibration A set of operations that make it possible to establish the relationship between  the values indicated by a measuring instrument and the values corresponding to  a standard. The basic objective of calibration is to determine the degree of  uncertainty of the measurements made with the equipment. Supplier Supplier of products and/or services. Inventoriable  equipment Equipment susceptible to be controlled and monitored throughout its useful life  to ensure its correct operation.",
+        "minimum preventive maintenance tasks as indicated in the tables.  The frequency of the tasks is indicated  in the tables.       a. Typical maintenance tasks .  This section presents general instructions for maintaining generator  systems.      (1)  Personnel should review past maintenance records to find repair patterns.  These records may  point to certain components that should be closely inspected during performance of preventive  maintenance.      (2)  Review operator records concerning electrical load connected to the generators, and compare  with equipment ratings.  Operator records regarding generator lubrication and operating temperatures  should also be reviewed, as well as any documented abnormal circumstances associated with generator or  control system operation.      (3)  Generator system equipment should be thoroughly inspected and all discrepancies reported to  the shift supervisor.       (a)  Inspect to ensure that warni ng signs exist.  Replace as required."
+      ],
+      "sources": [
+        {
+          "file": "c4isr_maintenance_practices.pdf",
+          "full_snippet": "(2)  Site access      (3)  Calibrated test equipment for each test required      (4)  Necessary lighting, electrical power, and service air to perform the work      (5)  Cleaning aids consisting of clean, white, lint-free cloths; solvents; vacuum cleaner; and dry  compressed air      (6)  Personnel safety equipment required for the specific maintenance activities being performed     b. Maintenance program.  A total maintenance program for C4ISR sites must contain elements of  both preventive and predictive maintenance.  Preventive maintenance is the systematic care and servicing  of equipment and facilities to prolong their useful life.  Predictive maintenance consists of the  performance of periodic equipment inspections to identify and monitor symptoms (such as increasing  wear, abnormal vibrations, or increasing power usage) which indicate that mechanical failure of a piece of  equipment may be approaching.  The goal of predictive maintenance is to develop an awareness of",
+          "id": 1,
+          "page": 10,
+          "snippet": "(2)  Site access      (3)  Calibrated test equipment for each test required      (4)  Necessary lighting, electrical power, and service air to perform..."
+        },
+        {
+          "file": "sop_maintenance_and_calibration_of_equipment.pdf",
+          "full_snippet": "Maintenance activities performed on equipment when an incident is detected  in its normal operation. Calibration A set of operations that make it possible to establish the relationship between  the values indicated by a measuring instrument and the values corresponding to  a standard. The basic objective of calibration is to determine the degree of  uncertainty of the measurements made with the equipment. Supplier Supplier of products and/or services. Inventoriable  equipment Equipment susceptible to be controlled and monitored throughout its useful life  to ensure its correct operation.",
+          "id": 2,
+          "page": 4,
+          "snippet": "Maintenance activities performed on equipment when an incident is detected  in its normal operation. Calibration A set of operations that make it poss..."
+        },
+        {
+          "file": "c4isr_maintenance_practices.pdf",
+          "full_snippet": "minimum preventive maintenance tasks as indicated in the tables.  The frequency of the tasks is indicated  in the tables.       a. Typical maintenance tasks .  This section presents general instructions for maintaining generator  systems.      (1)  Personnel should review past maintenance records to find repair patterns.  These records may  point to certain components that should be closely inspected during performance of preventive  maintenance.      (2)  Review operator records concerning electrical load connected to the generators, and compare  with equipment ratings.  Operator records regarding generator lubrication and operating temperatures  should also be reviewed, as well as any documented abnormal circumstances associated with generator or  control system operation.      (3)  Generator system equipment should be thoroughly inspected and all discrepancies reported to  the shift supervisor.       (a)  Inspect to ensure that warni ng signs exist.  Replace as required.",
+          "id": 3,
+          "page": 147,
+          "snippet": "minimum preventive maintenance tasks as indicated in the tables.  The frequency of the tasks is indicated  in the tables.       a. Typical maintenance..."
+        }
+      ],
+      "response_time_s": 8.77,
+      "error": null
+    },
+    {
+      "id": "REG-16",
+      "category": "cnc",
+      "question": "According to the Autodesk CNCbook, what are the required clothes for working in the CNC shop?",
+      "ground_truth": "ANSI approved safety glasses must be worn at all times in the shop, not just when at the machine. Do not wear flip flops or sandals; leather shoes are best. Do not wear long sleeve shirts as these could get caught in equipment; wear short sleeves or T-shirts. Remove rings and watches when at the machine. Do not wear short pants; wear sturdy long pants like blue jeans or work pants. Long hair should be tied back or under a hat to prevent it being caught in the machine spindle. Never wear gloves as they can be caught in the machine; latex gloves are acceptable.",
+      "answer": "Required clothes for working in the CNC shop include:\n- ANSI approved safety glasses or ANSI safety approved glasses with side shields\n- Leather shoes (best)\n- Sturdy long pants like blue jeans or work pants\n- Short sleeves or T-shirts\n- Tied back long hair or under a hat\n- No gloves",
+      "contexts": [
+        "• Wear ANSI approved safety glasses or ANSI safety approved glasses with side shields. You must wear  safety glasses at all times in the shop, not just when at the machine.  • If machining operations are loud, use hearing protection.  • Do not wear flip flops or sandals. Leather shoes are best. Steel toe shoes are not necessary unless  handling heavy objects that would crush regular shoes.  • Do not wear long sleeve shirts  because these could get caught in equipment . Wear short sleeves or  T-shirts.   • Remove rings and watches when at the machine.  • Do not wear short pants. Wear sturdy long pants like blue jeans or work pants.  • Long hair should be tied back or under a hat to prevent it being caught in the machine spindle.  • Never wear gloves as they can be caught in the machine. Latex gloves are acceptable.",
+        "approved.   Hearing Protection – You will wear hearing protection when and if asked to do so by the instructor.   Jewelry – You will remove all rings, watches, necklaces, bracelets, and dangling earrings before  operating any machinery or tools.   Proper Attire- You will wear ankle-length pants. Loose hair and clothing are extremely dangerous . You  must tuck in your shirt, roll up long sleeves, secure draw strings, tie back hair, etc…    No Open -Toe Shoes –  You must wear appropriate foot wear while in the shop. Shoes must be fully  enclosed. Inappropriate footwear includes: open-toe shoes, sandals, crocks, high heels, etc…   Clean-Up –Before leaving the shop area, you must assist in cleaning any mess (metal chips, splashed  coolant) that you produce. You must clean any spilled liquids immediately.    Return of Tools and Parts-You will return any tools, instruments, bits, etc. to their proper location after  using them."
+      ],
+      "sources": [
+        {
+          "file": "autodesk_cncbook.pdf",
+          "full_snippet": "• Wear ANSI approved safety glasses or ANSI safety approved glasses with side shields. You must wear  safety glasses at all times in the shop, not just when at the machine.  • If machining operations are loud, use hearing protection.  • Do not wear flip flops or sandals. Leather shoes are best. Steel toe shoes are not necessary unless  handling heavy objects that would crush regular shoes.  • Do not wear long sleeve shirts  because these could get caught in equipment . Wear short sleeves or  T-shirts.   • Remove rings and watches when at the machine.  • Do not wear short pants. Wear sturdy long pants like blue jeans or work pants.  • Long hair should be tied back or under a hat to prevent it being caught in the machine spindle.  • Never wear gloves as they can be caught in the machine. Latex gloves are acceptable.",
+          "id": 1,
+          "page": 19,
+          "snippet": "• Wear ANSI approved safety glasses or ANSI safety approved glasses with side shields. You must wear  safety glasses at all times in the shop, not jus..."
+        },
+        {
+          "file": "autodesk_cncbook.pdf",
+          "full_snippet": "approved.   Hearing Protection – You will wear hearing protection when and if asked to do so by the instructor.   Jewelry – You will remove all rings, watches, necklaces, bracelets, and dangling earrings before  operating any machinery or tools.   Proper Attire- You will wear ankle-length pants. Loose hair and clothing are extremely dangerous . You  must tuck in your shirt, roll up long sleeves, secure draw strings, tie back hair, etc…    No Open -Toe Shoes –  You must wear appropriate foot wear while in the shop. Shoes must be fully  enclosed. Inappropriate footwear includes: open-toe shoes, sandals, crocks, high heels, etc…   Clean-Up –Before leaving the shop area, you must assist in cleaning any mess (metal chips, splashed  coolant) that you produce. You must clean any spilled liquids immediately.    Return of Tools and Parts-You will return any tools, instruments, bits, etc. to their proper location after  using them.",
+          "id": 2,
+          "page": 254,
+          "snippet": "approved.   Hearing Protection – You will wear hearing protection when and if asked to do so by the instructor.   Jewelry – You will remove all ring..."
+        }
+      ],
+      "response_time_s": 8.51,
+      "error": null
+    },
+    {
+      "id": "REG-17",
+      "category": "cnc",
+      "question": "According to the Autodesk CNCbook, what is the difference between a subplate and an angle plate?",
+      "ground_truth": "A subplate is a ground aluminum plate that bolts to the top of the machine table and has threaded holes and bushings at regular intervals. An angle plate is a precision ground steel plate that allows the part to be set on its side, and can point in a direction parallel to either the X or Y axis.",
+      "answer": "A subplate is a ground aluminum plate that bolts to the top of the machine table. It has threaded holes and bushings at regular intervals. Subplates protect the machine table and speed setups by allowing clamps and other components to be quickly and precisely located anywhere in the workspace. Once installed, the subplate generally remains permanently fixed on the table. Fixtures and vises are installed on top of it.\n\nAn angle plate is a precision ground steel plate that allows the part to be set on its side. Angle plates can point in a direction parallel to either the X or Y axis.",
+      "contexts": [
+        "possible, acquire a fixture components catalog or look at the web sites of Carr- Lane (carrlane.com), Jergens  (jergensinc.com), Chick (chickworkholding.com) MSC (mscdirect.com) and others.  Subplates and Angle Plates  A Subplateis a ground aluminum plate that bolts to the top of the machine table. It has threaded holes and  bushings at regular intervals.   Subplates protect the machine table and speeds setups by allowing clamps and other components to be  quickly and precisely located anywhere in the workspace.  Once installed, the subplate generally remains permanently fixed on the table. Fixtures and vises are  installed on top of it.   An Angle plate is a precision ground steel plate that allows the part to be set  on its side. Angle plates can  point in a direction parallel to either the X or Y axis.    Figure 1: Angle Plate and Sub Plate  Angle Plate Subplate",
+        "Chapter10:  Milling Setups  Overview ................................................................. 10-3  Fixture Components ................................................ 10-3  Subplates and Angle Plates ..................................... 10-3     Clamps .................................................................. 10-4  ShoulderBolts and Dowel Pins ................................ 10-5  Vise Accessories ...................................................... 10-5  Hard Jaws ............................................................. 10-6  Soft Jaws .................................................................. 10-6    Appendix A:  CNC MillingWork-Holding Examples    Project 1 : Install Vise ................................................ A-2  Project 2 : Install Vise Jaws ........................................ A-4  Project 3 : Square Block............................................. A-5  Project 4 : Contour Square Step .............................. A-13"
+      ],
+      "sources": [
+        {
+          "file": "autodesk_cncbook.pdf",
+          "full_snippet": "possible, acquire a fixture components catalog or look at the web sites of Carr- Lane (carrlane.com), Jergens  (jergensinc.com), Chick (chickworkholding.com) MSC (mscdirect.com) and others.  Subplates and Angle Plates  A Subplateis a ground aluminum plate that bolts to the top of the machine table. It has threaded holes and  bushings at regular intervals.   Subplates protect the machine table and speeds setups by allowing clamps and other components to be  quickly and precisely located anywhere in the workspace.  Once installed, the subplate generally remains permanently fixed on the table. Fixtures and vises are  installed on top of it.   An Angle plate is a precision ground steel plate that allows the part to be set  on its side. Angle plates can  point in a direction parallel to either the X or Y axis.    Figure 1: Angle Plate and Sub Plate  Angle Plate Subplate",
+          "id": 1,
+          "page": 170,
+          "snippet": "possible, acquire a fixture components catalog or look at the web sites of Carr- Lane (carrlane.com), Jergens  (jergensinc.com), Chick (chickworkholdi..."
+        },
+        {
+          "file": "autodesk_cncbook.pdf",
+          "full_snippet": "Chapter10:  Milling Setups  Overview ................................................................. 10-3  Fixture Components ................................................ 10-3  Subplates and Angle Plates ..................................... 10-3     Clamps .................................................................. 10-4  ShoulderBolts and Dowel Pins ................................ 10-5  Vise Accessories ...................................................... 10-5  Hard Jaws ............................................................. 10-6  Soft Jaws .................................................................. 10-6    Appendix A:  CNC MillingWork-Holding Examples    Project 1 : Install Vise ................................................ A-2  Project 2 : Install Vise Jaws ........................................ A-4  Project 3 : Square Block............................................. A-5  Project 4 : Contour Square Step .............................. A-13",
+          "id": 2,
+          "page": 7,
+          "snippet": "Chapter10:  Milling Setups  Overview ................................................................. 10-3  Fixture Components ........................."
+        }
+      ],
+      "response_time_s": 9.26,
+      "error": null
+    },
+    {
+      "id": "REG-18",
+      "category": "manufacturing",
+      "question": "According to Modern Manufacturing, what are the varieties of milling cutter tool constructions?",
+      "ground_truth": "Solid cutters are made from a single piece of HSS or carbide; cutters can be tipped with a harder material; teeth can be designed for specific cutting conditions; low initial cost. Inserted blade cutters are usually made from HSS, carbide, or cast alloy; individual blades can be replaced as they wear out, saving replacement cost; ideal for close-tolerance finishing. Indexable insert cutters use inserts made from carbide, coated carbide, ceramic, or ultrahard material such as diamond; each insert has one or more cutting edges; as inserts wear they are repositioned to expose new cutting surface or indexed to bring another cutting insert on line.",
+      "answer": "I found relevant content in multiple documents: \"basic machine tool operations aug 2017\", \"manufacturing processes\", and \"autodesk cncbook\". Which one are you asking about, or would you like me to check all relevant documents?",
+      "contexts": [],
+      "sources": [],
+      "response_time_s": 4.75,
+      "error": null
+    },
+    {
+      "id": "REG-19",
+      "category": "server",
+      "question": "In the server installation guide error codes document, what is error code 8x1A?",
+      "ground_truth": "Error code 8x1A indicates an AC Voltage Surge. If the fault persists, check the AC connection to the inverter, verify the inverter is set to the correct country, check with the grid operator if a large surge source or irregular load exists near the site, and verify that the output wire size matches the distance between the inverter and the grid connection.",
+      "answer": "The uploaded documents do not contain information about this.",
+      "contexts": [],
+      "sources": [],
+      "response_time_s": 5.19,
+      "error": null
+    },
+    {
+      "id": "REG-20",
+      "category": "manufacturing",
+      "question": "According to Modern Manufacturing, what are the general processing guidelines for laser surface hardening?",
+      "ground_truth": "The range of usable power densities for laser surface hardening is 3200 W/in² (500 W/cm²) to 32,000 W/in² (5000 W/cm²) with beam dwell times from 0.1 to 10 seconds; higher power levels would melt the surface. Alloys with high hardenability can be processed at low speed with low power density to produce relatively thick cases. Alloys with low hardenability should be processed at high speed with high power density; the result is a shallow case. Beam configuration can be rectangular, square, or round, and uniform energy density within the beam is very important. Maximum achievable surface temperature is proportional to the square root of the processing speed; thus doubling the beam power density requires the processing speed to be increased by a factor of four to maintain the equivalent maximum surface temperature. Smaller workpieces are not as effective a heat sink as larger workpieces, and hence self-quenching may have to be assisted by quenching media.",
+      "answer": "Based on the provided context, the following are mentioned:\n\n- **Laser surface hardening** is performed on smaller parts that cannot be heat-treated in a normal manner or when only limited areas of a larger part need to be hardened.\n- The highly focused laser beam’s heat can be used to heat treat the teeth of very small gears.\n- Very hard and thin surfaces are supported by strong, more ductal substrata; this duplex material provides the harness needed to resist wear and the strength to resist fracturing.",
+      "contexts": [
+        "which allows it to make full-penetration welds in thick   sections. For example, it is possible to make a welded butt  number of materials can be used to produce the laser. These  materials include common items such as glass and exotic  items such as neodymium-doped yttrium aluminum garnet  (Nd:YAG), often referred to as a YAG laser. Laser Beam Heat Treating The laser beam can be used to heat the surface of the mate- rials so they can be hardened. Most laser beam hardening  is performed on smaller parts that cannot be heat-treated  in a normal manor or when only limited areas of a larger  part need to be hardened. Following are some advantages  of laser beam heat treating: •\tThe highly focused laser beam’s heat can be used to  heat treat the teeth of very small gears. •\tVery hard and thin surfaces are supported by strong,  more ductal substrata; this duplex material provides  the harness needed to resist ware and the strength to  resist fracturing, Figure 30-39.",
+        "reduce blowouts. The surface must be clean of any oil  or dirt. Figure 25 ­10 shows holes a laser beam drilled in  some jet turbine blades. The equipment required for laser beam applications  is shown in Fig. 25 ­11. This setup is using the solid ­  state type neodymium ­doped, yttrium ­ aluminum­garnet  (YAG) material as a lasing source. The power sup ­ ply, which operates at high voltage, supplies power to  the flash lamps. A cryogenic cooler is used to cool the  power supply and the laser rod and flash lamps. The  rear mirror is fully reflective and bounces the coherent  monochromatic beam back through the laser rod to the  partially reflective front mirror. This helps in producing  the coherent ­synchronized wave light beam. Once the  beam exits it can be treated as light and can be reflected,  deflected, and focused. An energy monitor is placed in  the beam to measure and compare the beam’s power  level. The beam dump and shutter control the beam."
+      ],
+      "sources": [
+        {
+          "file": "Welding_Principles_Applications_Jeffus_P3.pdf",
+          "full_snippet": "which allows it to make full-penetration welds in thick   sections. For example, it is possible to make a welded butt  number of materials can be used to produce the laser. These  materials include common items such as glass and exotic  items such as neodymium-doped yttrium aluminum garnet  (Nd:YAG), often referred to as a YAG laser. Laser Beam Heat Treating The laser beam can be used to heat the surface of the mate- rials so they can be hardened. Most laser beam hardening  is performed on smaller parts that cannot be heat-treated  in a normal manor or when only limited areas of a larger  part need to be hardened. Following are some advantages  of laser beam heat treating: •\tThe highly focused laser beam’s heat can be used to  heat treat the teeth of very small gears. •\tVery hard and thin surfaces are supported by strong,  more ductal substrata; this duplex material provides  the harness needed to resist ware and the strength to  resist fracturing, Figure 30-39.",
+          "id": 1,
+          "page": 227,
+          "snippet": "which allows it to make full-penetration welds in thick   sections. For example, it is possible to make a welded butt  number of materials can be used..."
+        },
+        {
+          "file": "Welding_Principles_Practices_Bohnart_P2.pdf",
+          "full_snippet": "reduce blowouts. The surface must be clean of any oil  or dirt. Figure 25 ­10 shows holes a laser beam drilled in  some jet turbine blades. The equipment required for laser beam applications  is shown in Fig. 25 ­11. This setup is using the solid ­  state type neodymium ­doped, yttrium ­ aluminum­garnet  (YAG) material as a lasing source. The power sup ­ ply, which operates at high voltage, supplies power to  the flash lamps. A cryogenic cooler is used to cool the  power supply and the laser rod and flash lamps. The  rear mirror is fully reflective and bounces the coherent  monochromatic beam back through the laser rod to the  partially reflective front mirror. This helps in producing  the coherent ­synchronized wave light beam. Once the  beam exits it can be treated as light and can be reflected,  deflected, and focused. An energy monitor is placed in  the beam to measure and compare the beam’s power  level. The beam dump and shutter control the beam.",
+          "id": 2,
+          "page": 340,
+          "snippet": "reduce blowouts. The surface must be clean of any oil  or dirt. Figure 25 ­10 shows holes a laser beam drilled in  some jet turbine blades. The equipm..."
+        }
+      ],
+      "response_time_s": 9.02,
+      "error": null
+    },
+    {
+      "id": "REG-21",
+      "category": "manufacturing",
+      "question": "According to Modern Manufacturing, what is laser surface hardening?",
+      "ground_truth": "Laser surface hardening is used as an alternative to flame hardening and induction hardening of ferrous materials. The rapid heating rate achievable by the laser minimizes part distortion and can impart surface hardness to low-carbon steels. This process is used to harden selected areas of machine components such as gears, cylinders, bearings, and shafts, and the entire operation can be performed in air.",
+      "answer": "Laser surface hardening is a process where the laser beam is used to heat the surface of materials, allowing them to be hardened. This method is particularly useful for smaller parts that cannot be heat-treated in a conventional manner or when only limited areas of a larger part need to be hardened. For instance, the laser beam can be used to heat treat the teeth of very small gears.",
+      "contexts": [
+        "which allows it to make full-penetration welds in thick   sections. For example, it is possible to make a welded butt  number of materials can be used to produce the laser. These  materials include common items such as glass and exotic  items such as neodymium-doped yttrium aluminum garnet  (Nd:YAG), often referred to as a YAG laser. Laser Beam Heat Treating The laser beam can be used to heat the surface of the mate- rials so they can be hardened. Most laser beam hardening  is performed on smaller parts that cannot be heat-treated  in a normal manor or when only limited areas of a larger  part need to be hardened. Following are some advantages  of laser beam heat treating: •\tThe highly focused laser beam’s heat can be used to  heat treat the teeth of very small gears. •\tVery hard and thin surfaces are supported by strong,  more ductal substrata; this duplex material provides  the harness needed to resist ware and the strength to  resist fracturing, Figure 30-39.",
+        "metal surfacing. A surface that is worn away  can be restored to its original state, or addi - tional qualities can be given to the material.  The part to be surfaced may be prepared as  shown in Fig. 9-13. Hard facing has the following advantages: •  Hard-faced surfaces will last 2 to 40  times as long as low carbon steel, de- pending on the type of surfacing alloy  and the service required. •  The service life of a part is greatly   increased. Production schedules are  maintained due to fewer replacements  and more continuous operation of  equipment. •  Surfacing materials need be applied only  to those surfaces that will be subjected  to severe conditions. Cheaper material  may be used to make the part being  surfaced. •  Parts can be rebuilt again and again without being  replaced. • Special cutting edges can be formed for special  situations. ISTUDY"
+      ],
+      "sources": [
+        {
+          "file": "Welding_Principles_Applications_Jeffus_P3.pdf",
+          "full_snippet": "which allows it to make full-penetration welds in thick   sections. For example, it is possible to make a welded butt  number of materials can be used to produce the laser. These  materials include common items such as glass and exotic  items such as neodymium-doped yttrium aluminum garnet  (Nd:YAG), often referred to as a YAG laser. Laser Beam Heat Treating The laser beam can be used to heat the surface of the mate- rials so they can be hardened. Most laser beam hardening  is performed on smaller parts that cannot be heat-treated  in a normal manor or when only limited areas of a larger  part need to be hardened. Following are some advantages  of laser beam heat treating: •\tThe highly focused laser beam’s heat can be used to  heat treat the teeth of very small gears. •\tVery hard and thin surfaces are supported by strong,  more ductal substrata; this duplex material provides  the harness needed to resist ware and the strength to  resist fracturing, Figure 30-39.",
+          "id": 1,
+          "page": 227,
+          "snippet": "which allows it to make full-penetration welds in thick   sections. For example, it is possible to make a welded butt  number of materials can be used..."
+        },
+        {
+          "file": "Welding_Principles_Practices_Bohnart_P1.pdf",
+          "full_snippet": "metal surfacing. A surface that is worn away  can be restored to its original state, or addi - tional qualities can be given to the material.  The part to be surfaced may be prepared as  shown in Fig. 9-13. Hard facing has the following advantages: •  Hard-faced surfaces will last 2 to 40  times as long as low carbon steel, de- pending on the type of surfacing alloy  and the service required. •  The service life of a part is greatly   increased. Production schedules are  maintained due to fewer replacements  and more continuous operation of  equipment. •  Surfacing materials need be applied only  to those surfaces that will be subjected  to severe conditions. Cheaper material  may be used to make the part being  surfaced. •  Parts can be rebuilt again and again without being  replaced. • Special cutting edges can be formed for special  situations. ISTUDY",
+          "id": 2,
+          "page": 261,
+          "snippet": "metal surfacing. A surface that is worn away  can be restored to its original state, or addi - tional qualities can be given to the material.  The par..."
+        }
+      ],
+      "response_time_s": 8.58,
+      "error": null
+    },
+    {
+      "id": "REG-22",
+      "category": "manufacturing",
+      "question": "According to Modern Manufacturing, explain the key system components for laser surface hardening.",
+      "ground_truth": "The majority of industrial metalworking lasers are either solid-state Nd:YAG or carbon dioxide type; power output for YAG lasers is 50 to 500 W and carbon dioxide lasers are available up to 25 kW. The surface to be hardened is usually coated to improve its ability to absorb laser radiation; a typical coating is manganese phosphate, and paints containing graphite, silicon, and carbon are also used, increasing absorption to 80 to 90 percent. The output beam of the laser must be shaped and directed by an optical system to generate a laser spot of desired shape and size at the correct location on the workpiece surface; reflective optical components are used as they are sturdy and easily adapted to an industrial environment.",
+      "answer": "Based on the provided context, the following are mentioned:\n\n- **Pumping Source**: Provides energy to the laser.\n- **Target**: The material being laser-hardened.\n- **Lens**: Focuses the laser beam.\n- **Optical Cavity Laser Crystal**: Part of the laser system.\n- **Chiller**: Used to cool the laser and its components.\n- **Energy Monitor**: Measures the power level of the laser beam.\n- **Beam Dump and Shutter**: Control the laser beam.\n- **Safety Mirror**: Reflects the laser beam for safety.\n- **45° Mirror**: Deflects the laser beam path.\n- **Viewing Head**: Monitors the operation of the laser beam.",
+      "contexts": [
+        "reduce blowouts. The surface must be clean of any oil  or dirt. Figure 25 ­10 shows holes a laser beam drilled in  some jet turbine blades. The equipment required for laser beam applications  is shown in Fig. 25 ­11. This setup is using the solid ­  state type neodymium ­doped, yttrium ­ aluminum­garnet  (YAG) material as a lasing source. The power sup ­ ply, which operates at high voltage, supplies power to  the flash lamps. A cryogenic cooler is used to cool the  power supply and the laser rod and flash lamps. The  rear mirror is fully reflective and bounces the coherent  monochromatic beam back through the laser rod to the  partially reflective front mirror. This helps in producing  the coherent ­synchronized wave light beam. Once the  beam exits it can be treated as light and can be reflected,  deflected, and focused. An energy monitor is placed in  the beam to measure and compare the beam’s power  level. The beam dump and shutter control the beam.",
+        "ing delicate parts that might be located just a few thou - sandths of an inch away. The benefits and capacities of the laser have made it  one of the most rapidly growing areas in manufacturing.  This is a useful tool that will continue to be developed and  improved for years to come. K e Y T e R ms (3.3.8 LI Module 8 4.1.6,  3.3.8 LI Module 8 4.2.5,  3.3.8 LI Module 8 4.3.6) abrasives air carbon arc cutting (CAC-A) carbon electrode cutting gas assist delamination exothermic gases gas laser gouging graphite laser beam cuts (LBC) laser beam drilling (LBD) laser beam welds (LBW) monochromatic oxygen lance cutting solid state lasers synchronized waveform washing water jet cutting weld removal YAG laser Copyright 2021 Cengage Learning. All Rights Reserved. May not be copied, scanned, or duplicated, in whole or in part. Due to electronic rights, some third party content may be suppressed from the eBook and/or eChapter(s)."
+      ],
+      "sources": [
+        {
+          "file": "Welding_Principles_Practices_Bohnart_P2.pdf",
+          "full_snippet": "reduce blowouts. The surface must be clean of any oil  or dirt. Figure 25 ­10 shows holes a laser beam drilled in  some jet turbine blades. The equipment required for laser beam applications  is shown in Fig. 25 ­11. This setup is using the solid ­  state type neodymium ­doped, yttrium ­ aluminum­garnet  (YAG) material as a lasing source. The power sup ­ ply, which operates at high voltage, supplies power to  the flash lamps. A cryogenic cooler is used to cool the  power supply and the laser rod and flash lamps. The  rear mirror is fully reflective and bounces the coherent  monochromatic beam back through the laser rod to the  partially reflective front mirror. This helps in producing  the coherent ­synchronized wave light beam. Once the  beam exits it can be treated as light and can be reflected,  deflected, and focused. An energy monitor is placed in  the beam to measure and compare the beam’s power  level. The beam dump and shutter control the beam.",
+          "id": 1,
+          "page": 340,
+          "snippet": "reduce blowouts. The surface must be clean of any oil  or dirt. Figure 25 ­10 shows holes a laser beam drilled in  some jet turbine blades. The equipm..."
+        },
+        {
+          "file": "Welding_Principles_Applications_Jeffus_P1.pdf",
+          "full_snippet": "ing delicate parts that might be located just a few thou - sandths of an inch away. The benefits and capacities of the laser have made it  one of the most rapidly growing areas in manufacturing.  This is a useful tool that will continue to be developed and  improved for years to come. K e Y T e R ms (3.3.8 LI Module 8 4.1.6,  3.3.8 LI Module 8 4.2.5,  3.3.8 LI Module 8 4.3.6) abrasives air carbon arc cutting (CAC-A) carbon electrode cutting gas assist delamination exothermic gases gas laser gouging graphite laser beam cuts (LBC) laser beam drilling (LBD) laser beam welds (LBW) monochromatic oxygen lance cutting solid state lasers synchronized waveform washing water jet cutting weld removal YAG laser Copyright 2021 Cengage Learning. All Rights Reserved. May not be copied, scanned, or duplicated, in whole or in part. Due to electronic rights, some third party content may be suppressed from the eBook and/or eChapter(s).",
+          "id": 2,
+          "page": 289,
+          "snippet": "ing delicate parts that might be located just a few thou - sandths of an inch away. The benefits and capacities of the laser have made it  one of the ..."
+        }
+      ],
+      "response_time_s": 9.63,
+      "error": null
+    },
+    {
+      "id": "REG-23",
+      "category": "manufacturing",
+      "question": "According to Modern Manufacturing, describe how bonding is achieved.",
+      "ground_truth": "Bonding is achieved in fusion welding by interposing a liquid of substantially similar composition as the base metal between the surfaces to be joined. The need for welding and joining is substantial since only monolithic parts can be made without joining.",
+      "answer": "I found relevant content in multiple documents: \"Welding Principles Practices Bohnart P2\", \"Welding Principles Applications Jeffus P1\", and \"Welding Principles Applications Jeffus P3\" (and 1 more). Which one are you asking about, or would you like me to check all relevant documents?",
+      "contexts": [],
+      "sources": [],
+      "response_time_s": 4.8,
+      "error": null
+    },
+    {
+      "id": "REG-24",
+      "category": "manufacturing",
+      "question": "According to Modern Manufacturing, can you give me an application or example of how bonding is achieved?",
+      "ground_truth": "In the fabrication of heavy structures, arc welding dominates other assembly processes because of the inherent flexibility and economy of welding.",
+      "answer": "I found relevant content in multiple documents: \"Welding Principles Practices Bohnart P2\", \"manufacturing processes\", and \"Welding Principles Applications Jeffus P1\" (and 2 more). Which one are you asking about, or would you like me to check all relevant documents?",
+      "contexts": [],
+      "sources": [],
+      "response_time_s": 2.45,
+      "error": null
+    },
+    {
+      "id": "REG-14",
+      "category": "grounding",
+      "question": "What is the torque specification for a Ford F-150 lug nut?",
+      "answer": "The uploaded documents do not contain information about this.",
+      "contexts": [],
+      "sources": [],
+      "response_time_s": 2.77,
+      "error": null
+    },
+    {
+      "id": "REG-25",
+      "category": "welding",
+      "question": "Why should excessive convexity be avoided in fillet welds?",
+      "ground_truth": "Excessive convexity is an undesirable fillet-weld profile; the text advises avoiding it just as excessive reinforcement should be avoided in groove welds.",
+      "answer": "Excessive convexity in fillet welds should be avoided because:\n- It increases cost and wastes filler metal.\n- It concentrates more stresses at the toes of the weld.\n- It may cause porosity and slag inclusion, which waste material and time, thus increasing costs.\n- It results in a poor appearance.",
+      "contexts": [
+        "126  Chapter 4 Basic Joints and Welds Fillet Weld Profiles Figure 4-36 shows flat and  concave fillet weld profiles  that are considered desirable.  Figure 4-37 illustrates a slightly  convex profile that is also ac - ceptable. Thus, we are again re- minded that the welder should  try to avoid excess convexity.  Convex fillet welds are accept- able, providing the convexity is  within the limits indicated by  Table 4-1, page 117. Figure 4-38 shows profiles of weld defects that  result  from poor welding technique. Fillet Weld with Insufficient Throat  Reduction of the   effective throat, Fig. 4-38A, materially reduces the size  of the weld. This abrupt change in the face concen - trates stress at the center. The smaller size of the weld  and the stress concentration weaken the weld and invite  Fig. 4-29 Production welding position diagram for groove welds in  pipe. Positions for circumferential groove welds indicated by shaded",
+        "welds the size and leg are the same, and this is what the  design engineer specifies on the weld symbol. The convex fillet weld, in contrast to the concave and  flat fillet welds, has less of a tendency to crack as a result  of shrinkage setup cooling. The welder will also find it  easier to keep from undercutting at the toes when making  this type of weld. Excessive convexity in fillet welds should be avoided  just as excessive reinforcement should be avoided in  groove welds. It increases cost, wastes filler metal, and  concentrates more stresses at the toes of the weld. If a   fillet weld is specified to be convex, it should only have   a slight amount of convexity. This is generally based on  the width of the weld face. Table 4-1 lists the acceptable  amounts of convexity. For concave fillet welding, the size and leg are two dif- ferent dimensions. The leg is the dimension from the weld  Fig. 4-11 Reinforcement for  groove welds. No undercut, no overlap at toes. Not less than ﬂush",
+        "Basic Joints and Welds Chapter 4  127 joint failure. This defect  is usually caused by too  fast travel and excessive  welding current. Fillet Weld with Exces - sive Convexity  The weld  metal in this type of defect,   Fig. 4-38B, may contain a  great deal of slag and po - rosity. There may also be  poor fusion at the root of  the weld and poor fusion of  the weld metal to plate surfaces, Figs. 4-39 and 4-40.  Stress concentrates at the toe of the weld. This weld defect  is usually caused by low welding current and a slow rate  of travel. Fillet Weld with Excess Undercut Figure 4-38C shows the  melting away of the base metal next to the weld toe. This  cutting away of one of the plate surfaces at the edge of the  weld is known as undercut. Excess undercut like this one  decreases the thickness of the plate at that point. Any ma- terial reduction in plate thick- ness leads to plate weakness.  The situation invites joint  failure because the designed  load of the joint is based on"
+      ],
+      "sources": [
+        {
+          "file": "Welding_Principles_Practices_Bohnart_P1.pdf",
+          "full_snippet": "126  Chapter 4 Basic Joints and Welds Fillet Weld Profiles Figure 4-36 shows flat and  concave fillet weld profiles  that are considered desirable.  Figure 4-37 illustrates a slightly  convex profile that is also ac - ceptable. Thus, we are again re- minded that the welder should  try to avoid excess convexity.  Convex fillet welds are accept- able, providing the convexity is  within the limits indicated by  Table 4-1, page 117. Figure 4-38 shows profiles of weld defects that  result  from poor welding technique. Fillet Weld with Insufficient Throat  Reduction of the   effective throat, Fig. 4-38A, materially reduces the size  of the weld. This abrupt change in the face concen - trates stress at the center. The smaller size of the weld  and the stress concentration weaken the weld and invite  Fig. 4-29 Production welding position diagram for groove welds in  pipe. Positions for circumferential groove welds indicated by shaded",
+          "id": 1,
+          "page": 143,
+          "snippet": "126  Chapter 4 Basic Joints and Welds Fillet Weld Profiles Figure 4-36 shows flat and  concave fillet weld profiles  that are considered desirable.  F..."
+        },
+        {
+          "file": "Welding_Principles_Practices_Bohnart_P1.pdf",
+          "full_snippet": "welds the size and leg are the same, and this is what the  design engineer specifies on the weld symbol. The convex fillet weld, in contrast to the concave and  flat fillet welds, has less of a tendency to crack as a result  of shrinkage setup cooling. The welder will also find it  easier to keep from undercutting at the toes when making  this type of weld. Excessive convexity in fillet welds should be avoided  just as excessive reinforcement should be avoided in  groove welds. It increases cost, wastes filler metal, and  concentrates more stresses at the toes of the weld. If a   fillet weld is specified to be convex, it should only have   a slight amount of convexity. This is generally based on  the width of the weld face. Table 4-1 lists the acceptable  amounts of convexity. For concave fillet welding, the size and leg are two dif- ferent dimensions. The leg is the dimension from the weld  Fig. 4-11 Reinforcement for  groove welds. No undercut, no overlap at toes. Not less than ﬂush",
+          "id": 2,
+          "page": 133,
+          "snippet": "welds the size and leg are the same, and this is what the  design engineer specifies on the weld symbol. The convex fillet weld, in contrast to the co..."
+        },
+        {
+          "file": "Welding_Principles_Practices_Bohnart_P1.pdf",
+          "full_snippet": "Basic Joints and Welds Chapter 4  127 joint failure. This defect  is usually caused by too  fast travel and excessive  welding current. Fillet Weld with Exces - sive Convexity  The weld  metal in this type of defect,   Fig. 4-38B, may contain a  great deal of slag and po - rosity. There may also be  poor fusion at the root of  the weld and poor fusion of  the weld metal to plate surfaces, Figs. 4-39 and 4-40.  Stress concentrates at the toe of the weld. This weld defect  is usually caused by low welding current and a slow rate  of travel. Fillet Weld with Excess Undercut Figure 4-38C shows the  melting away of the base metal next to the weld toe. This  cutting away of one of the plate surfaces at the edge of the  weld is known as undercut. Excess undercut like this one  decreases the thickness of the plate at that point. Any ma- terial reduction in plate thick- ness leads to plate weakness.  The situation invites joint  failure because the designed  load of the joint is based on",
+          "id": 3,
+          "page": 144,
+          "snippet": "Basic Joints and Welds Chapter 4  127 joint failure. This defect  is usually caused by too  fast travel and excessive  welding current. Fillet Weld wi..."
+        }
+      ],
+      "response_time_s": 8.51,
+      "error": null
+    },
+    {
+      "id": "REG-26",
+      "category": "welding",
+      "question": "What are the four basic welding positions?",
+      "ground_truth": "Flat, horizontal, vertical, and overhead.",
+      "answer": "I found relevant content in multiple documents: \"manufacturing processes\", \"Welding Principles Applications Jeffus P3\", and \"Welding Principles Practices Bohnart P1\" (and 1 more). Which one are you asking about, or would you like me to check all relevant documents?",
+      "contexts": [],
+      "sources": [],
+      "response_time_s": 4.74,
+      "error": null
+    },
+    {
+      "id": "REG-27",
+      "category": "welding",
+      "question": "Why should a welder control maximum weave width?",
+      "ground_truth": "Controlling weave width helps prevent slag inclusions and incomplete-fusion discontinuities.",
+      "answer": "To control the maximum weave width is important to manage the heat input and cooling rate, which affects the grain structure and distortion level of the weld. Additionally, limiting the weave width helps in avoiding slag inclusions and incomplete fusion type discontinuities.",
+      "contexts": [
+        "to-side oscillation, Fig. 4-22B. This is generally done to  increase the weld size. Most codes or specifications will  limit the width of a weave bead. The reduced travel speed  will increase the heat input and slow the cooling rate. This  will impact the grain structure and affect the distortion  level. Controlling the maximum weave width will also  help eliminate slag inclusions and incomplete fusion type  discontinuities. Weld Positions The four basic positions for welding are flat, horizontal,  vertical, and overhead. They are also designated with a  number system to aid in brevity in oral or written com - munication. They are defined as follows: • Flat position (1)  The flat position (number 1) is the  welding position used to weld from the upper side of the  joint at a point where the weld axis is approximately hori- zontal and the weld face lies in an approximately horizon- tal plane. • Horizontal position (2)  The horizontal position",
+        "will cause coarse ripples and even voids. Keep  the side-to-side motion within the limits of  the finished bead width to avoid undercutting.  Close arc gap control is important. Remove  the slag thoroughly so that good fusion may  be obtained with preceding passes and with  the groove faces of the beveled plate. Use the  edges of the plate as a guide for determining  the width of the last pass. Practice starts and stops. Travel in all  directions. Fig. 14-11 Typical appearance of weave beads welded in the overhead (4) position  with DCEP or a.c. shielded metal arc coated electrodes. Edward R. Bohnart ISTUDY"
+      ],
+      "sources": [
+        {
+          "file": "Welding_Principles_Practices_Bohnart_P1.pdf",
+          "full_snippet": "to-side oscillation, Fig. 4-22B. This is generally done to  increase the weld size. Most codes or specifications will  limit the width of a weave bead. The reduced travel speed  will increase the heat input and slow the cooling rate. This  will impact the grain structure and affect the distortion  level. Controlling the maximum weave width will also  help eliminate slag inclusions and incomplete fusion type  discontinuities. Weld Positions The four basic positions for welding are flat, horizontal,  vertical, and overhead. They are also designated with a  number system to aid in brevity in oral or written com - munication. They are defined as follows: • Flat position (1)  The flat position (number 1) is the  welding position used to weld from the upper side of the  joint at a point where the weld axis is approximately hori- zontal and the weld face lies in an approximately horizon- tal plane. • Horizontal position (2)  The horizontal position",
+          "id": 1,
+          "page": 137,
+          "snippet": "to-side oscillation, Fig. 4-22B. This is generally done to  increase the weld size. Most codes or specifications will  limit the width of a weave bead..."
+        },
+        {
+          "file": "Welding_Principles_Practices_Bohnart_P1.pdf",
+          "full_snippet": "will cause coarse ripples and even voids. Keep  the side-to-side motion within the limits of  the finished bead width to avoid undercutting.  Close arc gap control is important. Remove  the slag thoroughly so that good fusion may  be obtained with preceding passes and with  the groove faces of the beveled plate. Use the  edges of the plate as a guide for determining  the width of the last pass. Practice starts and stops. Travel in all  directions. Fig. 14-11 Typical appearance of weave beads welded in the overhead (4) position  with DCEP or a.c. shielded metal arc coated electrodes. Edward R. Bohnart ISTUDY",
+          "id": 2,
+          "page": 410,
+          "snippet": "will cause coarse ripples and even voids. Keep  the side-to-side motion within the limits of  the finished bead width to avoid undercutting.  Close ar..."
+        }
+      ],
+      "response_time_s": 6.3,
+      "error": null
+    },
+    {
+      "id": "REG-28",
+      "category": "welding",
+      "question": "What is undercut at the toe of a fillet weld?",
+      "ground_truth": "Undercut is a groove or melting away of base metal adjacent to the weld toe, leaving a reduction in the original base-metal surface.",
+      "answer": "I found relevant content in multiple documents: \"Welding Principles Applications Jeffus P3\", \"Welding Principles Practices Bohnart P1\", and \"Welding Principles Applications Jeffus P2\" (and 2 more). Which one are you asking about, or would you like me to check all relevant documents?",
+      "contexts": [],
+      "sources": [],
+      "response_time_s": 4.61,
+      "error": null
+    },
+    {
+      "id": "REG-29",
+      "category": "welding",
+      "question": "What welding conditions can contribute to an undesirable weld bead profile?",
+      "ground_truth": "The chapter discusses welding current and travel rate as variables affecting weld-bead profile and weld discontinuities.",
+      "answer": "I found relevant content in multiple documents: \"Welding Principles Practices Bohnart P2\", \"manufacturing processes\", and \"Welding Principles Applications Jeffus P2\" (and 2 more). Which one are you asking about, or would you like me to check all relevant documents?",
+      "contexts": [],
+      "sources": [],
+      "response_time_s": 2.66,
+      "error": null
+    },
+    {
+      "id": "REG-30",
+      "category": "welding",
+      "question": "Which trapped materials can cause weld discontinuities?",
+      "ground_truth": "Entrapped slag produces slag inclusions; entrapped gas produces porosity.",
+      "answer": "I found relevant content in multiple documents: \"Welding Principles Applications Jeffus P3\", \"Welding Principles Practices Bohnart P1\", and \"Welding Principles Practices Bohnart P2\". Which one are you asking about, or would you like me to check all relevant documents?",
+      "contexts": [],
+      "sources": [],
+      "response_time_s": 2.6,
+      "error": null
+    },
+    {
+      "id": "REG-31",
+      "category": "welding",
+      "question": "Where can cracks occur in or around a welded joint?",
+      "ground_truth": "The illustrated crack locations include toe cracks, root cracks, crater cracks, and underbead or heat-affected-zone cracks.",
+      "answer": "Cracks can occur in various parts of a welded joint, including:\n\n- **Weld Metal:** Cracks can form in the weld metal itself, as seen in transverse and longitudinal cracks. These are often caused by excessive restraint during welding or improper manipulation of the electrode.\n\n- **Base Metal:** Cracks can occur in the base metal, particularly in the heat-affected zone. Cold cracks are more common in steels and can appear as underbead cracks or toe cracks. Base metal cracking can also occur due to hydrogen-induced cracking, especially in hardenable materials.\n\n- **Crater Area:** Cracks can start in the crater area of a weld, where the weld metal has not been properly filled. These cracks can propagate out of the crater and into the joint.\n\n- **Underbead Cracks:** These are specific to steel and are caused by hydrogen, often occurring in the heat-affected zone.\n\n- **Longitudinal Cracks:** These are usually found in the center of the weld deposit and can be the continuation of crater cracks or cracks in the first layer of welding.\n\n- **Microfissures:** These are too small to be seen with the naked eye and can be either hot or cold cracks.\n\n- **Overlap and Undercut:** These are related to improper welding techniques and can lead to cracks, though they are more about surface defects rather than linear ruptures.",
+      "contexts": [
+        "130  Chapter 4 Basic Joints and Welds or opening. In most codes or specifications, cracks of any  length, location, or orientation are not allowed. In this  case all cracks would be defects and must be repaired.  Because they have a sharp tip, cracks are considered a  stress riser. They can also propagate rapidly across the  joint or weldment. Cracks can generally be classified as either hot cracks  or cold cracks. Insufficient ductility at high temperatures  will cause hot cracks. These cracks move between grains  in the weld metal or at the weld interface. If cracks occur  once the weld metal has solidified, then they are consid - ered cold cracks. The weld metal, heat-affected zone, or  base metal can be affected by cold cracks. Cold cracks   occur because of improper welding procedure or tech - niques or the welding service condition. Figure 4-49 is an  example of a crack starting in the crater area of a weld. The  crater was not properly filled to the full cross section of the",
+        "cracks parallel to the weld or as toe cracks at the edge of  the weld. Cold cracking occurs more often in steels than  in other metals. Microfissures (microcracks) may be either hot or cold  cracks. They are too small to be seen with the naked eye  and are not detectable at magnifications below 10 power.  These cracks usually do not reduce the service life of the  fabrication. Weld Metal Cracking  Three different types of cracks   occur in weld metal: transverse cracks, longitudinal  cracks, and crater cracks. Transverse cracks run across the face of the weld and  may extend into the base metal. They are usually caused  by excessive restraint during welding.Fig. 28-108 Porosity. ISTUDY",
+        "underbead cracking. Generally, these cracks do not sur- face and can be seen only in radiographs or by sectioning  welds. Sometimes they surface in a region of the weld run- ning parallel to the fusion zone. With high-strength steels,  hydrogen-induced cracking occurs as transverse cracks in  the weld metal that are seen easily with very low magnifi- cation, Figure 26-48. Hydrogen-induced cracking requires high stress, a  microstructure sensitive to hydrogen, and, of course, hydro- gen. The first two are almost always satisfied with high- strength quenched and tempered steels. The third depends  on the welding process, the filler metals, and the preheat,  as discussed previously. Another factor is time. Under very severe conditions,  cracking can occur in minutes. With very marginal condi - tions, cracks might not appear for weeks. For this reason,  welds often are not radiographed for weeks to allow time  for any potential cracks to develop.",
+        "Crater Cracks Crater cracks are the tiny cracks that develop in the  weld craters as the weld pool shrinks and solidifies,  Figure 25-13. Materials with a low melting temperature  Overlap Overlap, also called cold lap, occurs in fusion welds when  weld deposits are larger than the joint is conditioned to  accept. The weld metal then flows over the surface of the  base metal without fusing to it, along the toe of the weld  bead, Figure 25-11. It generally occurs on the horizontal  leg of a horizontal fillet weld under extreme conditions.  It can also occur on both sides of flat-positioned capping  passes. With GMA welding, overlap occurs when using too  much electrode extension to deposit metal at low power.  Misdirecting the arc into the vertical leg and keeping the  electrode nearly vertical will also cause overlap. To prevent  overlap, the fillet weld must be correctly sized to less than  3/8 in. (9.5 mm), and the arc must be properly manipulated. Undercut"
+      ],
+      "sources": [
+        {
+          "file": "Welding_Principles_Practices_Bohnart_P1.pdf",
+          "full_snippet": "130  Chapter 4 Basic Joints and Welds or opening. In most codes or specifications, cracks of any  length, location, or orientation are not allowed. In this  case all cracks would be defects and must be repaired.  Because they have a sharp tip, cracks are considered a  stress riser. They can also propagate rapidly across the  joint or weldment. Cracks can generally be classified as either hot cracks  or cold cracks. Insufficient ductility at high temperatures  will cause hot cracks. These cracks move between grains  in the weld metal or at the weld interface. If cracks occur  once the weld metal has solidified, then they are consid - ered cold cracks. The weld metal, heat-affected zone, or  base metal can be affected by cold cracks. Cold cracks   occur because of improper welding procedure or tech - niques or the welding service condition. Figure 4-49 is an  example of a crack starting in the crater area of a weld. The  crater was not properly filled to the full cross section of the",
+          "id": 1,
+          "page": 147,
+          "snippet": "130  Chapter 4 Basic Joints and Welds or opening. In most codes or specifications, cracks of any  length, location, or orientation are not allowed. In..."
+        },
+        {
+          "file": "Welding_Principles_Practices_Bohnart_P2.pdf",
+          "full_snippet": "cracks parallel to the weld or as toe cracks at the edge of  the weld. Cold cracking occurs more often in steels than  in other metals. Microfissures (microcracks) may be either hot or cold  cracks. They are too small to be seen with the naked eye  and are not detectable at magnifications below 10 power.  These cracks usually do not reduce the service life of the  fabrication. Weld Metal Cracking  Three different types of cracks   occur in weld metal: transverse cracks, longitudinal  cracks, and crater cracks. Transverse cracks run across the face of the weld and  may extend into the base metal. They are usually caused  by excessive restraint during welding.Fig. 28-108 Porosity. ISTUDY",
+          "id": 2,
+          "page": 458,
+          "snippet": "cracks parallel to the weld or as toe cracks at the edge of  the weld. Cold cracking occurs more often in steels than  in other metals. Microfissures ..."
+        },
+        {
+          "file": "Welding_Principles_Applications_Jeffus_P3.pdf",
+          "full_snippet": "underbead cracking. Generally, these cracks do not sur- face and can be seen only in radiographs or by sectioning  welds. Sometimes they surface in a region of the weld run- ning parallel to the fusion zone. With high-strength steels,  hydrogen-induced cracking occurs as transverse cracks in  the weld metal that are seen easily with very low magnifi- cation, Figure 26-48. Hydrogen-induced cracking requires high stress, a  microstructure sensitive to hydrogen, and, of course, hydro- gen. The first two are almost always satisfied with high- strength quenched and tempered steels. The third depends  on the welding process, the filler metals, and the preheat,  as discussed previously. Another factor is time. Under very severe conditions,  cracking can occur in minutes. With very marginal condi - tions, cracks might not appear for weeks. For this reason,  welds often are not radiographed for weeks to allow time  for any potential cracks to develop.",
+          "id": 3,
+          "page": 151,
+          "snippet": "underbead cracking. Generally, these cracks do not sur- face and can be seen only in radiographs or by sectioning  welds. Sometimes they surface in a ..."
+        },
+        {
+          "file": "Welding_Principles_Applications_Jeffus_P3.pdf",
+          "full_snippet": "Crater Cracks Crater cracks are the tiny cracks that develop in the  weld craters as the weld pool shrinks and solidifies,  Figure 25-13. Materials with a low melting temperature  Overlap Overlap, also called cold lap, occurs in fusion welds when  weld deposits are larger than the joint is conditioned to  accept. The weld metal then flows over the surface of the  base metal without fusing to it, along the toe of the weld  bead, Figure 25-11. It generally occurs on the horizontal  leg of a horizontal fillet weld under extreme conditions.  It can also occur on both sides of flat-positioned capping  passes. With GMA welding, overlap occurs when using too  much electrode extension to deposit metal at low power.  Misdirecting the arc into the vertical leg and keeping the  electrode nearly vertical will also cause overlap. To prevent  overlap, the fillet weld must be correctly sized to less than  3/8 in. (9.5 mm), and the arc must be properly manipulated. Undercut",
+          "id": 4,
+          "page": 102,
+          "snippet": "Crater Cracks Crater cracks are the tiny cracks that develop in the  weld craters as the weld pool shrinks and solidifies,  Figure 25-13. Materials wi..."
+        }
+      ],
+      "response_time_s": 8.96,
+      "error": null
+    },
+    {
+      "id": "REG-32",
+      "category": "welding",
+      "question": "What does HAZ stand for in welding discontinuity diagrams?",
+      "ground_truth": "HAZ means heat-affected zone, the base-metal region affected by welding heat.",
+      "answer": "HAZ stands for Heat-Affected Zone in welding discontinuity diagrams.",
+      "contexts": [
+        "Heat-Affected Zone (HAZ) The grain structure and metallurgical changes that occur  in the heated region are inevitable. The lowest tempera- ture along the sides of the weld that has any changes sets  the outer extremity of the zone of change. That region of  change is called the heat-affected zone, abbreviated HAZ,   Figure 26-42 . The exact size and shape of the HAZ are  affected by a number of factors: •\tType of metal or alloy: Some metals are easily affected  even by small temperature changes, whereas others  are more resistant. In work-hardened metals, the heat- affected zone is defined by the recrystallization tem- perature, Figure 26-43 . In age-hardened alloys, this  temperature is the lowest temperature at which evi - dence of overaging is seen, Figure 26-44. In quenched  and tempered steels, it is the temperature at which  over-tempering is seen. •\tMethod of applying the welding heat: Some heat sources,  such as plasma arc welding (PAW), are very concen-",
+        "melting temperature. The more metal that gets hot, the  larger the HAZ. •\tPreheating and postheating:  As the temperature of the  base metal increases—whether from preheating or  postheating or the welding process itself—the larger the  HAZ. A cold plate may have an extremely narrow HAZ. The HAZ need not always be small. A larger HAZ is  desirable for welding steels that can produce martensite at  FigurE 26-42  Changes in grain structure caused by heating steel plate into different zones of the iron-carbon phase  diagram. 1700 1600 1500 1400 1300 1200 1100 1000 900 800 700 600 500 400 300 200 100 0 Fe 0.5 1.0 1.5 2.0 2.5 3.0 3.5 4.0 4.5 5.0 5.5 6.0 6.5 7.0 MAXIMUM ZONES TEMPERA TURE IN PLA TE WEIGHT PERCENT AGE CARBON 1 2 3       4          5 WELD MET AL Zone 2 – Austenitic;  grain growth at high temperature, Zone 1 – Liquid metal and the beginning of grain growth fine grain at low temperature Zone 3 – Austenite + ferrite; grain refined and grain growth Zone 4 – Recrystallization",
+        "Heat Affected Zone (HAZ), Fig. B-78 ....................1084 Incomplete fusion and incomplete penetration,   Fig. B-75 ...................................................................1083 Kerf, Fig. B-57 .........................................................1080 Lap joint, Fig. B-5 ...................................................1074 ISTUDY"
+      ],
+      "sources": [
+        {
+          "file": "Welding_Principles_Applications_Jeffus_P3.pdf",
+          "full_snippet": "Heat-Affected Zone (HAZ) The grain structure and metallurgical changes that occur  in the heated region are inevitable. The lowest tempera- ture along the sides of the weld that has any changes sets  the outer extremity of the zone of change. That region of  change is called the heat-affected zone, abbreviated HAZ,   Figure 26-42 . The exact size and shape of the HAZ are  affected by a number of factors: •\tType of metal or alloy: Some metals are easily affected  even by small temperature changes, whereas others  are more resistant. In work-hardened metals, the heat- affected zone is defined by the recrystallization tem- perature, Figure 26-43 . In age-hardened alloys, this  temperature is the lowest temperature at which evi - dence of overaging is seen, Figure 26-44. In quenched  and tempered steels, it is the temperature at which  over-tempering is seen. •\tMethod of applying the welding heat: Some heat sources,  such as plasma arc welding (PAW), are very concen-",
+          "id": 1,
+          "page": 147,
+          "snippet": "Heat-Affected Zone (HAZ) The grain structure and metallurgical changes that occur  in the heated region are inevitable. The lowest tempera- ture along..."
+        },
+        {
+          "file": "Welding_Principles_Applications_Jeffus_P3.pdf",
+          "full_snippet": "melting temperature. The more metal that gets hot, the  larger the HAZ. •\tPreheating and postheating:  As the temperature of the  base metal increases—whether from preheating or  postheating or the welding process itself—the larger the  HAZ. A cold plate may have an extremely narrow HAZ. The HAZ need not always be small. A larger HAZ is  desirable for welding steels that can produce martensite at  FigurE 26-42  Changes in grain structure caused by heating steel plate into different zones of the iron-carbon phase  diagram. 1700 1600 1500 1400 1300 1200 1100 1000 900 800 700 600 500 400 300 200 100 0 Fe 0.5 1.0 1.5 2.0 2.5 3.0 3.5 4.0 4.5 5.0 5.5 6.0 6.5 7.0 MAXIMUM ZONES TEMPERA TURE IN PLA TE WEIGHT PERCENT AGE CARBON 1 2 3       4          5 WELD MET AL Zone 2 – Austenitic;  grain growth at high temperature, Zone 1 – Liquid metal and the beginning of grain growth fine grain at low temperature Zone 3 – Austenite + ferrite; grain refined and grain growth Zone 4 – Recrystallization",
+          "id": 2,
+          "page": 148,
+          "snippet": "melting temperature. The more metal that gets hot, the  larger the HAZ. •\tPreheating and postheating:  As the temperature of the  base metal increases..."
+        },
+        {
+          "file": "Welding_Principles_Practices_Bohnart_P2.pdf",
+          "full_snippet": "Heat Affected Zone (HAZ), Fig. B-78 ....................1084 Incomplete fusion and incomplete penetration,   Fig. B-75 ...................................................................1083 Kerf, Fig. B-57 .........................................................1080 Lap joint, Fig. B-5 ...................................................1074 ISTUDY",
+          "id": 3,
+          "page": 588,
+          "snippet": "Heat Affected Zone (HAZ), Fig. B-78 ....................1084 Incomplete fusion and incomplete penetration,   Fig. B-75 .................................."
+        }
+      ],
+      "response_time_s": 8.46,
+      "error": null
+    },
+    {
+      "id": "REG-33",
+      "category": "welding",
+      "question": "Why should welders know how to identify discontinuities?",
+      "ground_truth": "Welders may need to recognize discontinuities or defects in qualification or knowledge testing and to evaluate work against welding requirements.",
+      "answer": "I found relevant content in multiple documents: \"Welding Principles Applications Jeffus P3\", \"Welding Principles Practices Bohnart P2\", and \"Welding Principles Practices Bohnart P1\". Which one are you asking about, or would you like me to check all relevant documents?",
+      "contexts": [],
+      "sources": [],
+      "response_time_s": 4.67,
+      "error": null
+    },
+    {
+      "id": "REG-34",
+      "category": "welding",
+      "question": "Why is a welding procedure important when inspecting weld quality?",
+      "ground_truth": "The welding procedure establishes requirements for the work; applicable codes may require that a procedure be available and followed.",
+      "answer": "A welding procedure is important when inspecting weld quality because it ensures that the welding process is correctly followed according to established standards and specifications. This procedure includes details such as base metal specifications, filler metals, joint preparation, welding position, welding process, and welding techniques. Following these procedures helps in producing sound welds that meet the required quality and are fit for service.",
+      "contexts": [
+        "it. The welder should, however, have a good understand ­ ing of the different weld tests and know what to look for  in any visual inspection. There are two broad categories of welding tests. A  procedure qualification test  is a test conducted for the  purpose of determining the correctness of the method  of welding for a specific welding project. The American  Welding Society and various code authorities have es­ tablished standard procedures for welding. The weld ­ ing procedure meets specifications for base metal filler  metal, joint preparation, position of welding, the weld ­ ing process, and welding techniques. Such requirements  as current setting, electrode size, electrode manipulation  and preheat, interpass, and postheat temperatures are  Fig. 28-23 Recommended dimensions of grooves for shielded metal arc welding, gas metal arc welding, and gas welding",
+        "49. Date the results of the test were completed. 50. The name of the company that requested the test. ◆ Summary Over the years, often through trial and error, welders and weld - ing engineers have developed standards, codes, and specifications  that, when followed, will produce welds that will be sound and  provide years of service. It is important to know that, under such  codes and standards, not all welds must be perfect. Some levels of  imperfection are acceptable and, through years of experience, such  minor flaws have been determined to not be critical or to result in  structural failure. Being able to follow such codes and standards is important  in that it helps control welding costs. The more precise the weld  produced, the more expensive the weld is to produce. As a welder  attempts perfection, welding preparation time, welding time, post- weld cleanup time, and unnecessary rewelding time all increase,  thus increasing the cost of the weld. Knowing what is “fit for service”"
+      ],
+      "sources": [
+        {
+          "file": "Welding_Principles_Practices_Bohnart_P2.pdf",
+          "full_snippet": "it. The welder should, however, have a good understand ­ ing of the different weld tests and know what to look for  in any visual inspection. There are two broad categories of welding tests. A  procedure qualification test  is a test conducted for the  purpose of determining the correctness of the method  of welding for a specific welding project. The American  Welding Society and various code authorities have es­ tablished standard procedures for welding. The weld ­ ing procedure meets specifications for base metal filler  metal, joint preparation, position of welding, the weld ­ ing process, and welding techniques. Such requirements  as current setting, electrode size, electrode manipulation  and preheat, interpass, and postheat temperatures are  Fig. 28-23 Recommended dimensions of grooves for shielded metal arc welding, gas metal arc welding, and gas welding",
+          "id": 1,
+          "page": 416,
+          "snippet": "it. The welder should, however, have a good understand ­ ing of the different weld tests and know what to look for  in any visual inspection. There ar..."
+        },
+        {
+          "file": "Welding_Principles_Applications_Jeffus_P3.pdf",
+          "full_snippet": "49. Date the results of the test were completed. 50. The name of the company that requested the test. ◆ Summary Over the years, often through trial and error, welders and weld - ing engineers have developed standards, codes, and specifications  that, when followed, will produce welds that will be sound and  provide years of service. It is important to know that, under such  codes and standards, not all welds must be perfect. Some levels of  imperfection are acceptable and, through years of experience, such  minor flaws have been determined to not be critical or to result in  structural failure. Being able to follow such codes and standards is important  in that it helps control welding costs. The more precise the weld  produced, the more expensive the weld is to produce. As a welder  attempts perfection, welding preparation time, welding time, post- weld cleanup time, and unnecessary rewelding time all increase,  thus increasing the cost of the weld. Knowing what is “fit for service”",
+          "id": 2,
+          "page": 95,
+          "snippet": "49. Date the results of the test were completed. 50. The name of the company that requested the test. ◆ Summary Over the years, often through trial an..."
+        }
+      ],
+      "response_time_s": 6.58,
+      "error": null
+    },
+    {
+      "id": "REG-35",
+      "category": "welding",
+      "question": "What advantages does the text associate with concentrated-arc GMAW welding?",
+      "ground_truth": "The discussion associates GMAW with deep penetration, a narrow bead, a relatively small heat-affected zone, faster welding, less warpage and distortion, and reduced postweld cleaning.",
+      "answer": "I found relevant content in multiple documents: \"Welding Principles Practices Bohnart P1\", \"Welding Principles Applications Jeffus P1\", and \"Welding Principles Applications Jeffus P3\" (and 2 more). Which one are you asking about, or would you like me to check all relevant documents?",
+      "contexts": [],
+      "sources": [],
+      "response_time_s": 4.66,
+      "error": null
+    },
+    {
+      "id": "REG-36",
+      "category": "welding",
+      "question": "Which consumables and process variables must a welder select appropriately?",
+      "ground_truth": "The welder must select suitable electrode size and type and the correct shielding gas, and control electrode or torch angle, distance, and travel.",
+      "answer": "I found relevant content in multiple documents: \"Welding Principles Practices Bohnart P2\", \"Welding Principles Applications Jeffus P3\", and \"Welding Principles Applications Jeffus P1\" (and 1 more). Which one are you asking about, or would you like me to check all relevant documents?",
+      "contexts": [],
+      "sources": [],
+      "response_time_s": 2.58,
+      "error": null
+    },
+    {
+      "id": "REG-37",
+      "category": "welding",
+      "question": "How can a covered welding electrode affect deposited weld-metal properties?",
+      "ground_truth": "Electrode classification and covering influence the physical and chemical properties of deposited weld metal; some coverings also contain metal powder.",
+      "answer": "I found relevant content in multiple documents: \"Welding Principles Practices Bohnart P1\", \"Welding Principles Applications Jeffus P3\", and \"Welding Principles Applications Jeffus P2\". Which one are you asking about, or would you like me to check all relevant documents?",
+      "contexts": [],
+      "sources": [],
+      "response_time_s": 2.69,
+      "error": null
+    }
+  ]
+}

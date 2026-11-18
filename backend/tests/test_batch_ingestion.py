@@ -11,7 +11,7 @@ import ingest
 
 @pytest.mark.parametrize("store_exists", [False, True])
 def test_batch_tags_shared_chunks_and_preserves_existing_guest_owner(monkeypatch, store_exists):
-    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     files = [Path("kb/shared.txt"), Path("kb/guest.txt")]
     chunks_by_file = [
         [SimpleNamespace(page_content=f"file {file_index} page {page}",
@@ -28,11 +28,24 @@ def test_batch_tags_shared_chunks_and_preserves_existing_guest_owner(monkeypatch
          patch.object(ingest, "save_registry") as save_registry, \
          patch.object(ingest, "_load_docs", return_value=["loaded page"]), \
          patch.object(ingest, "RecursiveCharacterTextSplitter", return_value=splitter), \
-         patch.object(ingest, "OpenAIEmbeddings"), \
+         patch.object(ingest, "OllamaEmbeddings") as embeddings, \
          patch.object(ingest.os.path, "exists", return_value=store_exists), \
          patch.object(ingest, "Chroma") as chroma:
         ingest.ingest_files(files)
 
+    embeddings.assert_called_once_with(model="bge-m3")
+    if store_exists:
+        chroma.assert_called_once_with(
+            collection_name="documents",
+            persist_directory=ingest.CHROMA_DB_DIR,
+            embedding_function=embeddings.return_value,
+        )
+    else:
+        assert chroma.from_documents.call_args.kwargs == {
+            "embedding": embeddings.return_value,
+            "collection_name": "documents",
+            "persist_directory": ingest.CHROMA_DB_DIR,
+        }
     write = chroma.return_value.add_documents if store_exists else chroma.from_documents
     write.assert_called_once()
     written_chunks = write.call_args.args[0]

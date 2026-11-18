@@ -63,7 +63,20 @@ The Flask backend must be running on `http://localhost:5000` for the regression 
 
 ## Running the regression test
 
-Start the backend first, then from the project root:
+1) Start the backend server.
+
+2) Add a testing account to the application.
+    start the frontend and backend, create a new Admin account.
+
+4) Upload the documents for the tests in settings.
+
+5) add environment variables to terminal to run tests.
+    ```bash
+    $env:REGRESSION_USERNAME = "your test username"
+    $env:REGRESSION_PASSWORD = "your test password"
+    ```
+
+3) From the project root, run:
 
 ```bash
 # Report scores — does NOT fail on threshold violations

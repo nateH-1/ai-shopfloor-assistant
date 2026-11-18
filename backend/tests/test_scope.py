@@ -4,7 +4,7 @@ test_scope.py
 Characterization tests for document-scope detection in rag/scope.py.
 They pin down CURRENT behavior, including known issue #10.
 Retrieval is replaced with scripted (chunk, distance) pairs, so no
-Chroma or OpenAI calls are made. Lower distance = better match.
+Chroma or Ollama calls are made. Lower distance = better match.
 Framework: pytest + unittest.mock
 Run: cd backend && pytest tests/test_scope.py -v
 """
