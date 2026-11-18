@@ -29,23 +29,74 @@ def reset_globals():
 
 
 @pytest.mark.parametrize("base_url", [None, "http://ollama.test:11434/"])
-def test_collection_uses_local_ollama_embeddings(monkeypatch, base_url):
+@pytest.mark.parametrize("model_name", [None, "bge-m3", "qwen3-embedding:0.6b"])
+def test_collection_uses_local_ollama_embeddings(monkeypatch, base_url, model_name):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     if base_url is None:
         monkeypatch.delenv("OLLAMA_BASE_URL", raising=False)
     else:
         monkeypatch.setenv("OLLAMA_BASE_URL", base_url)
+    if model_name is None:
+        monkeypatch.delenv("OLLAMA_EMBEDDING_MODEL", raising=False)
+    else:
+        monkeypatch.setenv("OLLAMA_EMBEDDING_MODEL", model_name)
     with patch.object(resources, "chromadb") as chroma, \
-         patch.object(resources, "OllamaEmbeddingFunction") as ef:
+         patch.object(resources, "_OllamaRetrievalEmbeddings") as ef:
         collection = resources._create_collection()
     ef.assert_called_once_with(
         url=(base_url or resources.DEFAULT_OLLAMA_BASE_URL).rstrip("/"),
-        model_name="bge-m3",
+        model_name=model_name or "qwen3-embedding:0.6b",
     )
     chroma.PersistentClient.assert_called_once_with(path=CHROMA_DB_DIR)
     chroma.PersistentClient.return_value.get_or_create_collection.assert_called_once_with(
         name="documents", embedding_function=ef.return_value)
     assert collection is chroma.PersistentClient.return_value.get_or_create_collection.return_value
+
+
+def test_qwen_06b_query_batch_receives_instructions_without_mutating_input():
+    # conftest supplies a callable spy as the Ollama base class.
+    embedding = resources._OllamaRetrievalEmbeddings(model_name="qwen3-embedding:0.6b")
+    queries = ["What is the torque spec?", "How do I clean the lathe?"]
+
+    result = embedding.embed_query(input=queries)
+
+    embedding.assert_called_once_with(input=[
+        "Instruct: Retrieve manufacturing documentation that answers the user's question.\n"
+        "Query: What is the torque spec?",
+        "Instruct: Retrieve manufacturing documentation that answers the user's question.\n"
+        "Query: How do I clean the lathe?",
+    ])
+    assert result is embedding.return_value
+    assert queries == ["What is the torque spec?", "How do I clean the lathe?"]
+
+
+@pytest.mark.parametrize("model_name", [
+    "bge-m3",
+    "qwen3-embedding:4b",
+    "qwen3-embedding:8b",
+    "qwen3-embedding",
+    "qwen3-embedding:latest",
+    "Qwen3-embedding:0.6b",
+    "qwen3-embedding:0.6B",
+])
+def test_other_embedding_models_receive_plain_queries(model_name):
+    embedding = resources._OllamaRetrievalEmbeddings(model_name=model_name)
+    queries = ["What is the torque spec?", "How do I clean the lathe?"]
+
+    result = embedding.embed_query(input=queries)
+
+    embedding.assert_called_once_with(input=queries)
+    assert result is embedding.return_value
+
+
+def test_qwen_06b_document_batch_receives_plain_text():
+    embedding = resources._OllamaRetrievalEmbeddings(model_name="qwen3-embedding:0.6b")
+    documents = ["Tighten the bolt to 50 Nm.", "Remove chips before cleaning."]
+
+    result = embedding(input=documents)
+
+    embedding.assert_called_once_with(input=documents)
+    assert result is embedding.return_value
 
 
 def test_guard_client_created_once_and_reused():

@@ -15,9 +15,25 @@ from rag.config import (
 )
 
 
+class _OllamaRetrievalEmbeddings(OllamaEmbeddingFunction):
+    """Apply model-specific retrieval instructions when embedding queries."""
+
+    def embed_query(self, input: list[str]):
+        if self.model_name == "qwen3-embedding:0.6b":
+            input = [
+                "Instruct: Retrieve manufacturing documentation that answers the user's question.\n"
+                f"Query: {query}"
+                for query in input
+            ]
+        return self(input=input)
+
+
 def _create_collection() -> chromadb.Collection:
     """Open (or create) the persistent Chroma collection holding document chunks."""
-    ef = OllamaEmbeddingFunction(url = _ollama_settings()[1], model_name="bge-m3")
+    ef = _OllamaRetrievalEmbeddings(
+        url=_ollama_settings()[1],
+        model_name=os.getenv("OLLAMA_EMBEDDING_MODEL") or "qwen3-embedding:0.6b",
+    )
     client = chromadb.PersistentClient(path=CHROMA_DB_DIR)
     return client.get_or_create_collection(name="documents", embedding_function=ef)
 
