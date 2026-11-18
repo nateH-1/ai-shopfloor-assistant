@@ -14,6 +14,7 @@ For every model it does, with the app's real prompts and settings (temperature 0
 Usage (from the repo root or anywhere):
     python evals/compare_models.py generate --models qwen2.5:7b gemma3:4b llama3.2:1b
     python evals/compare_models.py generate --models phi4-mini --host http://localhost:11434
+    python evals/compare_models.py generate --models gpt-4o-mini gpt-4o     # OpenAI baseline (needs OPENAI_API_KEY in .env)
     python evals/compare_models.py report                      # table of the newest answers file per model
 
 Answers are saved to evals/results/answers_<model>_<timestamp>.json; score them with score_ragas.py.
@@ -26,6 +27,11 @@ import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+try:                                  # pick up OPENAI_API_KEY from the root .env (only needed for gpt-* models)
+    from dotenv import load_dotenv
+    load_dotenv(HERE.parent / ".env")
+except ImportError:
+    pass
 sys.path.insert(0, str(HERE.parent / "backend"))
 
 from langchain_ollama import ChatOllama
@@ -42,6 +48,11 @@ CALL_TIMEOUT_S = 240       # a call slower than this is recorded as an ERROR and
 
 
 def make_llm(model, host, **extra):
+    if model.startswith("gpt-"):          # OpenAI baseline: same prompts/chunks, hosted model (needs OPENAI_API_KEY)
+        from langchain_openai import ChatOpenAI
+        if "num_predict" in extra:        # Ollama's token cap is called max_tokens on OpenAI
+            extra["max_tokens"] = extra.pop("num_predict")
+        return ChatOpenAI(model=model, temperature=0, timeout=CALL_TIMEOUT_S, **extra)
     return ChatOllama(model=model, base_url=host, temperature=0, num_ctx=NUM_CTX,
                       client_kwargs={"timeout": CALL_TIMEOUT_S}, **extra)
 
