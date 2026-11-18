@@ -13,6 +13,7 @@ env/
 
 # Test/cache artifacts
 .pytest_cache/
+backend/.pytest-tmp/
 .uv-cache/
 /.tmp-uv-cache/
 backend/.venv-tests/

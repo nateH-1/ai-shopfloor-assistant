@@ -1,7 +1,7 @@
 """
 Kuldeep RAG Chatbot — Flask Backend
 =====================================
-RAG pipeline powered by ChromaDB + LangChain + OpenAI.
+RAG pipeline powered by ChromaDB + LangChain + Ollama.
 
 Endpoints
 ---------
@@ -292,12 +292,8 @@ def _init_store() -> tuple[bool, str]:
     """Initialise (or reload) the ChromaDB collection and LLM. Returns (ok, message)."""
     global collection, llm
 
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        return False, "OPENAI_API_KEY not set in environment."
-
     try:
-        collection = _create_collection(api_key)
+        collection = _create_collection()
         llm        = _create_llm()
         _mark_keyword_index_stale()
         return True, "Vector store loaded."
@@ -1190,15 +1186,13 @@ def enable_guest():
 @app.route("/api/health", methods=["GET"])
 def health():
     """Health / readiness check."""
-    has_api_key  = bool(os.getenv("OPENAI_API_KEY"))
     has_docs     = collection is not None and collection.count() > 0
     llm_error    = _ollama_status()
     return jsonify({
         "status":          "healthy",
         "has_documents":   has_docs,
-        "has_api_key":     has_api_key,
         "llm_error":       llm_error,
-        "ready":           has_docs and has_api_key and collection is not None and llm_error is None,
+        "ready":           has_docs and llm_error is None,
         "active_sessions": len(conversation_sessions),
     })
 
