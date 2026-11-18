@@ -17,6 +17,7 @@ import type { Message, Source, Clarification } from "@/lib/types";
 export function AssistantBubble({
   content,
   sources,
+  time,
   clarification,
   onOptionSelect,
   isLatest,
@@ -26,6 +27,7 @@ export function AssistantBubble({
 }: {
   content: string;
   sources?: Source[];
+  time?: string;
   clarification?: Clarification;
   onOptionSelect?: (value: string) => void;
   isLatest?: boolean;
@@ -99,7 +101,7 @@ export function AssistantBubble({
 
         {/* Server-issued IDs exclude connection errors and clarification prompts. */}
         {/* The answer text is passed only for the browser's local read-aloud button. */}
-        {feedbackId && <AnswerFeedback messageId={feedbackId} answerText={content} onRewrite={onRewrite} />}
+        {feedbackId && <AnswerFeedback messageId={feedbackId} answerText={content} onRewrite={onRewrite} time={time} />}
         {feedbackUnavailable && <p className="text-xs text-muted-foreground">Feedback is temporarily unavailable for this answer.</p>}
 
         {/* Source toggle */}
@@ -179,7 +181,7 @@ export function UserBubble({ content }: { content: string }) {
   return (
     <div className="flex justify-end w-full">
       <div
-        className="rounded-2xl rounded-tr-sm bg-muted px-5 py-3 max-w-[75%]"
+        className="rounded-2xl rounded-tr-sm bg-card px-5 py-3 max-w-[75%]"
       >
         <p className="text-foreground text-sm leading-relaxed">
           {content}
@@ -203,7 +205,7 @@ export function ChatBubble({
   onRewrite?: (message: Message, feedback: Feedback) => void;
 }) {
   if (message.role === "assistant") {
-    return <AssistantBubble feedbackId={message.feedbackId} feedbackUnavailable={message.feedbackUnavailable} content={message.content} sources={message.sources} clarification={message.clarification} onOptionSelect={onOptionSelect} isLatest={isLatest} onRewrite={onRewrite ? (feedback) => onRewrite(message, feedback) : undefined} />;
+    return <AssistantBubble feedbackId={message.feedbackId} feedbackUnavailable={message.feedbackUnavailable} content={message.content} sources={message.sources} time={message.time} clarification={message.clarification} onOptionSelect={onOptionSelect} isLatest={isLatest} onRewrite={onRewrite ? (feedback) => onRewrite(message, feedback) : undefined} />;
   }
   return <UserBubble content={message.content} />;
 }

@@ -12,6 +12,7 @@ export interface Message {
   /** Source references returned by the RAG backend (assistant messages only) */
   sources?: Source[];
   /** Clarification prompt when the query was ambiguous (assistant messages only) */
+  time?: string;
   clarification?: Clarification;
 }
 
@@ -63,6 +64,7 @@ export interface ChatResponse {
     clarification?: Clarification;
     [key: string]: unknown;
   };
+  time?: string;
 }
 
 // ── Document management ──────────────────────────────────────────────────────

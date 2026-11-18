@@ -70,6 +70,7 @@ export default function Chat() {
         timestamp: new Date().toISOString(),
         sources: response.metadata?.sources,
         clarification: response.metadata?.clarification,
+        time: response.time,
       };
 
       setMessages((prev) => [...prev, aiMessage]);
