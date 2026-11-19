@@ -19,7 +19,7 @@ class _OllamaRetrievalEmbeddings(OllamaEmbeddingFunction):
     """Apply model-specific retrieval instructions when embedding queries."""
 
     def embed_query(self, input: list[str]):
-        if self.model_name == "qwen3-embedding:0.6b":
+        if self.model_name in ["qwen3-embedding:0.6b", "qwen3-embedding:4b"]:
             input = [
                 "Instruct: Retrieve manufacturing documentation that answers the user's question.\n"
                 f"Query: {query}"

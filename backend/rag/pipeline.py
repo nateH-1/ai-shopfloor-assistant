@@ -5,7 +5,8 @@ from langchain.memory import ConversationBufferMemory
 from langchain_core.documents import Document
 
 from rag.config import KNOWLEDGE_BASE_DIR, MAX_MULTI_DOC_CHUNKS, NUM_CHUNKS
-from rag.context import _build_numbered_context, _parse_citations
+from rag.context import NO_INFO_REPLY, _build_numbered_context
+from rag.generation import _generate_answer
 from rag.guard import _is_off_topic
 from rag.prompts import CONDENSE_PROMPT, QA_PROMPT, _MULTI_DOC_QA_TEMPLATE
 from rag.retrieval import _hybrid_search
@@ -17,7 +18,6 @@ from rag.scope import (
 )
 
 OFF_TOPIC_REPLY = "I can only answer questions about the uploaded documents."
-NO_INFO_REPLY   = "The uploaded documents do not contain information about this."
 
 
 def answer_question(
@@ -130,10 +130,8 @@ def _answer_single_doc(question: str, filename: str, collection, llm, get_keywor
     if not doc_chunks or not enough_evidence:
         return f'The document "{_display_name(filename)}" does not appear to contain information about this.', []
 
-    context          = _build_numbered_context(doc_chunks)
-    result           = llm.invoke(QA_PROMPT.format(context=context, question=question))
-    answer, used_chunks = _parse_citations(result.content, doc_chunks)
-    return answer, used_chunks
+    context = _build_numbered_context(doc_chunks)
+    return _generate_answer(llm, QA_PROMPT.format(context=context, question=question), doc_chunks)
 
 
 def _answer_multi_doc(question: str, num_docs: int, collection, llm, get_keyword_index,
@@ -171,12 +169,8 @@ def _answer_multi_doc(question: str, num_docs: int, collection, llm, get_keyword
             chunk_num += 1
         context_parts.append("")
 
-    result = llm.invoke(_MULTI_DOC_QA_TEMPLATE.format(
-        context="\n".join(context_parts),
-        question=question,
-    ))
-    answer, used_chunks = _parse_citations(result.content, all_chunks)
-    return answer, used_chunks
+    prompt = _MULTI_DOC_QA_TEMPLATE.format(context="\n".join(context_parts), question=question)
+    return _generate_answer(llm, prompt, all_chunks)
 
 
 def _chat_with_memory(question: str, session: dict, collection, llm, get_keyword_index,
@@ -219,9 +213,8 @@ def _chat_with_memory(question: str, session: dict, collection, llm, get_keyword
         return answer, []
 
     # Step 3: Answer strictly from retrieved context
-    context   = _build_numbered_context(chunks)
-    raw       = llm.invoke(QA_PROMPT.format(context=context, question=condensed)).content
-    answer, chunks = _parse_citations(raw, chunks)
+    context = _build_numbered_context(chunks)
+    answer, chunks = _generate_answer(llm, QA_PROMPT.format(context=context, question=condensed), chunks)
 
     # Step 4: Persist turn to memory
     memory.save_context({"input": question}, {"output": answer})

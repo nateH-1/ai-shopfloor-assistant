@@ -4,7 +4,7 @@ import re
 from difflib import SequenceMatcher
 
 from rag.config import NUM_CHUNKS
-from rag.context import _build_numbered_context, _parse_citations
+from rag.context import _build_numbered_context, _read_citation_footer
 from rag.prompts import QA_PROMPT
 from rag.retrieval import _hybrid_search
 
@@ -30,24 +30,6 @@ def _document_limitation(answer):
         r"(?:do(?:es)? not (?:contain|provide|support)|insufficient|"
         r"no (?:additional|further)|lack(?:s)?\b)", answer, re.I,
     ))
-
-
-def _explicit_citations(raw, chunks):
-    """Validate the rewrite's citation marker without the shared parser's fallback."""
-    marker = re.search(r"^\s*SOURCES_USED:[ \t]*([^\n]*)", raw, re.I | re.M)
-    if not marker:
-        return None, False
-    value = marker.group(1).strip()
-    if value.lower() == "none":
-        return [], False
-    valid, invalid = [], False
-    for part in value.split(","):
-        number = re.fullmatch(r"(?:\[?CHUNK\s+)?(\d+)\]?", part.strip(), re.I)
-        if not number or not 1 <= int(number.group(1)) <= len(chunks):
-            invalid = True
-        else:
-            valid.append(chunks[int(number.group(1)) - 1])
-    return valid, invalid
 
 
 def _content(text):
@@ -177,7 +159,8 @@ def _output_checklist(feedback):
         items.append("Start with 'Evidence check:' and explicitly state whether the original claims are supported, contradicted, or not verifiable from the cited documents. Explain the document evidence; preserve supported facts and correct supported errors without assuming either side is right.")
         if _normalized(comment) in {"", "wrong", "incorrect", "this is wrong", "this is incorrect", "not correct"}:
             items.append("End the answer with exactly this clarification question: Which specific claim do you dispute?")
-    items.append("Keep all grounding rules. Finish with the SOURCES_USED protocol line after the answer.")
+    items.append("Append one final SOURCES_USED: line naming only the supporting chunk numbers, "
+                 "separated by commas. Use none when no chunk supports the answer.")
     return "\n\nFEEDBACK REWRITE OUTPUT CHECKLIST:\n- " + "\n- ".join(items)
 
 
@@ -233,15 +216,10 @@ def rewrite_answer(snapshot, feedback, collection, llm, get_keyword_index):
     for attempt in range(2):
         raw = llm.invoke(QA_PROMPT.format(context=context, question=instructions)
                          + _output_checklist(feedback) + retry).content
-        answer, citations = _parse_citations(raw, chunks)
-        # The shared parser intentionally falls back to all chunks when the marker
-        # is absent. Do not mistake that fallback for explicit model citations.
-        explicit_citations, invalid_ids = _explicit_citations(raw, chunks)
-        if explicit_citations is not None:
-            citations = explicit_citations
+        answer, citations, invalid_ids = _read_citation_footer(raw, chunks)
         missing = (f"Explicit citation IDs must be integers between 1 and {len(chunks)}; "
                    "remove or correct invalid IDs." if invalid_ids else
-                   _missing_change(snapshot["answer"], answer, feedback, explicit_citations or [],
+                   _missing_change(snapshot["answer"], answer, feedback, citations,
                                    "\n".join(chunk.page_content for chunk in chunks)))
         if not missing:
             return answer, citations

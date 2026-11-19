@@ -1,5 +1,16 @@
-import os
 import re
+
+
+NO_INFO_REPLY = "The uploaded documents do not contain information about this."
+
+_CITATION_FOOTER = re.compile(r"SOURCES_USED\s*:\s*(.*)", re.I)
+_CITATION_INSTRUCTION = re.compile(
+    r"(?:After your answer(?:,? on a separate line)?|After the next line),? "
+    r"write exactly:\s*(?:SOURCES_USED\s*:.*)?"
+    r"|If you used none of the chunks, write:\s*SOURCES_USED:\s*none\.?",
+    re.I,
+)
+_CHUNK_NUMBER = re.compile(r"\[?(?:CHUNK\s+)?([0-9]+)\]?", re.I)
 
 
 def _build_numbered_context(chunks: list) -> str:
@@ -8,13 +19,14 @@ def _build_numbered_context(chunks: list) -> str:
 
 
 def _dedup_chunks(chunks: list) -> list:
-    """Remove duplicate chunks by (source_file, page), preserving order."""
+    """Keep each distinct cited passage in the order it was cited."""
     seen = set()
     result = []
     for doc in chunks:
         key = (
-            os.path.basename(doc.metadata.get("source", "")),
+            doc.metadata.get("source", ""),
             doc.metadata.get("page", 0),
+            doc.page_content,
         )
         if key not in seen:
             seen.add(key)
@@ -22,27 +34,38 @@ def _dedup_chunks(chunks: list) -> list:
     return result
 
 
-def _parse_citations(raw_answer: str, chunks: list) -> tuple:
-    """Parse SOURCES_USED line from answer. Returns (clean_answer, cited_chunks).
-    Falls back to all chunks if the LLM omits the citation line.
-    """
-    match = re.search(r'\s*SOURCES_USED:\s*(.+?)\s*$', raw_answer, re.IGNORECASE | re.MULTILINE)
-    if not match:
-        return raw_answer.strip(), chunks
+def _read_citation_footer(raw_answer: str, chunks: list) -> tuple[str, list, bool]:
+    """Read only the final standalone footer. Report malformed IDs for rewrite retries."""
+    lines = raw_answer.rstrip().splitlines()
+    body = []
+    footer = None
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        marker = _CITATION_FOOTER.fullmatch(stripped)
+        if marker:
+            if i == len(lines) - 1:
+                footer = marker.group(1).removesuffix(".").strip()
+        elif not _CITATION_INSTRUCTION.fullmatch(stripped):
+            body.append(line)
 
-    clean_answer = raw_answer[:match.start()].strip()
-    cited_str    = match.group(1).strip()
+    answer = "\n".join(body).strip()
+    if not answer or answer == NO_INFO_REPLY or footer is None or footer.casefold() == "none":
+        return answer, [], False
 
-    if cited_str.lower() == "none" or not cited_str:
-        return clean_answer, []
+    numbered = {str(i): chunk for i, chunk in enumerate(chunks, 1)}
+    cited = {}
+    invalid = False
+    for part in footer.split(","):
+        match = _CHUNK_NUMBER.fullmatch(part.strip())
+        number = match.group(1).lstrip("0") if match else ""
+        if number in numbered:
+            cited[number] = numbered[number]
+        else:
+            invalid = True
+    return answer, list(cited.values()), invalid
 
-    cited_chunks = []
-    for part in cited_str.split(","):
-        m = re.search(r'\d+', part.strip())
-        if m:
-            idx = int(m.group()) - 1  # 1-based → 0-based
-            if 0 <= idx < len(chunks):
-                cited_chunks.append(chunks[idx])
 
-    # Fallback: if parsing yielded nothing, return all chunks
-    return clean_answer, cited_chunks if cited_chunks else chunks
+def _parse_citations(raw_answer: str, chunks: list) -> tuple[str, list]:
+    """Extract the visible answer and the chunks explicitly cited in its footer."""
+    answer, cited, _ = _read_citation_footer(raw_answer, chunks)
+    return answer or NO_INFO_REPLY, cited

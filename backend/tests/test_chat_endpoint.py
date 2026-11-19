@@ -309,6 +309,19 @@ class TestSourceFormatting:
             res = client.post("/chat", json={"message": "anything"})
         assert res.get_json()["metadata"]["sources"][0]["file"] == "manual.pdf"
 
+    def test_distinct_cited_passages_from_a_pageless_document_are_visible(self, client):
+        features = _mock_doc("Feature comparison", source="plan.docx")
+        tradeoffs = _mock_doc("Benefits and tradeoffs", source="plan.docx")
+        del features.metadata["page"], tradeoffs.metadata["page"]
+        cited = [features, tradeoffs, features]
+        with patch("rag.pipeline._is_off_topic", return_value=False), \
+             patch("rag.pipeline._chat_with_memory", return_value=_mock_chat_response(sources=cited)):
+            res = client.post("/chat", json={"message": "anything"})
+        cards = res.get_json()["metadata"]["sources"]
+        assert [(card["id"], card["full_snippet"]) for card in cards] == [
+            (1, "Feature comparison"), (2, "Benefits and tradeoffs"),
+        ]
+
 
 # ── Group 6: Session Management ───────────────────────────────────────────────
 

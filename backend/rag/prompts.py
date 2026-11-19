@@ -9,8 +9,8 @@ STRICT GROUNDING RULES (DO NOT VIOLATE):
 3. If the context is insufficient or doesn't contain the answer → say ONLY: \
 "The uploaded documents do not contain information about this."
 4. Do NOT infer, extrapolate, or fill gaps with general knowledge.
-5. For lists (models, methods, steps, names) → ONLY list what is explicitly named \
-in the context.
+5. For lists (models, methods, steps, names), include every requested item explicitly \
+named in the context. A table or list may continue in another chunk.
 6. If the question is broad but context is limited → acknowledge the limitation: \
 "Based on the provided context, the following are mentioned: ..."
 7. Your answer should read like a direct summary of the chunks below, \
@@ -29,11 +29,7 @@ Retrieved Context:
 
 Question: {question}
 
-Answer (extract/summarize ONLY from context above, applying formatting rules):
-
-After your answer, on a separate line write exactly:
-SOURCES_USED: followed by comma-separated chunk numbers you drew from (e.g. SOURCES_USED: 1, 3, 5).
-If you used none of the chunks, write: SOURCES_USED: none"""
+Answer (extract/summarize ONLY from context above, applying formatting rules):"""
 
 _CONDENSE_TEMPLATE = """Given the following conversation and a follow up question, \
 rephrase the follow up question to be a standalone question ONLY IF truly needed.
@@ -63,7 +59,7 @@ RULES:
 1. Answer ONLY from the source chunks provided below — do NOT add external knowledge.
 2. Cite which document each point comes from using [Source: filename].
 3. If documents differ or conflict on a point, say so explicitly.
-4. If the context is insufficient → say "The uploaded documents do not contain enough information about this."
+4. If the context is insufficient → say "The uploaded documents do not contain information about this."
 
 FORMATTING RULES (always apply):
 - Use **bold** to highlight key terms, names, model numbers, or critical warnings.
@@ -78,11 +74,7 @@ Retrieved Context (grouped by source):
 
 Question: {question}
 
-Answer (synthesize from context above, citing sources, applying formatting rules):
-
-After your answer, on a separate line write exactly:
-SOURCES_USED: followed by comma-separated chunk numbers you drew from (e.g. SOURCES_USED: 2, 4).
-If you used none of the chunks, write: SOURCES_USED: none"""
+Answer (synthesize from context above, citing sources, applying formatting rules):"""
 
 # ── Off-topic guard ───────────────────────────────────────────────────────────
 _GUARD_PROMPT = (

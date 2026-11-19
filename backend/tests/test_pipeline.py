@@ -3,19 +3,20 @@ test_pipeline.py
 ================
 Tests for answer_question in rag/pipeline.py — the coordinator that runs one
 chat turn (guard → condense → scope → clarification or answer path).
-The guard, scope detection and answer paths are replaced with fakes so each
-test checks only the routing decision. No Flask, Chroma or Ollama involved.
+Routing tests replace each answer path. Generation tests feed model replies
+through the real citation handling. No Flask, Chroma or Ollama involved.
 Framework: pytest + unittest.mock
 Run: cd backend && pytest tests/test_pipeline.py -v
 """
 
+import json
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from rag.config import KNOWLEDGE_BASE_DIR
-from rag.pipeline import NO_INFO_REPLY, OFF_TOPIC_REPLY, _chat_with_memory, answer_question
+from rag.pipeline import NO_INFO_REPLY, OFF_TOPIC_REPLY, _answer_multi_doc, _chat_with_memory, answer_question
 
 
 def _ask(message="what is the torque spec", sessions=None, scope=("pass", None),
@@ -85,6 +86,93 @@ def test_not_enough_evidence_answers_without_calling_the_model():
     assert (answer, chunks) == (NO_INFO_REPLY, [])
     llm.invoke.assert_not_called()
     session["memory"].save_context.assert_called_once()   # the turn is still remembered
+
+
+def test_echoed_welding_reply_recovered_and_only_supporting_chunk_saved():
+    chunks = [SimpleNamespace(page_content=f"Other passage {n}", metadata={"source": "plan.docx"})
+              for n in range(12)]
+    chunks[6].page_content = "Text-based chatbot\n\nRAG document retrieval\n\nChat history"
+    body = "The features included in the welding chatbot are:\n\n- RAG document retrieval\n- Chat history"
+    raw = ("After your answer, on a separate line write exactly: SOURCES_USED: 7, 11.\n\n"
+           + body + "\nSOURCES_USED: 7, 11.")
+    llm = MagicMock()
+    llm.invoke.side_effect = [
+        SimpleNamespace(content=raw),
+        SimpleNamespace(content=json.dumps({"evidence": [{"chunk": 11, "quote": "RAG document retrieval"}]})),
+    ]
+    memory = MagicMock()
+    memory.load_memory_variables.return_value = {"chat_history": ""}
+    with patch("rag.pipeline.QA_PROMPT.format", return_value="Welding chatbot features?"), \
+         patch("rag.pipeline._hybrid_search", return_value=(chunks, True)) as search:
+        answer, sources = _chat_with_memory("Features?", {"memory": memory}, None, llm, None)
+    assert (answer, sources) == (body, [chunks[6]])
+    memory.save_context.assert_called_once_with({"input": "Features?"}, {"output": body})
+    search.assert_called_once()
+    assert llm.invoke.call_count == 2
+    repair = llm.invoke.call_args.args[0]
+    assert json.dumps(body) in repair and "SOURCES_USED" not in repair
+
+
+def test_multi_doc_citations_follow_grouped_context_order_and_quote_text():
+    storage = SimpleNamespace(page_content="Storage stays local.", metadata={"source": "architecture.docx"})
+    login = SimpleNamespace(page_content="Login uses Supabase.", metadata={"source": "features.docx"})
+    speech = SimpleNamespace(page_content="Speech runs locally.", metadata={"source": "architecture.docx"})
+    body = "Storage and speech run locally."
+    llm = MagicMock()
+    llm.invoke.return_value.content = json.dumps({
+        "answer": body,
+        "evidence": [{"chunk": 2, "quote": "Speech runs locally."}, {"chunk": 1, "quote": "Storage stays local."}],
+    })
+    with patch("rag.pipeline._hybrid_search", return_value=([storage, login, speech], True)):
+        result = _answer_multi_doc("Benefits?", 2, None, llm, None)
+    assert result == (body, [speech, storage])
+    llm.invoke.assert_called_once()
+    assert "[CHUNK 2]\nSpeech runs locally." in llm.invoke.call_args.args[0]
+    assert "format" in llm.invoke.call_args.kwargs
+
+
+def test_unverified_and_ambiguous_quotes_do_not_become_source_cards():
+    chunks = [SimpleNamespace(page_content=text, metadata={"source": "plan.docx"})
+              for text in ("Common header. The archive is local.", "Common header. Login uses Supabase.", "Other.")]
+    llm = MagicMock()
+    evidence = [{"chunk": 1, "quote": "archive is local"}, {"chunk": 3, "quote": "Common header."}]
+    llm.invoke.side_effect = [
+        SimpleNamespace(content=json.dumps({"answer": "The archive is local.", "evidence": evidence})),
+        SimpleNamespace(content=json.dumps({"evidence": [{"chunk": 2, "quote": "invented text"}]})),
+    ]
+    with patch("rag.pipeline._hybrid_search", return_value=(chunks, True)):
+        result = _answer_multi_doc("Where is the archive?", 1, None, llm, None)
+    assert result == ("The archive is local.", [chunks[0]])
+    assert llm.invoke.call_count == 2
+
+
+def test_overlapping_table_does_not_add_a_citation_for_repeated_cells():
+    features = SimpleNamespace(page_content="Text-based chatbot\nIncluded\nTraining resources\nAdd if approved",
+                               metadata={"source": "plan.docx"})
+    overlap = SimpleNamespace(page_content="Training resources\nAdd if approved\nArchitecture plan",
+                              metadata={"source": "plan.docx"})
+    body = "The chatbot includes text chat and lists training resources."
+    llm = MagicMock()
+    llm.invoke.return_value.content = json.dumps({
+        "answer": body,
+        "evidence": [{"chunk": 1, "quote": "Training resources"}, {"chunk": 2, "quote": "Text-based chatbot"}],
+    })
+    with patch("rag.pipeline._hybrid_search", return_value=([overlap, features], True)):
+        assert _answer_multi_doc("Features?", 1, None, llm, None) == (body, [features])
+
+
+@pytest.mark.parametrize("raw", [
+    "After the next line, write exactly:\nSOURCES_USED: 1.",
+    json.dumps({"answer": NO_INFO_REPLY, "evidence": [{"chunk": 1, "quote": "unused"}]}),
+    '{"answer": "truncated',
+])
+def test_no_info_and_unusable_responses_never_return_a_source(raw):
+    chunk = SimpleNamespace(page_content="unused", metadata={"source": "plan.docx"})
+    llm = MagicMock()
+    llm.invoke.return_value.content = raw
+    with patch("rag.pipeline._hybrid_search", return_value=([chunk], True)):
+        assert _answer_multi_doc("Unanswered?", 1, None, llm, None) == (NO_INFO_REPLY, [])
+    llm.invoke.assert_called_once()
 
 
 @pytest.mark.parametrize("guest_id", ["", "guest-a"])
