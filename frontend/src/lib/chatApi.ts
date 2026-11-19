@@ -88,3 +88,28 @@ export async function transcribeAudio(
 
   return data.text;
 }
+
+export type SpellSpan = { start: number; end: number; suggestions?: string[] };
+
+/**
+ * Ask which words in the draft are misspelled, with up to five corrections each.
+ * A failed check returns no ranges so the chat box stays usable.
+ */
+export async function findMisspellings(text: string, signal?: AbortSignal): Promise<SpellSpan[]> {
+  const res = await tabFetch(`${API_BASE}/api/chat/spelling`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+    signal,
+  });
+  if (!res.ok) return [];
+  const data = (await res.json().catch(() => ({ spans: [] }))) as { spans?: SpellSpan[] };
+  if (!Array.isArray(data.spans)) return [];
+  return data.spans.filter((span) => Number.isInteger(span?.start) && Number.isInteger(span?.end)).map((span) => ({
+    start: span.start,
+    end: span.end,
+    suggestions: Array.isArray(span.suggestions)
+      ? span.suggestions.filter((item) => typeof item === "string" && item.trim()).slice(0, 5)
+      : [],
+  }));
+}

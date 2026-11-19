@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["dictionary-en", "nspell"],
   async rewrites() {
     const backend = (process.env.FLASK_URL ?? "http://localhost:5000").replace(/\/$/, "");
     return [
