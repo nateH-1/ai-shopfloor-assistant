@@ -18,7 +18,8 @@ from rag.config import CHROMA_DB_DIR
 
 
 @pytest.fixture(autouse=True)
-def reset_globals():
+def reset_globals(monkeypatch):
+    monkeypatch.delenv("LLM_PROVIDER", raising=False)
     app_module.collection = None
     app_module.llm = None
     app_module._guard_llm = None
@@ -121,3 +122,56 @@ def test_chat_explains_when_ollama_is_down(tmp_path, monkeypatch):
         res = client.post("/chat", json={"message": "how do I clean a lathe"})
     assert res.status_code == 503
     assert "Ollama" in res.get_json()["reply"]
+
+
+def test_openai_models_use_configured_model(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-4o")
+    with patch.object(resources, "ChatOpenAI") as openai, \
+         patch.object(resources, "ChatOllama") as ollama:
+        resources._create_llm()
+        resources._create_guard_llm()
+    assert openai.call_args_list[0].kwargs == {"model": "gpt-4o", "temperature": 0}
+    assert openai.call_args_list[1].kwargs == {
+        "model": "gpt-4o", "temperature": 0, "max_tokens": 3}
+    ollama.assert_not_called()
+
+
+def test_openai_default_model(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "openai")
+    monkeypatch.delenv("OPENAI_MODEL", raising=False)
+    assert resources._llm_settings() == ("openai", "gpt-4o-mini")
+
+
+def test_explicit_ollama_keeps_remote_settings(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    monkeypatch.setenv("OLLAMA_BASE_URL", "http://school-server:11434/")
+    monkeypatch.setenv("OLLAMA_MODEL", "qwen2.5:7b")
+    with patch.object(resources, "ChatOllama") as ollama, \
+         patch.object(resources, "ChatOpenAI") as openai:
+        resources._create_llm()
+        resources._create_guard_llm()
+    for call in ollama.call_args_list:
+        assert call.kwargs["base_url"] == "http://school-server:11434"
+        assert call.kwargs["model"] == "qwen2.5:7b"
+        assert call.kwargs["num_ctx"] == resources.OLLAMA_NUM_CTX
+        assert call.kwargs["client_kwargs"]["timeout"] == resources.OLLAMA_TIMEOUT_SECONDS
+    openai.assert_not_called()
+
+
+def test_invalid_provider_is_rejected(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "typo")
+    with pytest.raises(ValueError, match="LLM_PROVIDER"):
+        resources._create_llm()
+
+
+@pytest.mark.parametrize("has_key", [True, False])
+def test_openai_health_does_not_contact_ollama(monkeypatch, has_key):
+    monkeypatch.setenv("LLM_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test" if has_key else "")
+    app_module.collection = MagicMock(**{"count.return_value": 5})
+    with patch.object(app_module, "_ollama_status") as ollama_status:
+        data = app_module.app.test_client().get("/api/health").get_json()
+    ollama_status.assert_not_called()
+    assert data["ready"] is has_key
+    assert bool(data["llm_error"]) is not has_key

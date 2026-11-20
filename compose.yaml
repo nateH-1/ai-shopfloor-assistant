@@ -1,0 +1,56 @@
+services:
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      # Chat and embeddings use Ollama by default.
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      # Host Windows paths in .env must not leak into the Linux container.
+      STT_MODEL_PATH: /app/.models/whisper-base.en
+    ports:
+      - "127.0.0.1:5000:5000"
+    volumes:
+      # Use existing stores directly. Never seed, replace, or re-ingest them.
+      - type: bind
+        source: ./chroma_db
+        target: /app/chroma_db
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./knowledge_base
+        target: /app/knowledge_base
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./backend/users_database
+        target: /app/backend/users_database
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./.models
+        target: /app/.models
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        FLASK_URL: http://backend:5000
+    environment:
+      FLASK_URL: http://backend:5000
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy

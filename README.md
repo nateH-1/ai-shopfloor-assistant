@@ -2,7 +2,7 @@
 
 A Retrieval-Augmented Generation (RAG) chatbot with document upload, multi-document querying, and voice transcription.
 
-**Stack:** Flask + LangChain + ChromaDB + OpenAI (backend) · Next.js 15 + React 19 + TypeScript + Tailwind CSS (frontend)
+**Stack:** Flask + LangChain + ChromaDB + Ollama (backend) · Next.js 15 + React 19 + TypeScript + Tailwind CSS (frontend)
 
 ---
 
@@ -68,8 +68,14 @@ winget install OpenJS.NodeJS.LTS
 ```
 `npm` must be on your `PATH`. The start script calls `npm run dev` (and `npm install` with `-InstallDeps`) and will fail silently if Node isn't found.
 
-### OpenAI API key
-Create a `.env` file in the project root (see **Environment Setup** below). Chat and document embeddings currently require a valid key. Local speech transcription does not.
+### Ollama
+Install Ollama and download the chat and embedding models used by the app:
+```powershell
+ollama pull qwen2.5:7b
+ollama pull bge-m3
+```
+The app uses Ollama for answers and embeddings by default. An OpenAI API key is
+only needed if you explicitly set `LLM_PROVIDER=openai` for chat.
 
 ---
 
@@ -88,14 +94,14 @@ See [tab-specific authentication](docs/AUTHENTICATION.md) for independent tab
 logins, session expiration, and cookie configuration.
 
 Microphone transcription now runs locally with faster-whisper. Complete the
-[local speech setup](docs/LOCAL_SPEECH.md) before using the microphone. Speech
-recognition does not require an OpenAI key; chat and document embeddings still
-use their existing configuration.
+[local speech setup](docs/LOCAL_SPEECH.md) before using the microphone. Chat and
+embeddings use Ollama; speech recognition also runs locally.
 
 Create a `.env` file in the project root (one already exists as a template):
 
 ```env
-OPENAI_API_KEY=your-openai-api-key-here
+OLLAMA_MODEL=qwen2.5:7b
+OLLAMA_BASE_URL=http://localhost:11434
 
 # Optional overrides
 CHUNK_SIZE=1000
@@ -105,6 +111,32 @@ CHUNK_OVERLAP=200
 ---
 
 ## Startup
+
+### Run with Docker Compose
+
+To run the app in Docker on this computer:
+
+1. Start **Docker Desktop** and **Ollama**.
+2. Make sure Ollama has these models. You already downloaded them for this
+   setup; on a new computer, run:
+
+   ```powershell
+   ollama pull qwen2.5:7b
+   ollama pull bge-m3
+   ```
+
+3. From the project folder, run:
+
+```powershell
+docker compose up --build
+```
+
+Keep that terminal window open, then open **http://localhost:3000**. Docker
+starts both the frontend and backend. Ollama stays running on Windows; Docker
+connects to it automatically.
+
+To stop the app, press **Ctrl+C** in that terminal. Your documents and database
+stay in the project folder.
 
 ### Quick start (both servers)
 

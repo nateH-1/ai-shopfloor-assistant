@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+venv
+.venv*
+__pycache__
+**/__pycache__
+*.pyc
+.pytest_cache
+*.log
+chroma_db
+faiss_db
+knowledge_base
+users_database
+tests
+package-lock.json
