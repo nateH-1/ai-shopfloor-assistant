@@ -35,6 +35,7 @@ from dotenv import load_dotenv
 import chromadb
 
 from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
 from rag.config import (
     KNOWLEDGE_BASE_DIR,
@@ -53,7 +54,7 @@ from rag.resources import (
     _create_collection,
     _create_guard_llm,
     _create_llm,
-    _ollama_settings,
+    _llm_settings,
     _ollama_status,
 )
 
@@ -90,12 +91,12 @@ register_transcription(app)
 
 # Feedback is stored separately from the document collection.  It does not
 # alter retrieval, prompts, citations, or the RAG answer flow.
-register_feedback(app, CHROMA_DB_DIR, _ollama_settings()[0])
+register_feedback(app, CHROMA_DB_DIR, _llm_settings()[1])
 
 # ── Global state ─────────────────────────────────────────────────────────────
 collection: chromadb.Collection | None = None
-llm:        ChatOllama | None          = None
-_guard_llm: ChatOllama | None          = None   # off-topic classifier
+llm:        ChatOllama | ChatOpenAI | None = None
+_guard_llm: ChatOllama | ChatOpenAI | None = None   # off-topic classifier
 conversation_sessions: dict            = {}      # session_id → { memory, last_accessed }
 _keyword_index:       dict | None      = None    # BM25 index over the collection's chunks
 _keyword_index_stale: bool             = True    # rebuild on next use
@@ -113,7 +114,7 @@ def _with_document_lock(func):
             return func(*args, **kwargs)
     return wrapped
 
-def _get_guard_llm() -> ChatOllama:
+def _get_guard_llm() -> ChatOllama | ChatOpenAI:
     """Return the off-topic classifier client, creating it on first use."""
     global _guard_llm
     if _guard_llm is None:
@@ -670,7 +671,9 @@ def chat():
     except ConnectionError as exc:
         traceback.print_exc()
         return jsonify({
-            "reply":      "The local AI model isn't reachable right now. Please make sure Ollama is running and try again.",
+            "reply":      ("The local AI model isn't reachable right now. Please make sure Ollama is running and try again."
+                           if _llm_settings()[0] == "ollama" else
+                           "OpenAI isn't reachable right now. Please check your connection and try again."),
             "session_id": session_id,
             "metadata":   {"sources": []},
         }), 503
@@ -1179,13 +1182,15 @@ def enable_guest():
 @app.route("/api/health", methods=["GET"])
 def health():
     """Health / readiness check."""
+    has_api_key  = bool(os.getenv("OPENAI_API_KEY"))
     has_docs     = collection is not None and collection.count() > 0
-    llm_error    = _ollama_status()
+    llm_error    = (_ollama_status() if _llm_settings()[0] == "ollama" else
+                    None if has_api_key else "OPENAI_API_KEY not set in environment.")
     return jsonify({
         "status":          "healthy",
         "has_documents":   has_docs,
         "llm_error":       llm_error,
-        "ready":           has_docs and llm_error is None,
+        "ready":           has_docs and collection is not None and llm_error is None,
         "active_sessions": len(conversation_sessions),
     })
 

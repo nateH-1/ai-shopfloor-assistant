@@ -1,0 +1,10 @@
+.env
+.env.*
+node_modules
+.next
+out
+.turbo
+*.tsbuildinfo
+*.log
+tests
+.orchids

@@ -5,6 +5,7 @@ import urllib.request
 import chromadb
 from chromadb.utils.embedding_functions import OllamaEmbeddingFunction
 from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
 from rag.config import (
     CHROMA_DB_DIR,
@@ -17,7 +18,7 @@ from rag.config import (
 
 def _create_collection() -> chromadb.Collection:
     """Open (or create) the persistent Chroma collection holding document chunks."""
-    ef = OllamaEmbeddingFunction(url = _ollama_settings()[1], model_name="bge-m3")
+    ef = OllamaEmbeddingFunction(url=_ollama_settings()[1], model_name="bge-m3", timeout=300)
     client = chromadb.PersistentClient(path=CHROMA_DB_DIR)
     return client.get_or_create_collection(name="documents", embedding_function=ef)
 
@@ -25,6 +26,16 @@ def _create_collection() -> chromadb.Collection:
 def _ollama_settings() -> tuple[str, str]:
     return (os.getenv("OLLAMA_MODEL") or DEFAULT_OLLAMA_MODEL,
             (os.getenv("OLLAMA_BASE_URL") or DEFAULT_OLLAMA_BASE_URL).rstrip("/"))
+
+
+def _llm_settings() -> tuple[str, str]:
+    """Keep existing Ollama defaults outside Compose; allow explicit OpenAI selection."""
+    provider = (os.getenv("LLM_PROVIDER") or "ollama").strip().lower()
+    if provider == "ollama":
+        return provider, _ollama_settings()[0]
+    if provider == "openai":
+        return provider, os.getenv("OPENAI_MODEL") or "gpt-4o-mini"
+    raise ValueError("LLM_PROVIDER must be 'openai' or 'ollama'.")
 
 
 def _create_ollama_llm(**extra) -> ChatOllama:
@@ -39,13 +50,19 @@ def _create_ollama_llm(**extra) -> ChatOllama:
     )
 
 
-def _create_llm() -> ChatOllama:
-    """Create the main answer / condense model (local Ollama)."""
+def _create_llm() -> ChatOllama | ChatOpenAI:
+    """Create the answer / condense / feedback rewrite model."""
+    provider, model = _llm_settings()
+    if provider == "openai":
+        return ChatOpenAI(model=model, temperature=0)
     return _create_ollama_llm()
 
 
-def _create_guard_llm() -> ChatOllama:
-    """Create the off-topic classifier model (same local model; only needs YES/NO)."""
+def _create_guard_llm() -> ChatOllama | ChatOpenAI:
+    """Create the off-topic classifier model (only needs YES/NO)."""
+    provider, model = _llm_settings()
+    if provider == "openai":
+        return ChatOpenAI(model=model, temperature=0, max_tokens=3)
     return _create_ollama_llm(num_predict=3)
 
 
