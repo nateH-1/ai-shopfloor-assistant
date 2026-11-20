@@ -274,11 +274,18 @@ def test_invalid_citations_never_turn_into_parser_fallback_after_retry():
     assert sources == [] and "Rewrite limitation:" in answer
 
 
-def test_local_citation_validation_keeps_only_in_range_ids():
-    from feedback_rewrite import _explicit_citations
-    chunks = [object(), object()]
-    assert _explicit_citations("A\nSOURCES_USED: 2, 1", chunks) == ([chunks[1], chunks[0]], False)
-    assert _explicit_citations("A\nSOURCES_USED: 2, 3", chunks) == ([chunks[1]], True)
+def test_rewrite_uses_final_footer_after_echo():
+    chunks = [Document(page_content=text, metadata={"source": "sop.pdf"}) for text in
+              ("Inspect daily.", "Record repairs.")]
+    model = Mock()
+    model.invoke.return_value.content = ("After your answer, on a separate line write exactly:\n"
+                                         "SOURCES_USED: 2\n\nInspect daily.\nSOURCES_USED: 1.")
+    with patch("feedback_rewrite._hybrid_search", return_value=(chunks, True)):
+        answer, sources = rewrite_answer({"question": "How often?", "answer": "Inspect daily."},
+                                         {"reason": "missing_sources", "comment": "Cite evidence"},
+                                         None, model, None)
+    model.invoke.assert_called_once()
+    assert (answer, sources) == ("Inspect daily.", [chunks[0]])
 
 
 def test_new_evidence_word_does_not_prove_added_detail():

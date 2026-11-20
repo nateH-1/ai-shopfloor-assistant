@@ -70,6 +70,20 @@ def test_qwen_06b_query_batch_receives_instructions_without_mutating_input():
     assert queries == ["What is the torque spec?", "How do I clean the lathe?"]
 
 
+def test_embeddinggemma_2_formats_each_retrieval_query():
+    embedding = resources._OllamaRetrievalEmbeddings(model_name="embeddinggemma-2")
+    queries = ["What is the torque spec?", "How do I clean the lathe?"]
+
+    result = embedding.embed_query(input=queries)
+
+    embedding.assert_called_once_with(input=[
+        "task: search result | query: What is the torque spec?",
+        "task: search result | query: How do I clean the lathe?",
+    ])
+    assert result is embedding.return_value
+    assert queries == ["What is the torque spec?", "How do I clean the lathe?"]
+
+
 @pytest.mark.parametrize("model_name", [
     "bge-m3",
     "qwen3-embedding:4b",

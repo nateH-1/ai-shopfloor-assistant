@@ -25,6 +25,8 @@ class _OllamaRetrievalEmbeddings(OllamaEmbeddingFunction):
                 f"Query: {query}"
                 for query in input
             ]
+        elif self.model_name == "embeddinggemma-2":
+            input = [f"task: search result | query: {query}" for query in input]
         return self(input=input)
 
 
