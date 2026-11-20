@@ -24,15 +24,24 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
   const passwordFormat = /^(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*:?><]).*$/i;
   const [organization, setOrganization] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [invalidField, setInvalidField] = useState<"email" | "fullName" | "password" | null>(null);
   const [guestEnabled, setGuestEnabled] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false)
   const [signInOptions, setSignInOptions] = useState<SignUpInfo["role"][]>(["Worker", "Admin"]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const clearFieldError = (field: typeof invalidField) => {
+    if (invalidField === field) {
+      setInvalidField(null);
+      setErrorMessage("");
+    }
+  };
+
   const submit = async (info: SignUpInfo) => {
     if (isSubmitting) return;
     setErrorMessage("");
+    setInvalidField(null);
     setIsSubmitting(true);
     try {
       await onSubmit(info);
@@ -46,20 +55,24 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
   const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting) return;
+    setInvalidField(null);
     if (role == "Guest") {
       setErrorMessage("");
       void submit({ role, email: "", full_name: "", password: "", organization: ""});
       return
     }
     if (!email.trim()) {
+      setInvalidField("email");
       setErrorMessage("Please enter your email.");
       return;
     }
     if (!fullName.trim()) {
+      setInvalidField("fullName");
       setErrorMessage("Please enter your full name for recognition by admin.");
       return;
     }
     if (!password.trim() || password.length < 8 || !passwordFormat.test(password)) {
+      setInvalidField("password");
       setErrorMessage("Please enter a valid password.\nPasswords must contain at least 8 characters including at least 1 number and 1 special character.");
       return;
     }
@@ -89,22 +102,24 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
 
   return (
     <div className="mx-auto w-full max-w-md rounded-2xl rounded-tl-sm border border-border bg-card px-5 py-6 shadow-sm sm:px-6">
-      { isLoading ? (
-        <p>Loading, one moment...</p>
-      ) : (
+      {!isLoading && (
         <form onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate className="flex flex-col gap-4">
         {/* Role Selection */}
         <fieldset>
           <legend className="mb-3 text-lg font-semibold text-foreground">Sign up as:</legend>
           <div className="grid grid-cols-3 gap-2">
             {signInOptions.map((option) => (
-              <label key={option} className="cursor-pointer">
+              <label aria-label={`Sign up as ${option}`} key={option} className="cursor-pointer">
                 <input
                   type="radio"
                   name="role"
                   value={option}
                   checked={role === option}
-                  onChange={() => setRole(option)}
+                  onChange={() => {
+                    setRole(option);
+                    setInvalidField(null);
+                    setErrorMessage("");
+                  }}
                   className="peer sr-only"
                 />
                 <span className="block rounded-lg border-2 border-transparent px-3 py-2.5 text-center text-sm font-medium text-foreground transition-colors hover:bg-blue-button peer-checked:border-blue-button-focus peer-checked:bg-blue-button peer-checked:text-blue-button-text peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue-button-focus">
@@ -127,11 +142,11 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
           <div className="flex flex-col gap-4">
             <div>
               <label htmlFor="signup-email" className="mb-1.5 block text-sm font-medium text-foreground">Email</label>
-              <input id="signup-email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={inputClassName} />
+              <input id="signup-email" name="email" type="email" autoComplete="email" required value={email} aria-invalid={invalidField === "email"} aria-describedby={invalidField === "email" ? "signup-error" : undefined} onChange={(e) => { setEmail(e.target.value); clearFieldError("email"); }} className={inputClassName} />
             </div>
             <div>
               <label htmlFor="signup-name" className="mb-1.5 block text-sm font-medium text-foreground">Full Name</label>
-              <input id="signup-name" name="full_name" type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)} className={inputClassName} />
+              <input id="signup-name" name="full_name" type="text" required value={fullName} aria-invalid={invalidField === "fullName"} aria-describedby={invalidField === "fullName" ? "signup-error" : undefined} onChange={(e) => { setFullName(e.target.value); clearFieldError("fullName"); }} className={inputClassName} />
             </div>
             <div className="relative">
               <label htmlFor="signup-password" className="mb-1.5 block text-sm font-medium text-foreground">Password</label>
@@ -142,7 +157,9 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
                 autoComplete="new-password"
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                aria-invalid={invalidField === "password"}
+                aria-describedby={`signup-password-help${invalidField === "password" ? " signup-error" : ""}`}
+                onChange={(e) => { setPassword(e.target.value); clearFieldError("password"); }}
                 className={`${inputClassName} pr-12`}
               />
               <button
@@ -177,20 +194,24 @@ export function SignUpBubble({ onSubmit }: SignUpInputProps) {
                 </svg>
               </button>
             </div>
+            <p id="signup-password-help" className="text-sm text-muted-foreground">
+              Use at least 8 characters, including a letter, a number, and one of ! @ # $ % ^ &amp; * : ? &gt; &lt;.
+            </p>
             {/*<div>
               <label htmlFor="signup-organization" className="mb-1.5 block text-sm font-medium text-foreground">{role == "Worker" ? "Organization Code" : "Organization Name"}</label>
               <input id="signup-organization" name="organization" type="text" autoComplete="organization" required value={organization} onChange={(e) => setOrganization(e.target.value)} className={inputClassName} />
             </div>*/}
-            <button type="submit" disabled={isSubmitting} className="mt-1 w-full rounded-lg bg-blue-button-solid px-4 py-2.5 text-sm font-medium text-blue-button-solid-text transition-colors hover:bg-blue-button-solid-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-button-focus">
+            <button aria-label="Submit sign up info" type="submit" disabled={isSubmitting} className="mt-1 w-full rounded-lg bg-blue-button-solid px-4 py-2.5 text-sm font-medium text-blue-button-solid-text transition-colors hover:bg-blue-button-solid-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-button-focus">
               Sign Up as {role == "Worker" ? "a Worker" : "an Admin"}
             </button>
           </div>
         )}
-        {errorMessage && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>}
-        {isSubmitting && <p role="status" className="text-sm text-muted-foreground">Please wait...</p>}
+        {errorMessage && <p id="signup-error" role="alert" className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>}
       </form>
       )}
-      
+      <p role="status" className={isLoading || isSubmitting ? "text-sm text-muted-foreground" : "sr-only"}>
+        {isLoading ? "Loading, one moment..." : isSubmitting ? "Please wait..." : ""}
+      </p>
     </div>
   );
 }

@@ -32,7 +32,7 @@ from rag.ingestion import _load_docs
 
 load_dotenv()
 
-EMBEDDING_MODEL = os.getenv("OLLAMA_EMBEDDING_MODEL") or "qwen3-embedding:0.6b"
+EMBEDDING_MODEL = os.getenv("OLLAMA_EMBEDDING_MODEL") or "nomic-embed-text:v1.5"
 
 def load_registry() -> dict:
     if DOCUMENTS_JSON.exists():

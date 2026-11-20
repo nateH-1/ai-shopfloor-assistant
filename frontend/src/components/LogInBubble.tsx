@@ -19,13 +19,28 @@ export function LogInBubble({ onSubmit }: LogInInputProps) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [invalidField, setInvalidField] = useState<"email" | "password" | null>(null);
   const [guestEnabled, setGuestEnabled] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const clearFieldError = (field: typeof invalidField) => {
+    if (invalidField === field) {
+      setInvalidField(null);
+      setErrorMessage("");
+    }
+  };
+
+  const toggleGuest = () => {
+    setIsGuest((previous) => !previous);
+    setInvalidField(null);
+    setErrorMessage("");
+  };
+
   const submit = async (info: LogInInfo) => {
     if (isSubmitting) return;
     setErrorMessage("");
+    setInvalidField(null);
     setIsSubmitting(true);
     try {
       await onSubmit(info);
@@ -39,15 +54,18 @@ export function LogInBubble({ onSubmit }: LogInInputProps) {
   const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting) return;
+    setInvalidField(null);
     if (isGuest) {
       void submit({ email: "", password: "", role: "Guest" });
       return;
     }
     if (!email.trim()) {
+      setInvalidField("email");
       setErrorMessage("Please enter your email.");
       return;
     }
     if (!password.trim()) {
+      setInvalidField("password");
       setErrorMessage("Please enter a password.");
       return;
     }
@@ -77,9 +95,7 @@ export function LogInBubble({ onSubmit }: LogInInputProps) {
   return (
     <div className="mx-auto w-full max-w-md rounded-2xl rounded-tl-sm border border-border bg-card px-5 py-6 shadow-sm sm:px-6">
         
-      {isLoading ? (
-        <p>Loading, one moment...</p>
-      ) : (
+      {!isLoading && (
         <form onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate className="flex flex-col gap-4">
         {/* Log In Info Information */}
           { isGuest && guestEnabled ? (
@@ -88,33 +104,35 @@ export function LogInBubble({ onSubmit }: LogInInputProps) {
               <button type="submit" disabled={isSubmitting} className="mt-1 w-full rounded-lg bg-blue-button-solid px-4 py-2.5 text-sm font-medium text-blue-button-solid-text transition-colors hover:bg-blue-button-solid-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-button-focus">
                   Continue as a Guest
               </button>
-              <button type="button" disabled={isSubmitting} onClick={() => setIsGuest((previous) => !previous)}>
+              <button type="button" disabled={isSubmitting} onClick={toggleGuest}>
                 Log In
               </button>
             </div>
           ) : (
             <div className="flex flex-col gap-4">
               <div>
-                <label htmlFor="signup-email" className="mb-1.5 block text-sm font-medium text-foreground">Email</label>
-                <input id="signup-email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={inputClassName} />
+                <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-foreground">Email</label>
+                <input id="login-email" name="email" type="email" autoComplete="email" required value={email} aria-invalid={invalidField === "email"} aria-describedby={invalidField === "email" ? "login-error" : undefined} onChange={(e) => { setEmail(e.target.value); clearFieldError("email"); }} className={inputClassName} />
               </div>
               <div className="relative">
-                <label htmlFor="signup-password" className="mb-1.5 block text-sm font-medium text-foreground">Password</label>
+                <label htmlFor="login-password" className="mb-1.5 block text-sm font-medium text-foreground">Password</label>
                 <input
-                  id="signup-password"
+                  id="login-password"
                   name="password"
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  aria-invalid={invalidField === "password"}
+                  aria-describedby={invalidField === "password" ? "login-error" : undefined}
+                  onChange={(e) => { setPassword(e.target.value); clearFieldError("password"); }}
                   className={`${inputClassName} pr-12`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((previous) => !previous)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
-                  aria-controls="signup-password"
+                  aria-controls="login-password"
                   className="absolute right-3 translate-y-1 rounded p-1 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-blue-button-focus"
                 >
                   <svg
@@ -146,18 +164,20 @@ export function LogInBubble({ onSubmit }: LogInInputProps) {
                 Log In
               </button>
               {guestEnabled ? (
-                <button type="button" disabled={isSubmitting} onClick={() => setIsGuest((previous) => !previous)}>
+                <button type="button" disabled={isSubmitting} onClick={toggleGuest}>
                 Continue as Guest
               </button>
               ) : null}
               
             </div>
           )}
-          {errorMessage && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>}
-          {isSubmitting && <p role="status" className="text-sm text-muted-foreground">Please wait...</p>}
+          {errorMessage && <p id="login-error" role="alert" className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>}
         </form>
       
       )}
+      <p role="status" className={isLoading || isSubmitting ? "text-sm text-muted-foreground" : "sr-only"}>
+        {isLoading ? "Loading, one moment..." : isSubmitting ? "Please wait..." : ""}
+      </p>
     </div>
   );
 }

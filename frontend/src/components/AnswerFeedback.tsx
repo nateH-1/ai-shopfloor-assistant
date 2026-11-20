@@ -262,30 +262,30 @@ export default function AnswerFeedback({
             type="button"
             disabled={disabled}
             onClick={() => setDetailsOpen((open) => !open)}
+            aria-expanded={detailsOpen}
+            aria-controls={formId + "-comment-panel"}
             className="font-medium text-blue-button-text underline underline-offset-2 disabled:opacity-50"
           >
             {detailsOpen ? "Hide comment" : "Add a comment"}
           </button>
 
-          {detailsOpen && (
-            <div>
-              <label htmlFor={formId + "-comment"} className="mb-1 block font-medium text-foreground">
-                Comment
-              </label>
-              <textarea
-                id={formId + "-comment"}
-                value={comment}
-                maxLength={2000}
-                disabled={saving}
-                rows={3}
-                onChange={(event) => setComment(event.target.value)}
-                aria-describedby={formId + "-count"}
-                placeholder="Example: too vague, missing the source, or too much detail."
-                className="w-full resize-y rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-blue-button-border focus:ring-2 focus:ring-blue-button-focus"
-              />
-              <p id={formId + "-count"} className="mt-1 text-muted-foreground">{comment.length}/2000 characters</p>
-            </div>
-          )}
+          <div id={formId + "-comment-panel"} hidden={!detailsOpen}>
+            <label htmlFor={formId + "-comment"} className="mb-1 block font-medium text-foreground">
+              Comment
+            </label>
+            <textarea
+              id={formId + "-comment"}
+              value={comment}
+              maxLength={2000}
+              disabled={saving}
+              rows={3}
+              onChange={(event) => setComment(event.target.value)}
+              aria-describedby={formId + "-count"}
+              placeholder="Example: too vague, missing the source, or too much detail."
+              className="w-full resize-y rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-blue-button-border focus:ring-2 focus:ring-blue-button-focus"
+            />
+            <p id={formId + "-count"} className="mt-1 text-muted-foreground">{comment.length}/2000 characters</p>
+          </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -315,14 +315,15 @@ export default function AnswerFeedback({
                 {hasChanges ? "Save and rewrite" : "Rewrite now"}
               </button>
             )}
-            <p role="status" aria-live="polite" className="min-h-4 text-muted-foreground">
-              {loading ? "Loading feedback..." : notice}
-            </p>
           </div>
-
-          {error && <p role="alert" className="text-red-700 dark:text-red-300">{error}</p>}
         </form>
       )}
+      <p role="status" className={loading || notice ? "mt-2 text-muted-foreground" : "sr-only"}>
+        {loading ? "Loading feedback..." : notice}
+      </p>
+      <p role="alert" className={error ? "mt-2 text-red-700 dark:text-red-300" : "sr-only"}>
+        {error}
+      </p>
     </section>
   );
 }

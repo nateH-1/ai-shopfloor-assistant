@@ -4,7 +4,7 @@
 
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Message } from "@/lib/types";
 import type { Feedback } from "@/lib/feedbackApi";
 import { ChatBubble } from "./ChatBubble";
@@ -20,6 +20,18 @@ interface ChatPageProps {
 
 export default function ChatPage({ messages, onSend, onClarificationSelect, onRewrite, isLoading }: ChatPageProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const lastMessageId = useRef(messages[messages.length - 1]?.id);
+  const [replyAnnouncement, setReplyAnnouncement] = useState("");
+
+  useEffect(() => {
+    const latest = messages[messages.length - 1];
+    if (latest?.id !== lastMessageId.current) {
+      lastMessageId.current = latest?.id;
+      setReplyAnnouncement(latest?.role === "assistant" ? `Kuldeep: ${latest.content}` : "");
+    } else if (isLoading) {
+      setReplyAnnouncement("");
+    }
+  }, [messages, isLoading]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -27,6 +39,9 @@ export default function ChatPage({ messages, onSend, onClarificationSelect, onRe
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden bg-background">
+      {/* Announce new reply text only; sources and feedback have their own controls/statuses.
+          Restored history is available in the log without being read again on mount. */}
+      <p role="status" className="sr-only">{replyAnnouncement}</p>
       {/* Scrollable message area */}
       <div className="flex-1 overflow-y-auto px-4 pt-10 pb-4">
         <div className="max-w-2xl mx-auto w-full">
@@ -47,7 +62,7 @@ export default function ChatPage({ messages, onSend, onClarificationSelect, onRe
           </div>
 
           {/* Messages */}
-          <div className="flex flex-col gap-4">
+          <div role="log" aria-label="Conversation" aria-live="off" className="flex flex-col gap-4">
             {messages.map((msg, index) => (
               <ChatBubble
                 key={msg.id}
@@ -57,24 +72,24 @@ export default function ChatPage({ messages, onSend, onClarificationSelect, onRe
                 isLatest={index === messages.length - 1}
               />
             ))}
-
-            {/* Typing indicator */}
-            {isLoading && (
-              <div className="flex items-start gap-3">
-                <div
-                  className="shrink-0 flex items-center justify-center w-9 h-9 rounded-full"
-                  style={{ background: "linear-gradient(135deg, #a855f7 0%, #3b82f6 100%)" }}
-                >
-                  <BotIcon className="w-5 h-5 text-white" />
-                </div>
-                <div
-                  className="rounded-2xl rounded-tl-sm border border-border bg-card px-5 py-4 shadow-sm"
-                >
-                  <TypingDots />
-                </div>
-              </div>
-            )}
           </div>
+
+          {/* Typing indicator */}
+          {isLoading && (
+            <div aria-hidden="true" className="mt-4 flex items-start gap-3">
+              <div
+                className="shrink-0 flex items-center justify-center w-9 h-9 rounded-full"
+                style={{ background: "linear-gradient(135deg, #a855f7 0%, #3b82f6 100%)" }}
+              >
+                <BotIcon className="w-5 h-5 text-white" />
+              </div>
+              <div
+                className="rounded-2xl rounded-tl-sm border border-border bg-card px-5 py-4 shadow-sm"
+              >
+                <TypingDots />
+              </div>
+            </div>
+          )}
 
           <div ref={bottomRef} />
         </div>
@@ -115,6 +130,7 @@ function TypingDots() {
 function BotIcon({ className }: { className?: string }) {
   return (
     <svg
+      aria-hidden="true"
       className={className}
       viewBox="0 0 24 24"
       fill="currentColor"
