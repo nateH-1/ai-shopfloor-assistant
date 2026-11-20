@@ -45,3 +45,25 @@ test("highlight markup keeps every character, including symbols", () => {
   assert.equal(html, "a &lt;b&gt; &amp; <span class=\"misspelled-word\" data-start=\"8\" data-end=\"13\">meged</span>");
   assert.equal(context.exports.spellPieces(text, [{ start: 8, end: 13 }]).map((piece) => piece.text).join(""), text);
 });
+
+test("empty draft HTML stays empty so the placeholder can show", () => {
+  assert.equal(context.exports.highlightedHtml("", [{ start: 0, end: 1 }]), "");
+});
+
+test("invalid and unsorted spans still render safely", () => {
+  assert.equal(
+    context.exports.highlightedHtml("materials", [
+      { start: -1, end: 3 },
+      { start: 2, end: 2 },
+      { start: 9, end: 12 },
+    ]),
+    "materials",
+  );
+  assert.equal(
+    context.exports.highlightedHtml("aa bb", [
+      { start: 3, end: 5 },
+      { start: 0, end: 2 },
+    ]),
+    "<span class=\"misspelled-word\" data-start=\"0\" data-end=\"2\">aa</span> <span class=\"misspelled-word\" data-start=\"3\" data-end=\"5\">bb</span>",
+  );
+});
