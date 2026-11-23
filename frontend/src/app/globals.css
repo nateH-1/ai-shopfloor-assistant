@@ -233,3 +233,28 @@ nextjs-portal {
 #signup-password::-ms-reveal {
   display: none;
 }
+
+.spell-editor {
+  min-height: 28px;
+  max-height: 160px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.spell-editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted-foreground);
+}
+
+.misspelled-word {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='6' height='3' viewBox='0 0 6 3'><path d='M0 2 Q1.5 0 3 2 T6 2' fill='none' stroke='%23dc2626' stroke-width='1'/></svg>");
+  background-repeat: repeat-x;
+  background-position: left bottom;
+  background-size: 6px 3px;
+}
+
+.dark .misspelled-word,
+.red .misspelled-word {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='6' height='3' viewBox='0 0 6 3'><path d='M0 2 Q1.5 0 3 2 T6 2' fill='none' stroke='%23f87171' stroke-width='1'/></svg>");
+}

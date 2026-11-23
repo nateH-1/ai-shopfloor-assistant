@@ -2,6 +2,11 @@
 
 import { useEffect, useId, useRef, useState, KeyboardEvent } from "react";
 import { transcribeAudio } from "@/lib/chatApi";
+import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent, type MouseEvent } from "react";
+import { findMisspellings, transcribeAudio, type SpellSpan } from "@/lib/chatApi";
+import { readEditorText, selectionOffsets, setSelectionOffsets, type CaretOffsets } from "@/lib/editorCaret";
+import { highlightedHtml } from "@/lib/spellMarkup";
+import { replaceMisspelling } from "@/lib/spellcheck";
 import { get_verification_status } from "@/lib/authApi";
 
 interface ChatInputProps {
@@ -16,6 +21,10 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const caretRef = useRef<CaretOffsets | null>(null);
+  const composingRef = useRef(false);
+  const suggestionMenuRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -25,6 +34,14 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   const animFrameRef = useRef<number>(0);
   const [verificationStatus, setVerificationStatus] = useState("");
   const [error, setError] = useState("");
+  const [spellSpans, setSpellSpans] = useState<SpellSpan[]>([]);
+  const [suggestionMenu, setSuggestionMenu] = useState<{
+    x: number;
+    y: number;
+    start: number;
+    end: number;
+    suggestions: string[];
+  } | null>(null);
 
   useEffect(() => {
     return () => {
@@ -33,6 +50,54 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
       audioCtxRef.current?.close();
     };
   }, []);
+
+  useEffect(() => {
+    const text = value;
+    if (!text.trim()) {
+      setSpellSpans([]);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      findMisspellings(text, controller.signal)
+        .then((spans) => {
+          if (!controller.signal.aborted) setSpellSpans(spans);
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) setSpellSpans([]);
+        });
+    }, 300);
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [value]);
+
+  useLayoutEffect(() => {
+    const root = editorRef.current;
+    const saved = caretRef.current;
+    if (!root || !saved || composingRef.current || document.activeElement !== root) return;
+    const current = selectionOffsets(root);
+    if (current && current.start === saved.start && current.end === saved.end) return;
+    setSelectionOffsets(root, saved.start, saved.end);
+  }, [value, spellSpans]);
+
+  useEffect(() => {
+    if (!suggestionMenu) return;
+    const close = (event: PointerEvent) => {
+      if (suggestionMenuRef.current?.contains(event.target as Node)) return;
+      setSuggestionMenu(null);
+    };
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") setSuggestionMenu(null);
+    };
+    window.addEventListener("pointerdown", close);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("pointerdown", close);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [suggestionMenu]);
 
   useEffect(() => {
     let active = true;
@@ -54,29 +119,106 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
     };
   }, []);
 
+  const rememberCaret = () => {
+    const root = editorRef.current;
+    if (!root) return;
+    const offsets = selectionOffsets(root);
+    if (offsets) caretRef.current = offsets;
+  };
+
+  const insertAtCaret = (extra: string) => {
+    const root = editorRef.current;
+    if (!root) return;
+    const current = readEditorText(root);
+    const offsets = selectionOffsets(root) ?? caretRef.current ?? { start: current.length, end: current.length };
+    const next = current.slice(0, offsets.start) + extra + current.slice(offsets.end);
+    const caret = offsets.start + extra.length;
+    caretRef.current = { start: caret, end: caret };
+    setValue(next);
+  };
+
   const handleSend = () => {
-    const trimmed = value.trim();
+    const current = editorRef.current ? readEditorText(editorRef.current) : value;
+    const trimmed = current.trim();
     if (!trimmed || disabled || isTranscribing || isRecording) return;
     onSend(trimmed);
+    caretRef.current = { start: 0, end: 0 };
     setValue("");
     setVoiceStatus("");
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
+    setSpellSpans([]);
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleEditorInput = () => {
+    const root = editorRef.current;
+    if (!root || composingRef.current) return;
+    rememberCaret();
+    setSuggestionMenu(null);
+    setValue(readEditorText(root));
+  };
+
+  const applySuggestion = (start: number, end: number, suggestion: string) => {
+    const root = editorRef.current;
+    const current = root ? readEditorText(root) : value;
+    const replaced = replaceMisspelling(current, start, end, suggestion);
+    if (!replaced) return;
+    const delta = suggestion.length - (end - start);
+    caretRef.current = { start: replaced.caret, end: replaced.caret };
+    root?.focus();
+    setSpellSpans((spans) => spans.flatMap((span) => {
+      if (span.start === start && span.end === end) return [];
+      if (span.end <= start) return [span];
+      if (span.start >= end) return [{ ...span, start: span.start + delta, end: span.end + delta }];
+      return [];
+    }));
+    setSuggestionMenu(null);
+    setValue(replaced.text);
+  };
+
+  const openSuggestions = (event: MouseEvent<HTMLDivElement>, fromContextMenu: boolean) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const word = target.closest(".misspelled-word");
+    if (!word || !editorRef.current?.contains(word)) return;
+    if (!fromContextMenu && window.getSelection() && !window.getSelection()?.isCollapsed) return;
+    const start = Number(word.getAttribute("data-start"));
+    const end = Number(word.getAttribute("data-end"));
+    const match = spellSpans.find((span) => span.start === start && span.end === end);
+    const suggestions = match?.suggestions?.filter((item) => item.trim()) ?? [];
+    if (suggestions.length === 0) return;
+    if (fromContextMenu) event.preventDefault();
+    const rect = word.getBoundingClientRect();
+    setSuggestionMenu({
+      x: Math.max(8, Math.min(rect.left, window.innerWidth - 200)),
+      y: Math.min(rect.bottom + 4, window.innerHeight - 180),
+      start,
+      end,
+      suggestions,
+    });
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (suggestionMenu && e.key === "Escape") {
+      e.preventDefault();
+      setSuggestionMenu(null);
+      return;
+    }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+      return;
+    }
+    if (e.key === "Enter" && e.shiftKey) {
+      e.preventDefault();
+      insertAtCaret("\n");
     }
   };
 
-  const handleInput = () => {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = Math.min(el.scrollHeight, 160) + "px";
+  const handlePaste = (e: ClipboardEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    insertAtCaret(e.clipboardData.getData("text/plain").replace(/\r\n/g, "\n"));
   };
 
   const stopRecorder = () => {
@@ -197,11 +339,12 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
         setVoiceStatus("Transcribing audio.");
         try {
           const text = await transcribeAudio(audioBlob);
-          setValue((prev) => (prev ? `${prev} ${text}`.trim() : text));
+          setValue((prev) => {
+            const next = prev ? `${prev} ${text}`.trim() : text;
+            caretRef.current = { start: next.length, end: next.length };
+            return next;
+          });
           setVoiceStatus("Transcription ready in the message field. Review it before sending.");
-          requestAnimationFrame(() => handleInput());
-        } catch (err) {
-          setVoiceStatus("");
           console.error("[voice] transcription failed:", err);
           window.alert(err instanceof Error ? err.message : "Failed to transcribe audio.");
         } finally {
@@ -245,25 +388,77 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
         <>
 
         {/* Text input / Audio visualizer */}
-        <div className="flex-1" style={{ minHeight: "24px" }}>
-          <label htmlFor={inputId} className="sr-only">Message</label>
-          <textarea
+        <div className="min-w-0 flex-1">
+          <div
+            ref={editorRef}
+            role="textbox"
+            aria-multiline="true"
             id={inputId}
-            aria-describedby={`${inputId}-instructions`}
-            ref={textareaRef}
-            rows={1}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
+            aria-label="Message"
+            aria-describedby={[
+              `${inputId}-instructions`,
+              spellSpans.length > 0 ? `${inputId}-spelling` : null,
+              ].filter(Boolean).join(" ")}
+            id={inputId}
+            aria-label="Message"
+            aria-describedby={[
+              `${inputId}-instructions`,
+               spellSpans.length > 0 ? `${inputId}-spelling` : null,
+               ].filter(Boolean).join(" ")
+            }
+            data-placeholder={isTranscribing ? "Transcribing audio..." : "Ask Kuldeep about manuals, SOPs, or processes..."}
+            contentEditable={!disabled && !isTranscribing}
+            spellCheck={false}
+            suppressContentEditableWarning
+            onInput={handleEditorInput}
             onKeyDown={handleKeyDown}
-            onInput={handleInput}
-            placeholder={isTranscribing ? "Transcribing audio..." : "Ask Kuldeep about manuals, SOPs, or processes..."}
-            disabled={disabled || isTranscribing}
-            className="w-full resize-none bg-transparent text-foreground placeholder:text-muted-foreground text-sm leading-relaxed focus:outline-none"
-            style={{ minHeight: "24px", maxHeight: "160px", display: isRecording ? "none" : undefined }}
+            onKeyUp={rememberCaret}
+            onMouseUp={rememberCaret}
+            onPaste={handlePaste}
+            onClick={(event) => openSuggestions(event, false)}
+            onContextMenu={(event) => openSuggestions(event, true)}
+            onCompositionStart={() => { composingRef.current = true; }}
+            onCompositionEnd={() => {
+              composingRef.current = false;
+              handleEditorInput();
+            }}
+            dangerouslySetInnerHTML={{ __html: highlightedHtml(value, spellSpans) }}
+            className={`spell-editor wrap-break-word text-sm leading-relaxed text-foreground focus:outline-none ${isRecording ? "hidden" : ""}`}
           />
           <p id={`${inputId}-instructions`} className="sr-only">
             Press Enter to send. Press Shift+Enter for a new line.
           </p>
+          {suggestionMenu && (
+            <div
+              ref={suggestionMenuRef}
+              role="menu"
+              aria-label="Spelling suggestions"
+              className="fixed z-50 min-w-36 rounded-xl border border-border bg-card py-1 text-sm text-foreground shadow-lg"
+              style={{ left: suggestionMenu.x, top: suggestionMenu.y }}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              {suggestionMenu.suggestions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  role="menuitem"
+                  className="block w-full px-3 py-1.5 text-left hover:bg-muted"
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    applySuggestion(suggestionMenu.start, suggestionMenu.end, suggestion);
+                  }}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          )}
+          {spellSpans.length > 0 && (
+            <span id={`${inputId}-spelling`} className="sr-only" role="status">
+              Some words are underlined because they are misspelled or not real words.
+            </span>
+          )}
           {/* Canvas is always mounted so canvasRef is always set; shown only while recording */}
           <canvas
             aria-hidden="true"
