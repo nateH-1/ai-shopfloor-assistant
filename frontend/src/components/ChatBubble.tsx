@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import AnswerFeedback from "./AnswerFeedback";
@@ -17,6 +17,7 @@ import type { Message, Source, Clarification } from "@/lib/types";
 export function AssistantBubble({
   content,
   sources,
+  time,
   clarification,
   onOptionSelect,
   isLatest,
@@ -26,6 +27,7 @@ export function AssistantBubble({
 }: {
   content: string;
   sources?: Source[];
+  time?: string;
   clarification?: Clarification;
   onOptionSelect?: (value: string) => void;
   isLatest?: boolean;
@@ -37,6 +39,7 @@ export function AssistantBubble({
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const hasSources = sources && sources.length > 0;
   const [fullSources, setFullSources] = useState<Set<number>>(new Set());
+  const sourcesId = useId();
 
   return (
     <div className="flex items-start gap-3 w-full">
@@ -63,6 +66,7 @@ export function AssistantBubble({
             prose-headings:text-foreground prose-headings:font-semibold
             prose-code:bg-muted prose-code:text-foreground prose-pre:bg-muted prose-pre:text-foreground prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono prose-code:before:content-none prose-code:after:content-none
             prose-blockquote:border-l-2 prose-blockquote:border-input prose-blockquote:text-muted-foreground prose-blockquote:not-italic">
+            <span className="sr-only">Kuldeep: </span>
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {content}
             </ReactMarkdown>
@@ -99,7 +103,7 @@ export function AssistantBubble({
 
         {/* Server-issued IDs exclude connection errors and clarification prompts. */}
         {/* The answer text is passed only for the browser's local read-aloud button. */}
-        {feedbackId && <AnswerFeedback messageId={feedbackId} answerText={content} onRewrite={onRewrite} />}
+        {feedbackId && <AnswerFeedback messageId={feedbackId} answerText={content} onRewrite={onRewrite} time={time} />}
         {feedbackUnavailable && <p className="text-xs text-muted-foreground">Feedback is temporarily unavailable for this answer.</p>}
 
         {/* Source toggle */}
@@ -107,6 +111,8 @@ export function AssistantBubble({
           <div>
             <button
               onClick={() => setShowSources((v) => !v)}
+              aria-expanded={showSources}
+              aria-controls={sourcesId}
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <BookIcon className="w-3.5 h-3.5" />
@@ -117,44 +123,44 @@ export function AssistantBubble({
               />
             </button>
 
-            {showSources && (
-              <div className="mt-2 flex flex-col gap-1.5">
-                {sources.map((src) => {
-                  const isExpanded = fullSources.has(src.id);
-                  const snippet = isExpanded
-                    ? src.full_snippet ?? src.snippet
-                    : src.snippet;
+            <div id={sourcesId} hidden={!showSources} className={showSources ? "mt-2 flex flex-col gap-1.5" : "hidden"}>
+              {sources.map((src) => {
+                const isExpanded = fullSources.has(src.id);
+                const snippet = isExpanded
+                  ? src.full_snippet ?? src.snippet
+                  : src.snippet;
 
-                  return (
-                    <button
-                      key={src.id}
-                      onClick={() => toggleFullSources(src.id)}
-                      aria-expanded={isExpanded}
-                      className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-sm text-left"
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <ChevronIcon className={`w-3 h-3 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                        <span className="font-medium text-foreground truncate max-w-45" title={src.file}>
-                          {src.file}
-                        </span>
-                        <span
-                          className="shrink-0 rounded-full px-2 py-0.5 text-white text-[10px] font-semibold"
-                          style={{ background: "linear-gradient(135deg, #a855f7 0%, #3b82f6 100%)" }}
-                        >
-                          p.{src.page}
-                        </span>
-                      </div>
-                      <p
-                        className={`text-muted-foreground leading-snug ${isExpanded ? "whitespace-pre-wrap break-words" : "line-clamp-2"}`}
-                        title={snippet}
+                return (
+                  <button
+                    key={src.id}
+                    onClick={() => toggleFullSources(src.id)}
+                    aria-expanded={isExpanded}
+                    aria-controls={`${sourcesId}-${src.id}`}
+                    className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-sm text-left"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <ChevronIcon className={`w-3 h-3 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                      <span className="font-medium text-foreground truncate max-w-45" title={src.file}>
+                        {src.file}
+                      </span>
+                      <span
+                        className="shrink-0 rounded-full px-2 py-0.5 text-white text-[10px] font-semibold"
+                        style={{ background: "linear-gradient(135deg, #a855f7 0%, #3b82f6 100%)" }}
                       >
-                        {snippet}
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                        p.{src.page}
+                      </span>
+                    </div>
+                    <p
+                      id={`${sourcesId}-${src.id}`}
+                      className={`text-muted-foreground leading-snug ${isExpanded ? "whitespace-pre-wrap break-words" : "line-clamp-2"}`}
+                      title={snippet}
+                    >
+                      {snippet}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
@@ -179,9 +185,10 @@ export function UserBubble({ content }: { content: string }) {
   return (
     <div className="flex justify-end w-full">
       <div
-        className="rounded-2xl rounded-tr-sm bg-muted px-5 py-3 max-w-[75%]"
+        className="rounded-2xl rounded-tr-sm bg-card px-5 py-3 max-w-[75%]"
       >
         <p className="text-foreground text-sm leading-relaxed">
+          <span className="sr-only">You: </span>
           {content}
         </p>
       </div>
@@ -203,7 +210,7 @@ export function ChatBubble({
   onRewrite?: (message: Message, feedback: Feedback) => void;
 }) {
   if (message.role === "assistant") {
-    return <AssistantBubble feedbackId={message.feedbackId} feedbackUnavailable={message.feedbackUnavailable} content={message.content} sources={message.sources} clarification={message.clarification} onOptionSelect={onOptionSelect} isLatest={isLatest} onRewrite={onRewrite ? (feedback) => onRewrite(message, feedback) : undefined} />;
+    return <AssistantBubble feedbackId={message.feedbackId} feedbackUnavailable={message.feedbackUnavailable} content={message.content} sources={message.sources} time={message.time} clarification={message.clarification} onOptionSelect={onOptionSelect} isLatest={isLatest} onRewrite={onRewrite ? (feedback) => onRewrite(message, feedback) : undefined} />;
   }
   return <UserBubble content={message.content} />;
 }
@@ -212,7 +219,7 @@ export function ChatBubble({
 
 function BotIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <svg aria-hidden="true" className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
       <rect x="11" y="1" width="2" height="3" rx="1" />
       <circle cx="12" cy="1.5" r="1.5" />
       <rect x="4" y="4" width="16" height="12" rx="3" />
@@ -230,7 +237,7 @@ function BotIcon({ className }: { className?: string }) {
 
 function BookIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg aria-hidden="true" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
     </svg>
@@ -239,7 +246,7 @@ function BookIcon({ className }: { className?: string }) {
 
 function ChevronIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg aria-hidden="true" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="6 9 12 15 18 9" />
     </svg>
   );

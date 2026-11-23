@@ -16,10 +16,12 @@ export default function AnswerFeedback({
   messageId,
   answerText,
   onRewrite,
+  time,
 }: {
   messageId: string;
   answerText: string;
   onRewrite?: (feedback: Feedback) => void;
+  time?: string;
 }) {
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [draftVote, setDraftVote] = useState<Vote | "">("");
@@ -212,6 +214,9 @@ export default function AnswerFeedback({
           <SpeakerIcon active={isReading} />
           <span className="sr-only">{isReading ? "Stop reading" : "Read answer aloud"}</span>
         </button>
+        {time ? (
+          <p className="text-muted-foreground">{time}s  </p>
+        ) : null}
       </div>
 
       {showDetails && (
@@ -243,7 +248,7 @@ export default function AnswerFeedback({
                 value={reason}
                 disabled={saving}
                 onChange={(event) => setReason(event.target.value)}
-                className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900"
+                className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-blue-button-border focus:ring-2 focus:ring-blue-button-focus"
               >
                 <option value="">Select a reason</option>
                 {REASONS.map(([value, label]) => (
@@ -257,36 +262,36 @@ export default function AnswerFeedback({
             type="button"
             disabled={disabled}
             onClick={() => setDetailsOpen((open) => !open)}
-            className="font-medium text-purple-700 underline underline-offset-2 disabled:opacity-50 dark:text-purple-300"
+            aria-expanded={detailsOpen}
+            aria-controls={formId + "-comment-panel"}
+            className="font-medium text-blue-button-text underline underline-offset-2 disabled:opacity-50"
           >
             {detailsOpen ? "Hide comment" : "Add a comment"}
           </button>
 
-          {detailsOpen && (
-            <div>
-              <label htmlFor={formId + "-comment"} className="mb-1 block font-medium text-foreground">
-                Comment
-              </label>
-              <textarea
-                id={formId + "-comment"}
-                value={comment}
-                maxLength={2000}
-                disabled={saving}
-                rows={3}
-                onChange={(event) => setComment(event.target.value)}
-                aria-describedby={formId + "-count"}
-                placeholder="Example: too vague, missing the source, or too much detail."
-                className="w-full resize-y rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900"
-              />
-              <p id={formId + "-count"} className="mt-1 text-muted-foreground">{comment.length}/2000 characters</p>
-            </div>
-          )}
+          <div id={formId + "-comment-panel"} hidden={!detailsOpen}>
+            <label htmlFor={formId + "-comment"} className="mb-1 block font-medium text-foreground">
+              Comment
+            </label>
+            <textarea
+              id={formId + "-comment"}
+              value={comment}
+              maxLength={2000}
+              disabled={saving}
+              rows={3}
+              onChange={(event) => setComment(event.target.value)}
+              aria-describedby={formId + "-count"}
+              placeholder="Example: too vague, missing the source, or too much detail."
+              className="w-full resize-y rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-blue-button-border focus:ring-2 focus:ring-blue-button-focus"
+            />
+            <p id={formId + "-count"} className="mt-1 text-muted-foreground">{comment.length}/2000 characters</p>
+          </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="submit"
               disabled={disabled || !draftVote || (!hasChanges && Boolean(feedback))}
-              className="rounded-lg bg-purple-700 px-4 py-2 font-medium text-white shadow-sm hover:bg-purple-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-blue-button px-4 py-2 font-medium text-blue-button-text shadow-sm hover:bg-blue-button-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving ? "Saving..." : feedback ? "Save changes" : "Save feedback"}
             </button>
@@ -295,7 +300,7 @@ export default function AnswerFeedback({
                 type="button"
                 disabled={disabled}
                 onClick={() => void remove()}
-                className="rounded-lg border border-input px-3 py-2 font-medium text-foreground hover:bg-muted disabled:opacity-50"
+                className="rounded-lg border border-input px-3 py-2 font-medium text-foreground hover:bg-blue-button-hover disabled:opacity-50"
               >
                 Remove
               </button>
@@ -305,28 +310,29 @@ export default function AnswerFeedback({
                 type="button"
                 disabled={disabled}
                 onClick={() => void rewrite()}
-                className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 font-medium text-purple-800 hover:bg-purple-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-purple-900 dark:bg-purple-950 dark:text-purple-300 dark:hover:bg-purple-900"
+                className="rounded-lg border border-blue-button-border bg-blue-button px-3 py-2 font-medium text-blue-button-text hover:bg-blut-button-hover disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {hasChanges ? "Save and rewrite" : "Rewrite now"}
               </button>
             )}
-            <p role="status" aria-live="polite" className="min-h-4 text-muted-foreground">
-              {loading ? "Loading feedback..." : notice}
-            </p>
           </div>
-
-          {error && <p role="alert" className="text-red-700 dark:text-red-300">{error}</p>}
         </form>
       )}
+      <p role="status" className={loading || notice ? "mt-2 text-muted-foreground" : "sr-only"}>
+        {loading ? "Loading feedback..." : notice}
+      </p>
+      <p role="alert" className={error ? "mt-2 text-red-700 dark:text-red-300" : "sr-only"}>
+        {error}
+      </p>
     </section>
   );
 }
 
 function ratingClass(selected: boolean) {
   return [
-    "inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors disabled:opacity-50",
+    "relative inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors disabled:opacity-50",
     selected
-      ? "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300"
+      ? "bg-blue-button text-blue-button-text"
       : "text-muted-foreground hover:bg-muted hover:text-foreground",
   ].join(" ");
 }

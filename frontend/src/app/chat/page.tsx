@@ -70,6 +70,7 @@ export default function Chat() {
         timestamp: new Date().toISOString(),
         sources: response.metadata?.sources,
         clarification: response.metadata?.clarification,
+        time: response.time,
       };
 
       setMessages((prev) => [...prev, aiMessage]);
@@ -173,17 +174,22 @@ export default function Chat() {
     <div className="flex flex-col h-screen overflow-hidden">
       <Header showSettings />
 
-      {hasMessages ? (
-        <ChatPage
-          messages={messages}
-          onSend={handleSend}
-          onClarificationSelect={handleClarificationSelect}
-          onRewrite={handleRewrite}
-          isLoading={isLoading}
-        />
-      ) : (
-        <WelcomePage onSend={handleSend} />
-      )}
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <p role="status" className="sr-only">
+          {isLoading ? "Kuldeep is preparing a reply." : ""}
+        </p>
+        {hasMessages ? (
+          <ChatPage
+            messages={messages}
+            onSend={handleSend}
+            onClarificationSelect={handleClarificationSelect}
+            onRewrite={handleRewrite}
+            isLoading={isLoading}
+          />
+        ) : (
+          <WelcomePage onSend={handleSend} />
+        )}
+      </main>
     </div>
   );
 }

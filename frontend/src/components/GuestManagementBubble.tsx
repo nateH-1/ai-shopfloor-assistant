@@ -52,15 +52,11 @@ export default function GuestManagementBubble() {
         If enabled, Guests can upload their own documents and ask questions, but cannot share access to documents, and uploads are deleted after 24 hours.
         If disabled, users won't be able to continue as a Guest and current Guests will be logged out.
       </p>
-      {isLoading ? (
-        <p className="text-sm font-semibold text-foreground">
-          Loading info...
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <p role="status" className="text-sm leading-relaxed text-foreground">
+          {isLoading ? "Loading info..." : isLoadingStatusChange ? "Saving guest settings..." : guestEnabled !== null ? `Guest features are currently ${guestEnabled ? "enabled" : "disabled"}` : ""}
         </p>
-      ) : guestEnabled !== null ? (
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-        <p className="text-sm leading-relaxed text-foreground">
-          Guest features are currently {guestEnabled ? "enabled" : "disabled"}
-        </p>
+        {!isLoading && guestEnabled !== null && (
         <button
           type="button"
           className="flex items-center justify-center gap-2 rounded-lg border border-blue-button-border bg-blue-button px-3 py-3 text-sm font-medium text-blue-button-text transition-colors hover:bg-blue-button-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-button-focus disabled:cursor-not-allowed disabled:opacity-50"
@@ -69,8 +65,8 @@ export default function GuestManagementBubble() {
         >
           {isLoadingStatusChange ? "Saving..." : guestEnabled ? "Disable guests" : "Enable guests"}
         </button>
+        )}
       </div>
-      ) : null}
       {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
     </section>
   );

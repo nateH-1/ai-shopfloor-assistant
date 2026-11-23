@@ -309,6 +309,14 @@ class TestSourceFormatting:
             res = client.post("/chat", json={"message": "anything"})
         assert res.get_json()["metadata"]["sources"][0]["file"] == "manual.pdf"
 
+    def test_pageless_docx_keeps_both_cited_passages(self):
+        features = _mock_doc("Chatbot features", source="plan.docx")
+        architecture = _mock_doc("Architecture tradeoffs", source="plan.docx")
+        del features.metadata["page"], architecture.metadata["page"]
+
+        cards = app_module._format_sources([architecture, features, architecture])
+        assert [card["full_snippet"] for card in cards] == ["Architecture tradeoffs", "Chatbot features"]
+
 
 # ── Group 6: Session Management ───────────────────────────────────────────────
 

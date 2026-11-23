@@ -63,7 +63,7 @@ def test_strong_plain_question_uses_vector_only():
 
 
 def test_weak_vector_match_adds_keyword_results():
-    ids, getter, _, enough = _search("how do I clean a lathe", [("a", 0.25), ("b", 0.30)], _kw("z"))
+    ids, getter, _, enough = _search("how do I clean a lathe", [("a", 0.55), ("b", 0.60)], _kw("z"))
     assert set(ids) == {"a", "b", "z"} and enough
     getter.assert_called_once()
 
@@ -172,7 +172,7 @@ def test_code_detection_and_rank_fusion():
 # ── Evidence check (PR C) ─────────────────────────────────────────────────────
 
 def test_weak_match_with_word_missing_from_documents_is_not_enough_evidence():
-    ids, _, kw, enough = _search("what is the warranty period", [("a", 0.22)], _kw("z"),
+    ids, _, kw, enough = _search("what is the warranty period", [("a", 0.55)], _kw("z"),
                                  vocab={"period"})          # "warranty" appears in no chunk
     assert ids == [] and not enough
     kw.assert_not_called()

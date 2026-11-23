@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent, type MouseEvent } from "react";
+import { useEffect, useLayoutEffect, useId, useRef, useState, type ClipboardEvent, type KeyboardEvent, type MouseEvent } from "react";
 import { findMisspellings, transcribeAudio, type SpellSpan } from "@/lib/chatApi";
 import { readEditorText, selectionOffsets, setSelectionOffsets, type CaretOffsets } from "@/lib/editorCaret";
 import { highlightedHtml } from "@/lib/spellMarkup";
@@ -13,9 +13,11 @@ interface ChatInputProps {
 }
 
 export default function ChatInput({ onSend, disabled }: ChatInputProps) {
+  const inputId = useId();
   const [value, setValue] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState("");
   const editorRef = useRef<HTMLDivElement>(null);
   const caretRef = useRef<CaretOffsets | null>(null);
   const composingRef = useRef(false);
@@ -139,6 +141,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
     onSend(trimmed);
     caretRef.current = { start: 0, end: 0 };
     setValue("");
+    setVoiceStatus("");
     setSpellSpans([]);
   };
 
@@ -283,6 +286,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   };
 
   const startRecorder = async () => {
+    setVoiceStatus("");
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       window.alert("Voice input is not supported in this browser.");
       return;
@@ -320,9 +324,13 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
         streamRef.current = null;
         mediaRecorderRef.current = null;
 
-        if (audioBlob.size === 0) return;
+        if (audioBlob.size === 0) {
+          setVoiceStatus("Recording stopped. No audio was captured.");
+          return;
+        }
 
         setIsTranscribing(true);
+        setVoiceStatus("Transcribing audio.");
         try {
           const text = await transcribeAudio(audioBlob);
           setValue((prev) => {
@@ -330,7 +338,9 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
             caretRef.current = { start: next.length, end: next.length };
             return next;
           });
+          setVoiceStatus("Transcription ready in the message field. Review it before sending.");
         } catch (err) {
+          setVoiceStatus("");
           console.error("[voice] transcription failed:", err);
           window.alert(err instanceof Error ? err.message : "Failed to transcribe audio.");
         } finally {
@@ -340,9 +350,11 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
 
       recorder.start();
       setIsRecording(true);
+      setVoiceStatus("Recording. Select Stop voice recording when finished.");
       startVisualizer(stream);
     } catch (err) {
       console.error("[voice] microphone access failed:", err);
+      setVoiceStatus("");
       window.alert("Microphone access was denied or unavailable.");
     }
   };
@@ -363,6 +375,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
         boxShadow: "0 4px 24px 0 rgba(0,0,0,0.10)",
       }}
     >
+      <p role="status" className="sr-only">{voiceStatus}</p>
       { error ? (
         <p role="alert" className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-medium leading-relaxed text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">{error}</p>
       ) : verificationStatus != "VERIFIED" ? (
@@ -377,7 +390,12 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
             role="textbox"
             aria-multiline="true"
             aria-disabled={disabled || isTranscribing || undefined}
-            aria-describedby={spellSpans.length > 0 ? "draft-spelling" : undefined}
+            id={inputId}
+            aria-label="Message"
+            aria-describedby={[
+              `${inputId}-instructions`,
+              spellSpans.length > 0 ? `${inputId}-spelling` : null,
+            ].filter(Boolean).join(" ")}
             data-placeholder={isTranscribing ? "Transcribing audio..." : "Ask Kuldeep about manuals, SOPs, or processes..."}
             contentEditable={!disabled && !isTranscribing}
             spellCheck={false}
@@ -397,6 +415,9 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
             dangerouslySetInnerHTML={{ __html: highlightedHtml(value, spellSpans) }}
             className={`spell-editor wrap-break-word text-sm leading-relaxed text-foreground focus:outline-none ${isRecording ? "hidden" : ""}`}
           />
+          <p id={`${inputId}-instructions`} className="sr-only">
+            Press Enter to send. Press Shift+Enter for a new line.
+          </p>
           {suggestionMenu && (
             <div
               ref={suggestionMenuRef}
@@ -424,12 +445,13 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
             </div>
           )}
           {spellSpans.length > 0 && (
-            <span id="draft-spelling" className="sr-only" role="status">
+            <span id={`${inputId}-spelling`} className="sr-only" role="status">
               Some words are underlined because they are misspelled or not real words.
             </span>
           )}
           {/* Canvas is always mounted so canvasRef is always set; shown only while recording */}
           <canvas
+            aria-hidden="true"
             ref={canvasRef}
             style={{
               display: isRecording ? "block" : "none",
@@ -480,7 +502,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
 
 function PaperclipIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg aria-hidden="true" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
     </svg>
   );
@@ -488,7 +510,7 @@ function PaperclipIcon({ className }: { className?: string }) {
 
 function MicIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg aria-hidden="true" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
       <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
       <line x1="12" y1="19" x2="12" y2="23" />
@@ -499,7 +521,7 @@ function MicIcon({ className }: { className?: string }) {
 
 function SendIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <svg aria-hidden="true" className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
       <path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
       <path d="M22 2L15 22L11 13L2 9L22 2Z" fill="white"/>
     </svg>

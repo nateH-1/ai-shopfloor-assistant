@@ -27,12 +27,13 @@ from rag.config import (
     CHUNK_SIZE,
     CHUNK_OVERLAP,
     ALLOWED_EXTENSIONS,
+    DEFAULT_OLLAMA_EMBEDDING_MODEL,
 )
 from rag.ingestion import _load_docs
 
 load_dotenv()
 
-EMBEDDING_MODEL = "bge-m3"
+EMBEDDING_MODEL = os.getenv("OLLAMA_EMBEDDING_MODEL") or DEFAULT_OLLAMA_EMBEDDING_MODEL
 
 def load_registry() -> dict:
     if DOCUMENTS_JSON.exists():

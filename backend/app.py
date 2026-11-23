@@ -616,6 +616,9 @@ def chat():
         if not message:
             return jsonify({"error": "Message cannot be empty"}), 400
 
+        # start timer
+        start_time = time.time()
+
         # Evict idle sessions to prevent unbounded memory growth
         _evict_stale_sessions()
 
@@ -661,10 +664,14 @@ def chat():
         metadata = {"sources": _format_sources(result["chunks"])}
         if result["clarification"]:
             metadata["clarification"] = result["clarification"]
+
+        total_time = time.time() - start_time
+        
         return jsonify({
             "reply":      result["reply"],
             "session_id": session_id,
             "metadata":   metadata,
+            "time":       str(round(total_time, 2)),
         })
 
     except ConnectionError as exc:

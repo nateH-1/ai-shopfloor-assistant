@@ -24,11 +24,13 @@ export default function UserManagementBubble() {
     const [onVerified, setOnVerified] = useState(false);
     const [saving, setSaving] = useState(false);
     const [actionError, setActionError] = useState("");
+    const [statusMessage, setStatusMessage] = useState("");
 
-    async function handleRoleChange(userId: string, role: "Worker" | "Admin") {
+    async function handleRoleChange(userId: string, role: "Worker" | "Admin", fullName: string) {
         if (saving) return;
         setSaving(true);
         setActionError("");
+        setStatusMessage("");
         try {
             await change_user_role(userId, role);
             setUsers((current) => current ? {
@@ -37,6 +39,7 @@ export default function UserManagementBubble() {
                     user.id === userId ? { ...user, name: role } : user
                 ),
             } : current);
+            setStatusMessage(`Role for ${fullName} changed to ${role}.`);
         } catch (error) {
             setActionError(error instanceof Error ? error.message : "Failed to change user role.");
         } finally {
@@ -44,18 +47,36 @@ export default function UserManagementBubble() {
         }
     }
 
-    async function handleDelete(userId: string) {
+    async function handleDelete(userId: string, fullName: string) {
         if (saving) return;
         setSaving(true);
         setActionError("");
+        setStatusMessage("");
         try {
             await delete_user(userId);
             setUsers((current) => current ? {
                 ...current,
                 verified_users: current.verified_users.filter((user) => user.id !== userId),
             } : current);
+            setStatusMessage(`${fullName} deleted.`);
         } catch (error) {
             setActionError(error instanceof Error ? error.message : "Failed to delete user.");
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    async function handleVerification(user: user_info, status: "VERIFIED" | "REJECTED") {
+        if (saving) return;
+        setSaving(true);
+        setStatusMessage("");
+        setActionError("");
+        try {
+            const updatedUsers = await verify_user(user.id, status);
+            setUsers(updatedUsers);
+            setStatusMessage(`${user.full_name} ${status === "VERIFIED" ? "verified" : "rejected"}.`);
+        } catch (error) {
+            setError(error instanceof Error ? error.message : "Failed to verify user.");
         } finally {
             setSaving(false);
         }
@@ -89,7 +110,9 @@ export default function UserManagementBubble() {
     return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-8">
       <h2 className="text-lg font-semibold text-foreground">Manage Users</h2>
-      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+      <fieldset>
+        <legend className="sr-only">Filter users by verification status</legend>
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
         {(["Pending Users", "Verified Users"] as const).map((option) => (
           <label key={option} className="cursor-pointer">
             <input
@@ -98,7 +121,10 @@ export default function UserManagementBubble() {
               value={option}
               checked={onVerified === (option === "Verified Users")}
               disabled={saving}
-              onChange={() => setOnVerified(option == "Verified Users" ? true : false)}
+              onChange={() => {
+                setOnVerified(option === "Verified Users");
+                setStatusMessage("");
+              }}
               className="peer sr-only"
             />
             <span className="block rounded-lg border-2 border-transparent px-3 py-2.5 text-center text-sm font-medium text-foreground transition-colors hover:bg-blue-button peer-checked:border-blue-button-focus peer-checked:bg-blue-button peer-checked:text-blue-button-text peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue-button-focus">
@@ -106,14 +132,15 @@ export default function UserManagementBubble() {
             </span>
           </label>
         ))}
-      </div>
+        </div>
+      </fieldset>
 
       {actionError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{actionError}</p>}
-      {saving && <p role="status" className="text-sm text-muted-foreground">Saving changes...</p>}
+      <p role="status" className={loadingUsers || saving ? "text-sm text-muted-foreground" : "sr-only"}>
+        {loadingUsers ? "Loading users..." : saving ? "Saving changes..." : statusMessage || (users && !error ? `${onVerified ? users.verified_users.length : users.pending_users.length} ${onVerified ? "verified" : "pending"} users.` : "")}
+      </p>
 
-      {loadingUsers ? (
-        <p className="mb-1.5 block text-sm font-medium text-foreground">Loading users...</p>
-      ) : error ? (
+      {loadingUsers ? null : error ? (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>
       ) : users?.verified_users.length && onVerified ? (
         <ul className="space-y-4">
@@ -122,13 +149,13 @@ export default function UserManagementBubble() {
               <p title={user.full_name} className="min-w-0 truncate font-medium text-foreground">{user.full_name}</p>
               <p title={user.username} className="min-w-0 truncate text-sm text-muted-foreground">{user.username}</p>
               <select
-                aria-label={`Role for ${user.username}`}
+                aria-label={`Role for ${user.full_name}`}
                 value={user.name}
                 disabled={saving}
                 onChange={(event) => {
                   const role = event.target.value;
                   if (role === "Worker" || role === "Admin") {
-                    void handleRoleChange(user.id, role);
+                    void handleRoleChange(user.id, role, user.full_name);
                   }
                 }}
                 className="min-w-0 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground focus:border-blue-button-focus focus:outline-none focus:ring-2 focus:ring-blue-button-ring disabled:cursor-wait disabled:opacity-50"
@@ -142,8 +169,8 @@ export default function UserManagementBubble() {
               <button
                 type="button"
                 disabled={saving}
-                onClick={() => { void handleDelete(user.id); }}
-                aria-label={`Delete ${user.username}`}
+                onClick={() => { void handleDelete(user.id, user.full_name); }}
+                aria-label={`Delete ${user.full_name}`}
                 className="justify-self-end rounded-lg bg-red-button px-4 py-2 border-2 border-transparent dark:border-red-button-border text-sm font-medium text-red-button-text hover:bg-red-button-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Delete
@@ -158,24 +185,10 @@ export default function UserManagementBubble() {
               <p title={user.full_name} className="min-w-0 truncate font-medium text-foreground">{user.full_name}</p>
               <p title={user.username} className="min-w-0 truncate text-sm text-muted-foreground">{user.username}</p>
               <p title={user.name} className="min-w-0 truncate text-sm text-muted-foreground">{user.name}</p>
-              <button className="rounded-lg bg-blue-button px-2 py-2 text-sm font-medium text-blue-button-text transition-colors hover:bg-blue-button-hover" onClick={async () => {
-                try {
-                  const updatedUsers = await verify_user(user.id, "VERIFIED");
-                  setUsers(updatedUsers);
-                } catch (error) {
-                  setError(error instanceof Error ? error.message : "Failed to verify user.");
-                }
-              }}>
+              <button type="button" aria-label={`Verify ${user.full_name}`} disabled={saving} className="rounded-lg bg-blue-button px-2 py-2 text-sm font-medium text-blue-button-text transition-colors hover:bg-blue-button-hover" onClick={() => { void handleVerification(user, "VERIFIED"); }}>
                 Verify
               </button>
-              <button className="rounded-lg bg-red-50 dark:bg-red-950/50 px-2 py-2 text-sm font-medium text-red-700 dark:text-red-300 transition-colors hover:bg-red-100 dark:hover:bg-red-900/60" onClick={async () => {
-                try {
-                  const updatedUsers = await verify_user(user.id, "REJECTED");
-                  setUsers(updatedUsers);
-                } catch (error) {
-                  setError(error instanceof Error ? error.message : "Failed to verify user.");
-                }
-              }}>
+              <button type="button" aria-label={`Reject ${user.full_name}`} disabled={saving} className="rounded-lg bg-red-50 dark:bg-red-950/50 px-2 py-2 text-sm font-medium text-red-700 dark:text-red-300 transition-colors hover:bg-red-100 dark:hover:bg-red-900/60" onClick={() => { void handleVerification(user, "REJECTED"); }}>
                 Reject
               </button>
             </li>

@@ -5,7 +5,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain_core.documents import Document
 
 from rag.config import KNOWLEDGE_BASE_DIR, MAX_MULTI_DOC_CHUNKS, NUM_CHUNKS
-from rag.context import _build_numbered_context, _parse_citations
+from rag.context import NO_INFO_REPLY, _build_numbered_context, _parse_citations
 from rag.guard import _is_off_topic
 from rag.prompts import CONDENSE_PROMPT, QA_PROMPT, _MULTI_DOC_QA_TEMPLATE
 from rag.retrieval import _hybrid_search
@@ -17,7 +17,6 @@ from rag.scope import (
 )
 
 OFF_TOPIC_REPLY = "I can only answer questions about the uploaded documents."
-NO_INFO_REPLY   = "The uploaded documents do not contain information about this."
 
 
 def answer_question(
