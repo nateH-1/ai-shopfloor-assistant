@@ -45,7 +45,7 @@ def test_collection_uses_local_ollama_embeddings(monkeypatch, base_url, model_na
         collection = resources._create_collection()
     ef.assert_called_once_with(
         url=(base_url or resources.DEFAULT_OLLAMA_BASE_URL).rstrip("/"),
-        model_name=model_name or "qwen3-embedding:0.6b",
+        model_name=model_name or "nomic-embed-text:v1.5",
     )
     chroma.PersistentClient.assert_called_once_with(path=CHROMA_DB_DIR)
     chroma.PersistentClient.return_value.get_or_create_collection.assert_called_once_with(

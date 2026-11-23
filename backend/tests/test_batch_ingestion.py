@@ -33,7 +33,7 @@ def test_batch_tags_shared_chunks_and_preserves_existing_guest_owner(monkeypatch
          patch.object(ingest, "Chroma") as chroma:
         ingest.ingest_files(files)
 
-    embeddings.assert_called_once_with(model="bge-m3")
+    embeddings.assert_called_once_with(model="nomic-embed-text:v1.5")
     if store_exists:
         chroma.assert_called_once_with(
             collection_name="documents",

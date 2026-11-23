@@ -14,16 +14,17 @@ BROAD_INTENT_PHRASES = {
     "compare", "consolidate", "summarize all", "all relevant",
     "every document", "every doc", "from every",
 }
-SESSION_TTL_SECONDS      = 2 * 60 * 60   # evict sessions idle for 2 hours
-GUEST_DOCUMENT_TTL_SECONDS = 24 * 60 * 60
-GUEST_CLEANUP_INTERVAL_SECONDS = 60
-MAX_MULTI_DOC_CHUNKS     = 40            # hard cap on total chunks sent to LLM (≈10K tokens)
-KEYWORD_FALLBACK_DISTANCE = 0.50         # best vector distance at which keyword results are added
-RRF_K                    = 60            # reciprocal rank fusion constant
+SESSION_TTL_SECONDS             = 2 * 60 * 60   # evict sessions idle for 2 hours
+GUEST_DOCUMENT_TTL_SECONDS      = 24 * 60 * 60
+GUEST_CLEANUP_INTERVAL_SECONDS  = 60
+MAX_MULTI_DOC_CHUNKS            = 40            # hard cap on total chunks sent to LLM (≈10K tokens)
+KEYWORD_FALLBACK_DISTANCE       = 0.50         # best vector distance at which keyword results are added
+RRF_K                           = 60            # reciprocal rank fusion constant
 
 # Answer/guard/rewrite models run on a local Ollama server; override in .env (see .env.example).
 # Embeddings still use OpenAI for now.
-DEFAULT_OLLAMA_MODEL     = "qwen2.5:7b"    # best valid-citation / refusal results in our 2026-10-15 benchmark
-DEFAULT_OLLAMA_BASE_URL  = "http://localhost:11434"
-OLLAMA_NUM_CTX           = 16384         # Ollama silently truncates prompts beyond this
-OLLAMA_TIMEOUT_SECONDS   = 300
+DEFAULT_OLLAMA_MODEL            = "qwen2.5:7b"    # best valid-citation / refusal results in our 2026-10-15 benchmark
+DEFAULT_OLLAMA_EMBEDDING_MODEL  = "nomic-embed-text:v1.5"
+DEFAULT_OLLAMA_BASE_URL         = "http://localhost:11434"
+OLLAMA_NUM_CTX                  = 16384         # Ollama silently truncates prompts beyond this
+OLLAMA_TIMEOUT_SECONDS          = 300

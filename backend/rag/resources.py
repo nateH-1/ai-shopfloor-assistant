@@ -10,6 +10,7 @@ from rag.config import (
     CHROMA_DB_DIR,
     DEFAULT_OLLAMA_BASE_URL,
     DEFAULT_OLLAMA_MODEL,
+    DEFAULT_OLLAMA_EMBEDDING_MODEL,
     OLLAMA_NUM_CTX,
     OLLAMA_TIMEOUT_SECONDS,
 )
@@ -34,7 +35,7 @@ def _create_collection() -> chromadb.Collection:
     """Open (or create) the persistent Chroma collection holding document chunks."""
     ef = _OllamaRetrievalEmbeddings(
         url=_ollama_settings()[1],
-        model_name=os.getenv("OLLAMA_EMBEDDING_MODEL") or "nomic-embed-text:v1.5",
+        model_name=os.getenv("OLLAMA_EMBEDDING_MODEL") or DEFAULT_OLLAMA_EMBEDDING_MODEL,
     )
     client = chromadb.PersistentClient(path=CHROMA_DB_DIR)
     return client.get_or_create_collection(name="documents", embedding_function=ef)
