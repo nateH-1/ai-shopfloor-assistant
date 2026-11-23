@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, KeyboardEvent } from "react";
-import { transcribeAudio } from "@/lib/chatApi";
-import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent, type MouseEvent } from "react";
+import { useEffect, useLayoutEffect, useId, useRef, useState, type ClipboardEvent, type KeyboardEvent, type MouseEvent } from "react";
 import { findMisspellings, transcribeAudio, type SpellSpan } from "@/lib/chatApi";
 import { readEditorText, selectionOffsets, setSelectionOffsets, type CaretOffsets } from "@/lib/editorCaret";
 import { highlightedHtml } from "@/lib/spellMarkup";
@@ -20,7 +18,6 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const caretRef = useRef<CaretOffsets | null>(null);
   const composingRef = useRef(false);
@@ -145,9 +142,6 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
     caretRef.current = { start: 0, end: 0 };
     setValue("");
     setVoiceStatus("");
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-    }
     setSpellSpans([]);
   };
 
@@ -345,6 +339,8 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
             return next;
           });
           setVoiceStatus("Transcription ready in the message field. Review it before sending.");
+        } catch (err) {
+          setVoiceStatus("");
           console.error("[voice] transcription failed:", err);
           window.alert(err instanceof Error ? err.message : "Failed to transcribe audio.");
         } finally {
@@ -393,19 +389,13 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
             ref={editorRef}
             role="textbox"
             aria-multiline="true"
+            aria-disabled={disabled || isTranscribing || undefined}
             id={inputId}
             aria-label="Message"
             aria-describedby={[
               `${inputId}-instructions`,
               spellSpans.length > 0 ? `${inputId}-spelling` : null,
-              ].filter(Boolean).join(" ")}
-            id={inputId}
-            aria-label="Message"
-            aria-describedby={[
-              `${inputId}-instructions`,
-               spellSpans.length > 0 ? `${inputId}-spelling` : null,
-               ].filter(Boolean).join(" ")
-            }
+            ].filter(Boolean).join(" ")}
             data-placeholder={isTranscribing ? "Transcribing audio..." : "Ask Kuldeep about manuals, SOPs, or processes..."}
             contentEditable={!disabled && !isTranscribing}
             spellCheck={false}
